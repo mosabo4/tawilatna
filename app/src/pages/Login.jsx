@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
-import { Pawn } from '../ui'
+import { Avatar } from '../ui'
 import { DEMO } from '../api'
 
 export default function Login() {
@@ -34,19 +34,21 @@ export default function Login() {
     return (
       <div className="login">
         <div className="login-brand">
-          <h1 className="brand">طاولتنا</h1>
+          <h1 className="brand big">طاولتنا</h1>
           <p>ألعابنا، قيماتنا، ومين يكسب مين.</p>
         </div>
-        <h2 className="login-q">مين أنت؟</h2>
-        <div className="who-grid">
-          {idx.players.map(p => (
-            <button key={p.id} className="who" onClick={() => setWho(p)} style={{ '--c': p.color }}>
-              <Pawn color={p.color} size={46} />
-              <span>{p.name}</span>
-            </button>
-          ))}
+        <div className="glass login-card">
+          <h2 className="login-q">مين أنت؟</h2>
+          <div className="who-grid">
+            {idx.players.map(p => (
+              <button key={p.id} className="who" onClick={() => setWho(p)}>
+                <Avatar player={p} size={52} />
+                <span>{p.name}</span>
+              </button>
+            ))}
+          </div>
         </div>
-        <button className="link-btn light" onClick={() => setGuest(true)}>أتفرج بس بدون دخول</button>
+        <button className="link-btn" onClick={() => setGuest(true)}>أتفرج بس بدون دخول</button>
         {DEMO && <p className="demo-note">نسخة تجريبية: رمز الكل 1111</p>}
       </div>
     )
@@ -54,14 +56,14 @@ export default function Login() {
 
   return (
     <div className="login">
-      <button className="link-btn light back-who" onClick={() => { setWho(null); setPin(''); setErr('') }}>مو أنا؟ ارجع</button>
+      <button className="link-btn back-who" onClick={() => { setWho(null); setPin(''); setErr('') }}>مو أنا؟ ارجع</button>
       <div className="pin-who">
-        <Pawn color={who.color} size={64} />
+        <Avatar player={who} size={76} ring />
         <h2>هلا {who.name}</h2>
         <p>اكتب رمزك</p>
       </div>
       <div className={`pin-dots ${err ? 'shake' : ''}`} aria-live="polite" aria-label={`${pin.length} أرقام`}>
-        {Array.from({ length: Math.max(4, pin.length) }, (_, i) => <span key={i} className={i < pin.length ? 'on' : ''} style={{ '--c': who.color }} />)}
+        {Array.from({ length: Math.max(4, pin.length) }, (_, i) => <span key={i} className={i < pin.length ? 'on' : ''} />)}
       </div>
       <p className="pin-err" role="alert">{err}</p>
       <div className="keypad" dir="ltr">

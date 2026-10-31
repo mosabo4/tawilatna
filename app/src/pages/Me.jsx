@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useStore, go } from '../store'
 import { api, DEMO } from '../api'
-import { Pawn, TopBar, Section, Field, Empty } from '../ui'
+import { Avatar, TopBar, Section, Field, Empty } from '../ui'
 
 const PALETTE = ['#D93A3A', '#2F6FDB', '#E9B425', '#2E9E5B', '#8A4FD8', '#EE7A2B', '#1BA6A6', '#D6458F', '#6B7A2E', '#4B4F58']
 
@@ -39,7 +39,7 @@ function PlayerEditor({ player, onDone }) {
   return (
     <form className="pad form editor" onSubmit={save}>
       <div className="row gap center">
-        <Pawn color={f.color} size={40} />
+        <Avatar player={{ id: player?.id, name: f.name || '؟', color: f.color }} size={44} />
         <Field label="الاسم"><input className="input" required value={f.name} onChange={e => setF({ ...f, name: e.target.value })} /></Field>
       </div>
       <div className="field">
@@ -69,9 +69,9 @@ export default function Me() {
   return (
     <div className="page">
       <TopBar title="حسابي" />
-      <div className="sheet-stack">
-        <div className="paper pad me-card">
-          <Pawn color={me.color} size={44} />
+      <div className="stack">
+        <div className="glass pad me-card">
+          <Avatar player={me} size={48} />
           <div><b>{me.name}</b>{me.is_admin && <span className="tag">مسؤول</span>}</div>
           <a className="more" href={`#/player/${me.id}`}>إحصائياتي</a>
         </div>
@@ -85,7 +85,7 @@ export default function Me() {
                 <li key={p.id}>
                   {editing === p.id ? <PlayerEditor player={p} onDone={() => setEditing(null)} /> : (
                     <div className="ap-row">
-                      <Pawn color={p.color} size={24} /><span>{p.name}</span>
+                      <Avatar player={p} size={28} /><span>{p.name}</span>
                       {p.is_admin && <span className="tag">مسؤول</span>}
                       <button className="link-btn" onClick={() => setEditing(p.id)}>تعديل أو رمز جديد</button>
                     </div>

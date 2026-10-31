@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { leaderboard, playerStats, versus } from '../stats'
-import { Pawn, TopBar, Section, Empty, pct, fmtDate, fmtScore, ScoreBadge } from '../ui'
+import { Avatar, Donut, TopBar, Section, Empty, pct, fmtDate, fmtScore, ScoreBadge } from '../ui'
 import { PlayCard } from './History'
 
 export default function Players() {
@@ -11,13 +11,13 @@ export default function Players() {
   const [b, setB] = useState(() => idx.players.find(p => p.id !== (me?.id || idx.players[0]?.id))?.id || '')
   return (
     <div className="page">
-      <header className="topbar"><h1>اللاعبين</h1></header>
-      <div className="sheet-stack">
+      <header className="page-head"><h1>اللاعبين</h1></header>
+      <div className="stack">
         <div className="player-list">
           {board.map((s, i) => (
-            <a key={s.player.id} className="player-row" href={`#/player/${s.player.id}`} style={{ '--c': s.player.color }}>
+            <a key={s.player.id} className="player-row" href={`#/player/${s.player.id}`}>
               <span className="rank">{i + 1}</span>
-              <Pawn color={s.player.color} size={34} crown={i === 0 && s.wins > 0} />
+              <Avatar player={s.player} size={40} />
               <span className="pr-name">{s.player.name}{s.player.id === me?.id && <small> (أنت)</small>}</span>
               <span className="pr-stat"><b>{s.wins}</b><small>فوز</small></span>
               <span className="pr-stat"><b>{s.plays}</b><small>قيم</small></span>
@@ -56,20 +56,26 @@ export function PlayerView({ id }) {
 
   return (
     <div className="page">
-      <TopBar title={player.name} backTo="/players" right={me?.id === id && <button className="btn small ghost-light" onClick={() => go('/me')}>حسابي</button>} />
-      <div className="player-hero" style={{ '--c': player.color }}>
-        <Pawn color={player.color} size={72} crown={st.currentStreak >= 2} />
-        <div className="ph-stats">
+      <TopBar title={player.name} backTo="/players" right={me?.id === id && <button className="btn small ghost" onClick={() => go('/me')}>حسابي</button>} />
+      <div className="stack">
+        <div className="glass lead">
+          <Donut value={st.winRate}><Avatar player={player} size={56} /></Donut>
+          <div className="lead-info">
+            <small>{st.currentStreak >= 2 ? `على سلسلة ${st.currentStreak} فوز` : 'نسبة الفوز'}</small>
+            <strong>{player.name}</strong>
+            <p>يفوز في {st.plays ? pct(st.winRate) : '0%'} من قيماته</p>
+          </div>
+        </div>
+        <div className="row3">
           <div><b>{st.wins}</b><span>فوز</span></div>
           <div><b>{st.plays}</b><span>قيم</span></div>
-          <div><b>{st.plays ? pct(st.winRate) : '—'}</b><span>نسبة الفوز</span></div>
+          <div><b>{st.podiums}</b><span>بالثلاثة الأوائل</span></div>
         </div>
       </div>
 
-      <div className="sheet-stack">
-        <div className="paper facts">
+      <div className="stack">
+        <div className="glass facts">
           <dl>
-            <div><dt>بالمراكز الثلاثة الأولى</dt><dd>{st.podiums} مرة</dd></div>
             <div><dt>سلسلة الفوز الحالية</dt><dd>{st.currentStreak ? `${st.currentStreak} على التوالي` : 'ما فيه'}</dd></div>
             <div><dt>أطول سلسلة فوز</dt><dd>{st.bestStreak}</dd></div>
             <div><dt>ملعبه</dt><dd>{st.bestGame ? <a href={`#/game/${st.bestGame.game.id}`}>{st.bestGame.game.name} ({st.bestGame.wins} فوز)</a> : '—'}</dd></div>
@@ -82,14 +88,14 @@ export function PlayerView({ id }) {
         {others.length > 0 && (
           <Section title="قارنه مع">
             <div className="chips pad-x pad-b">
-              {others.map(o => <a key={o.id} className="chip" href={`#/vs/${id}/${o.id}`}><Pawn color={o.color} size={16} />{o.name}</a>)}
+              {others.map(o => <a key={o.id} className="chip" href={`#/vs/${id}/${o.id}`}><Avatar player={o} size={20} />{o.name}</a>)}
             </div>
           </Section>
         )}
 
         {records.length > 0 && (
           <Section title="سجله في كل لعبة">
-            <table className="scorepad">
+            <table className="table">
               <thead><tr><th>اللعبة</th><th>قيم</th><th>فوز</th><th>تقييمه</th></tr></thead>
               <tbody>
                 {records.map(r => (
@@ -107,10 +113,10 @@ export function PlayerView({ id }) {
 
         {ratings.length > 0 && (
           <Section title={`تقييماته (${ratings.length})`}>
-            <ul className="plain-list">
+            <ul className="link-list">
               {ratings.map(r => {
                 const g = idx.gamesById.get(r.game_id)
-                return g && <li key={r.game_id}><a href={`#/game/${g.id}`}><span>{g.name}</span><ScoreBadge value={r.score} /></a></li>
+                return g && <li key={r.game_id}><a href={`#/game/${g.id}`}><span className="nm">{g.name}</span><ScoreBadge value={r.score} /></a></li>
               })}
             </ul>
           </Section>
@@ -136,28 +142,28 @@ export function VersusView({ a, b }) {
   return (
     <div className="page">
       <TopBar title="مين يغلب مين" backTo="/players" />
-      <div className="vs-hero">
+      <div className="glass vs-hero">
         <a className="vs-side" href={`#/player/${a}`}>
-          <Pawn color={pa.color} size={60} crown={v.aAhead > v.bAhead} />
+          <Avatar player={pa} size={64} ring={v.aAhead > v.bAhead} />
           <span>{pa.name}</span>
           <b>{v.aAhead}</b>
         </a>
         <span className="vs-mid">ضد</span>
         <a className="vs-side" href={`#/player/${b}`}>
-          <Pawn color={pb.color} size={60} crown={v.bAhead > v.aAhead} />
+          <Avatar player={pb} size={64} ring={v.bAhead > v.aAhead} />
           <span>{pb.name}</span>
           <b>{v.bAhead}</b>
         </a>
       </div>
       {total > 0 && (
         <div className="vs-bar" aria-hidden="true">
-          <span style={{ flex: v.aAhead, background: pa.color }} />
-          {v.tie > 0 && <span style={{ flex: v.tie, background: 'var(--muted)' }} />}
-          <span style={{ flex: v.bAhead, background: pb.color }} />
+          <span className="a" style={{ flex: v.aAhead }} />
+          {v.tie > 0 && <span className="t" style={{ flex: v.tie }} />}
+          <span className="b" style={{ flex: v.bAhead }} />
         </div>
       )}
       <p className="vs-sub">{total ? `لعبوا مع بعض ${total} قيم${v.tie ? `، وتعادلوا ${v.tie}` : ''}. الرقم يعني كم مرة خلّص قدّام الثاني.` : 'ما لعبوا مع بعض للحين.'}</p>
-      <div className="sheet-stack">
+      <div className="stack">
         {v.shared.length > 0 && <Section title="قيماتهم مع بعض"><div className="play-list">{v.shared.slice(0, 30).map(p => <PlayCard key={p.id} play={p} />)}</div></Section>}
       </div>
     </div>

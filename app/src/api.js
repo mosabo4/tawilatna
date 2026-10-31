@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import SEED_GAMES from './seedGames.json'
 
 const URL = import.meta.env.VITE_SUPABASE_URL
 const KEY = import.meta.env.VITE_SUPABASE_KEY
@@ -17,6 +18,7 @@ export const ERRORS = {
   bad_new_pin: 'الرمز لازم يكون من 4 إلى 8 أرقام',
   name_taken: 'هذا الاسم مستخدم',
   not_found: 'العنصر غير موجود، يمكن انحذف',
+  dup_game: 'هذي اللعبة موجودة من قبل',
   network: 'ما قدرنا نوصل للخادم. تأكد من الإنترنت وحاول مرة ثانية',
 }
 
@@ -46,26 +48,25 @@ async function sbCall(fn, args) {
 }
 
 // ---------------- Demo (localStorage) ----------------
-const DKEY = 'tawilatna-demo-v1'
+const DKEY = 'tawilatna-demo-v2'
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2))
 function seedDemo() {
   const names = [['مصعب', '#D93A3A', true], ['هاني', '#2F6FDB'], ['معتز', '#E9B425'], ['فارس', '#2E9E5B'], ['اياد', '#8A4FD8'], ['محمدي', '#EE7A2B']]
   const players = names.map(([name, color, admin], i) => ({ id: uid(), name, color, is_admin: !!admin, pin: '1111', created_at: new Date(2026, 0, 1, 0, i).toISOString() }))
-  const g = (name, min, max, mins) => ({ id: uid(), name, image_url: null, min_players: min, max_players: max, play_minutes: mins, owner_id: players[0].id, added_by: players[0].id, created_at: new Date().toISOString() })
-  const games = [g('كاتان', 3, 4, 90), g('سبليندور', 2, 4, 30), g('كودنيمز', 4, 8, 20), g('تيكت تو رايد', 2, 5, 60), g('أزول', 2, 4, 40), g('ون نايت ويروولف', 3, 10, 15)]
+  const games = SEED_GAMES.map(g => ({ ...g, id: uid(), owner_id: players[0].id, added_by: players[0].id, created_at: new Date().toISOString() }))
   const plays = [], results = [], ratings = []
   let seed = 7
   const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280
-  for (let i = 0; i < 26; i++) {
-    const game = games[Math.floor(rnd() * games.length)]
-    const n = Math.max(game.min_players, Math.min(game.max_players, 3 + Math.floor(rnd() * 4)))
+  for (let i = 0; i < 34; i++) {
+    const game = games[Math.floor(rnd() * 18) * 2 % games.length]
+    const n = Math.max(game.min_players, Math.min(game.max_players, 2 + Math.floor(rnd() * 5), 6))
     const ps = [...players].sort(() => rnd() - 0.5).slice(0, n)
     const d = new Date(2026, 9, 30); d.setDate(d.getDate() - i * 4 - Math.floor(rnd() * 3))
     const id = uid()
     plays.push({ id, game_id: game.id, played_on: d.toISOString().slice(0, 10), notes: i === 2 ? 'أطول قيم في التاريخ' : null, created_by: ps[0].id, created_at: d.toISOString() })
     ps.forEach((p, k) => results.push({ play_id: id, player_id: p.id, position: k + 1, score: null }))
   }
-  players.forEach(p => games.forEach(gm => { if (rnd() > 0.3) ratings.push({ game_id: gm.id, player_id: p.id, score: Math.round((4 + rnd() * 6) * 2) / 2, updated_at: new Date().toISOString() }) }))
+  players.forEach(p => games.forEach(gm => { if (rnd() > 0.55) ratings.push({ game_id: gm.id, player_id: p.id, score: Math.round((4 + rnd() * 6) * 2) / 2, updated_at: new Date().toISOString() }) }))
   return { players, games, plays, results, ratings }
 }
 function dGet() {
@@ -114,7 +115,7 @@ const demo = {
   saveGame: async (player, pin, game) => {
     const s = dGet(); const me = dAuth(s, player, pin)
     if (!game.name?.trim()) throw new ApiError('no_name')
-    const fields = { name: game.name.trim(), image_url: game.image_url || null, min_players: game.min_players || null, max_players: game.max_players || null, play_minutes: game.play_minutes || null, owner_id: game.owner_id || null }
+    const fields = { name: game.name.trim(), image_url: game.image_url || null, min_players: game.min_players || null, max_players: game.max_players || null, play_minutes: game.play_minutes || null, max_minutes: game.max_minutes || null, category: game.category || null, weight: game.weight ?? null, bgg_id: game.bgg_id || null, year: game.year || null, owner_id: game.owner_id || null }
     let id = game.id
     if (!id) { id = uid(); s.games.push({ id, ...fields, owner_id: fields.owner_id || player, added_by: player, created_at: new Date().toISOString() }) }
     else {

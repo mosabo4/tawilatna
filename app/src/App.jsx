@@ -1,5 +1,5 @@
 import { useStore, useRoute } from './store'
-import { Pawn, Toast } from './ui'
+import { Avatar, Toast } from './ui'
 import Login from './pages/Login'
 import Home from './pages/Home'
 import Games, { GameView, GameForm } from './pages/Games'
@@ -15,7 +15,7 @@ const I = {
   history: <><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></>,
   players: <><circle cx="9" cy="8" r="3" /><path d="M3.5 19c0-3.3 2.5-6 5.5-6s5.5 2.7 5.5 6" /><circle cx="17" cy="9" r="2.4" /><path d="M16 13.2c2.7.2 4.6 2.6 4.6 5.8" /></>,
 }
-const Icon = ({ d }) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+const Icon = ({ d }) => <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
 
 function Nav({ at }) {
   const { me, setGuest } = useStore()
@@ -27,7 +27,7 @@ function Nav({ at }) {
       {tab('#/', 'home', 'الرئيسية', at === '')}
       {tab('#/games', 'games', 'الألعاب', at === 'games' || at === 'game')}
       {me
-        ? <a href="#/log" className="tab-add" aria-label="سجّل قيم"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></a>
+        ? <a href="#/log" className="tab-add" aria-label="سجّل قيم"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></a>
         : <button className="tab-add login" onClick={() => setGuest(false)}>ادخل</button>}
       {tab('#/history', 'history', 'السجل', at === 'history' || at === 'play')}
       {tab('#/players', 'players', 'اللاعبين', at === 'players' || at === 'player' || at === 'vs')}
@@ -63,7 +63,7 @@ export default function App() {
         <h1 className="brand">طاولتنا</h1>
         {loadError
           ? <><p>{loadError}</p><button className="btn gold" onClick={reload}>حاول مرة ثانية</button></>
-          : <div className="dice-load" aria-label="يحمّل"><Pawn color="#E9B425" size={36} /></div>}
+          : <div className="loader" aria-label="يحمّل" />}
       </div>
     )
   }
@@ -75,12 +75,10 @@ export default function App() {
       {top && (
         <header className="topbar home-top">
           <h1 className="brand">طاولتنا</h1>
-          {me
-            ? <a className="me-pill" href="#/me" aria-label="حسابي"><span>{me.name}</span><Pawn color={me.color} size={24} /></a>
-            : null}
+          {me && <a className="me-pill" href="#/me" aria-label="حسابي"><span>{me.name}</span><Avatar player={me} size={30} /></a>}
         </header>
       )}
-      {DEMO && top && <p className="demo-banner">نسخة تجريبية ببيانات وهمية</p>}
+      {DEMO && top && <p className="demo-banner">نسخة تجريبية: القيمات والتقييمات وهمية</p>}
       <main><Main r={r} /></main>
       <Nav at={r[0] || ''} />
       <Toast />

@@ -1,29 +1,8 @@
 import { useMemo } from 'react'
 import { useStore, go } from '../store'
 import { leaderboard, allGameStats, daysSince } from '../stats'
-import { Pawn, Section, Empty, Cover, ScoreBadge, ago, pct } from '../ui'
+import { Avatar, Donut, Section, Empty, Cover, ScoreBadge, ago, pct } from '../ui'
 import { PlayCard } from './History'
-
-function Podium({ board }) {
-  const top = board.filter(b => b.plays > 0).slice(0, 3)
-  if (!top.length) return null
-  // ترتيب العرض: الثاني، الأول، الثالث
-  const order = [top[1], top[0], top[2]]
-  const heights = [62, 92, 44]
-  return (
-    <div className="podium" aria-label="صدارة الطاولة">
-      {order.map((b, i) => b ? (
-        <a key={b.player.id} className={`pod pod-${i}`} href={`#/player/${b.player.id}`}>
-          <Pawn color={b.player.color} size={i === 1 ? 54 : 42} crown={i === 1} />
-          <span className="pod-name">{b.player.name}</span>
-          <span className="pod-block" style={{ height: heights[i] }}>
-            <b>{b.wins}</b><small>فوز</small>
-          </span>
-        </a>
-      ) : <span key={i} className="pod pod-empty" />)}
-    </div>
-  )
-}
 
 export default function Home() {
   const { idx, me } = useStore()
@@ -31,12 +10,13 @@ export default function Home() {
   const games = useMemo(() => allGameStats(idx), [idx])
   const month = new Date().toISOString().slice(0, 7)
   const thisMonth = idx.plays.filter(p => p.played_on.startsWith(month)).length
+  const leader = board.find(b => b.plays > 0 && b.wins > 0)
 
-  const topRated = games.filter(g => g.avg != null).sort((a, b) => b.avg - a.avg).slice(0, 3)
+  const topRated = games.filter(g => g.avg != null).sort((a, b) => b.avg - a.avg).slice(0, 4)
   const forgotten = games
     .map(g => ({ ...g, days: daysSince(g.lastPlayed) }))
     .sort((a, b) => (b.days ?? 1e9) - (a.days ?? 1e9))
-    .slice(0, 3)
+    .slice(0, 4)
 
   if (!idx.games.length) {
     return (
@@ -48,64 +28,77 @@ export default function Home() {
   }
 
   return (
-    <div className="page">
-      <div className="hero">
-        <Podium board={board} />
-        <p className="hero-line">
-          <span><b>{idx.plays.length}</b> قيم</span>
-          <span><b>{idx.games.length}</b> لعبة</span>
-          <span><b>{thisMonth}</b> هالشهر</span>
-        </p>
+    <div className="page stack">
+      {leader ? (
+        <a className="glass lead" href={`#/player/${leader.player.id}`}>
+          <Donut value={leader.winRate}><Avatar player={leader.player} size={56} /></Donut>
+          <div className="lead-info">
+            <small>المتصدر</small>
+            <strong>{leader.player.name}</strong>
+            <p>{leader.wins} فوز، ويفوز في {pct(leader.winRate)} من قيماته</p>
+          </div>
+        </a>
+      ) : (
+        <div className="glass lead empty-lead">
+          <div className="lead-info"><small>المتصدر</small><strong>ما أحد للحين</strong><p>أول واحد يفوز يتصدّر هنا.</p></div>
+        </div>
+      )}
+
+      <div className="row3">
+        <a href="#/history"><b>{idx.plays.length}</b><span>قيم</span></a>
+        <a href="#/games"><b>{idx.games.length}</b><span>لعبة</span></a>
+        <a href="#/history"><b>{thisMonth}</b><span>هالشهر</span></a>
       </div>
 
-      <div className="sheet-stack">
-        <Section title="الترتيب" action={<a className="more" href="#/players">كل اللاعبين</a>}>
-          {board.some(b => b.plays) ? (
-            <table className="scorepad">
-              <thead><tr><th></th><th>اللاعب</th><th>فوز</th><th>قيم</th><th>نسبة</th></tr></thead>
-              <tbody>
-                {board.map((b, i) => (
-                  <tr key={b.player.id} onClick={() => go(`/player/${b.player.id}`)} className={b.player.id === me?.id ? 'me' : ''}>
-                    <td className="rank">{i + 1}</td>
-                    <td><span className="ptag"><Pawn color={b.player.color} size={20} /><span>{b.player.name}</span></span></td>
-                    <td className="num strong">{b.wins}</td>
-                    <td className="num">{b.plays}</td>
-                    <td className="num">{b.plays ? pct(b.winRate) : '—'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : <p className="muted pad">ما سجلتوا أي قيم للحين.</p>}
-        </Section>
-
-        <Section title="آخر القيمات" action={<a className="more" href="#/history">السجل كامل</a>}>
-          {idx.plays.length
-            ? <div className="play-list">{idx.plays.slice(0, 3).map(p => <PlayCard key={p.id} play={p} />)}</div>
-            : <Empty title="ما فيه قيمات" text="أول ما تخلصون قيم، سجلوه من زر الزائد تحت." />}
-        </Section>
-
-        {topRated.length > 0 && (
-          <Section title="الأعلى تقييماً عندنا">
-            <div className="mini-games">
-              {topRated.map(g => (
-                <a key={g.game.id} className="mini-game" href={`#/game/${g.game.id}`}>
-                  <Cover game={g.game} className="sm" />
-                  <span className="mg-name">{g.game.name}</span>
-                  <ScoreBadge value={g.avg} />
+      <Section title="الترتيب" action={<a className="more" href="#/players">الكل</a>}>
+        {board.some(b => b.plays) ? (
+          <ol className="rank-list">
+            {board.map((b, i) => (
+              <li key={b.player.id} className={b.player.id === me?.id ? 'mine' : ''}>
+                <a href={`#/player/${b.player.id}`}>
+                  <span className="rk">{i + 1}</span>
+                  <Avatar player={b.player} size={28} />
+                  <span className="nm">{b.player.name}</span>
+                  <span className="pc">{b.plays ? pct(b.winRate) : '—'}</span>
+                  <span className="w">{b.wins}</span>
                 </a>
-              ))}
-            </div>
-          </Section>
-        )}
-
-        <Section title="صار لها زمان ما انلعبت">
-          <ul className="plain-list">
-            {forgotten.map(g => (
-              <li key={g.game.id}><a href={`#/game/${g.game.id}`}><span>{g.game.name}</span><span className="muted">{ago(g.days)}</span></a></li>
+              </li>
             ))}
-          </ul>
+          </ol>
+        ) : <p className="muted pad">ما سجلتوا أي قيم للحين. أول ما تخلصون قيم، سجلوه من زر الزائد تحت.</p>}
+      </Section>
+
+      {idx.plays.length > 0 && (
+        <Section title="آخر القيمات" action={<a className="more" href="#/history">السجل</a>}>
+          <div className="play-list">{idx.plays.slice(0, 3).map(p => <PlayCard key={p.id} play={p} />)}</div>
         </Section>
-      </div>
+      )}
+
+      {topRated.length > 0 && (
+        <Section title="الأعلى تقييماً عندنا" action={<a className="more" href="#/games">الألعاب</a>}>
+          <div className="mini-games">
+            {topRated.map(g => (
+              <a key={g.game.id} className="mini-game" href={`#/game/${g.game.id}`}>
+                <Cover game={g.game} className="sm" />
+                <span className="mg-name">{g.game.name}</span>
+                <ScoreBadge value={g.avg} />
+              </a>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      <Section title="صار لها زمان ما انلعبت">
+        <ul className="link-list">
+          {forgotten.map(g => (
+            <li key={g.game.id}><a href={`#/game/${g.game.id}`}>
+              <Cover game={g.game} className="xs" />
+              <span className="nm">{g.game.name}</span>
+              <span className="muted">{ago(g.days)}</span>
+            </a></li>
+          ))}
+        </ul>
+      </Section>
     </div>
   )
 }

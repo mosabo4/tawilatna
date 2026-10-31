@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { api } from '../api'
-import { Pawn, TopBar, Cover, Confirm, today, Field, Empty } from '../ui'
+import { Avatar, TopBar, Cover, Confirm, today, Field, Empty, playersText } from '../ui'
+import { CATEGORIES, catOf } from '../categories'
 
 export default function LogPlay({ id, presetGame }) {
   const { idx, me, act } = useStore()
@@ -19,7 +20,13 @@ export default function LogPlay({ id, presetGame }) {
 
   const game = idx.gamesById.get(gameId)
   const canEdit = !existing || me?.is_admin || me?.id === existing.created_by
-  const filtered = useMemo(() => idx.games.filter(g => g.name.includes(q.trim())), [idx, q])
+  const filtered = useMemo(() => {
+    const t = q.trim().toLowerCase()
+    return idx.games.filter(g => g.name.toLowerCase().includes(t))
+  }, [idx, q])
+  const grouped = useMemo(() => [...CATEGORIES, { id: 'other' }]
+    .map(c => ({ c, games: filtered.filter(g => (catOf(g).id) === c.id) }))
+    .filter(x => x.games.length), [filtered])
 
   if (!me) return <div className="page"><TopBar title="سجّل قيم" /><Empty title="ادخل باسمك أول" text="التسجيل يحتاج رمزك." /></div>
   if (id && !existing) return <div className="page"><TopBar title="تعديل قيم" /><Empty title="هذا القيم غير موجود" /></div>
@@ -65,8 +72,8 @@ export default function LogPlay({ id, presetGame }) {
   return (
     <div className="page has-action">
       <TopBar title={existing ? 'تعديل قيم' : 'سجّل قيم'} />
-      <div className="sheet-stack">
-        <section className="paper pad step">
+      <div className="stack">
+        <section className="glass pad step">
           <h2 className="step-title">وش لعبتوا؟</h2>
           {game ? (
             <div className="chosen-game">
@@ -76,41 +83,49 @@ export default function LogPlay({ id, presetGame }) {
             </div>
           ) : idx.games.length ? (
             <>
-              {idx.games.length > 6 && <input className="input" placeholder="دوّر على لعبة" value={q} onChange={e => setQ(e.target.value)} />}
+              {idx.games.length > 6 && <input className="input" type="search" placeholder="دوّر على لعبة" value={q} onChange={e => setQ(e.target.value)} />}
               <div className="game-picker">
-                {filtered.map(g => (
-                  <button key={g.id} className="gp" onClick={() => setGameId(g.id)}>
-                    <Cover game={g} className="xs" /><span>{g.name}</span>
-                  </button>
+                {grouped.map(({ c, games }) => (
+                  <div key={c.id} className="gp-group">
+                    <p className="gp-cat">{catOf({ category: c.id }).name}</p>
+                    <div className="gp-grid">
+                      {games.map(g => (
+                        <button key={g.id} className="gp" onClick={() => setGameId(g.id)}>
+                          <Cover game={g} className="xs" /><span>{g.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 ))}
+                {!grouped.length && <p className="muted">ما لقينا لعبة بهالاسم.</p>}
               </div>
             </>
           ) : <p className="muted">ما فيه ألعاب. <a href="#/games/new">أضف لعبة</a> أول.</p>}
         </section>
 
-        <section className="paper pad step">
+        <section className="glass pad step">
           <h2 className="step-title">متى؟</h2>
           <input type="date" className="input" value={date} max={today()} onChange={e => setDate(e.target.value)} />
         </section>
 
-        <section className="paper pad step">
+        <section className="glass pad step">
           <h2 className="step-title">مين لعب؟</h2>
           <div className="pick-players">
             {idx.players.map(p => {
               const on = rows.some(r => r.player_id === p.id)
               return (
-                <button key={p.id} className={`pp ${on ? 'on' : ''}`} style={{ '--c': p.color }} aria-pressed={on} onClick={() => toggle(p.id)}>
-                  <Pawn color={on ? p.color : '#C9CCC4'} size={32} />
+                <button key={p.id} className={`pp ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => toggle(p.id)}>
+                  <Avatar player={p} size={38} />
                   <span>{p.name}</span>
                 </button>
               )
             })}
           </div>
-          {outOfRange && <p className="warn">هذي اللعبة لـ {game.min_players}{game.max_players && game.max_players !== game.min_players ? `–${game.max_players}` : ''} لاعبين، وأنتم {rows.length}. تقدر تكمل عادي.</p>}
+          {outOfRange && <p className="warn">هذي اللعبة لـ {playersText(game)}، وأنتم {rows.length}. تقدر تكمل عادي.</p>}
         </section>
 
         {rows.length > 0 && (
-          <section className="paper pad step">
+          <section className="glass pad step">
             <div className="step-head">
               <h2 className="step-title">الترتيب</h2>
               <label className="switch">
@@ -123,8 +138,8 @@ export default function LogPlay({ id, presetGame }) {
               {ordered.map(r => {
                 const p = idx.playersById.get(r.player_id)
                 return (
-                  <li key={r.player_id} className="rank-row" style={{ '--c': p.color }}>
-                    <div className="rr-who"><Pawn color={p.color} size={24} crown={r.position === 1 && rows.length > 1} /><span>{p.name}</span></div>
+                  <li key={r.player_id} className="rank-row">
+                    <div className="rr-who"><Avatar player={p} size={26} /><span>{p.name}</span></div>
                     <div className="rr-pos" role="radiogroup" aria-label={`مركز ${p.name}`}>
                       {Array.from({ length: count || rows.length }, (_, i) => i + 1).map(n => (
                         <button key={n} role="radio" aria-checked={r.position === n} className={r.position === n ? 'on' : ''} onClick={() => setPos(r.player_id, n)}>{n}</button>
@@ -142,7 +157,7 @@ export default function LogPlay({ id, presetGame }) {
           </section>
         )}
 
-        <section className="paper pad step">
+        <section className="glass pad step">
           <Field label="ملاحظة (اختياري)">
             <textarea className="input" rows={2} value={notes} onChange={e => setNotes(e.target.value)} placeholder="مثلاً: فارس قلب اللعبة في آخر دور" />
           </Field>
