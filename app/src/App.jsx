@@ -1,0 +1,89 @@
+import { useStore, useRoute } from './store'
+import { Pawn, Toast } from './ui'
+import Login from './pages/Login'
+import Home from './pages/Home'
+import Games, { GameView, GameForm } from './pages/Games'
+import History, { PlayView } from './pages/History'
+import LogPlay from './pages/LogPlay'
+import Players, { PlayerView, VersusView } from './pages/Players'
+import Me from './pages/Me'
+import { DEMO } from './api'
+
+const I = {
+  home: <path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-4v-6H9v6H5a1 1 0 0 1-1-1z" />,
+  games: <><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></>,
+  history: <><circle cx="12" cy="12" r="8" /><path d="M12 8v4l3 2" /></>,
+  players: <><circle cx="9" cy="8" r="3" /><path d="M3.5 19c0-3.3 2.5-6 5.5-6s5.5 2.7 5.5 6" /><circle cx="17" cy="9" r="2.4" /><path d="M16 13.2c2.7.2 4.6 2.6 4.6 5.8" /></>,
+}
+const Icon = ({ d }) => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
+
+function Nav({ at }) {
+  const { me, setGuest } = useStore()
+  const tab = (href, key, label, active) => (
+    <a href={href} className={`tab ${active ? 'on' : ''}`} aria-current={active ? 'page' : undefined}><Icon d={I[key]} /><span>{label}</span></a>
+  )
+  return (
+    <nav className="bottom-nav" aria-label="التنقل">
+      {tab('#/', 'home', 'الرئيسية', at === '')}
+      {tab('#/games', 'games', 'الألعاب', at === 'games' || at === 'game')}
+      {me
+        ? <a href="#/log" className="tab-add" aria-label="سجّل قيم"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></a>
+        : <button className="tab-add login" onClick={() => setGuest(false)}>ادخل</button>}
+      {tab('#/history', 'history', 'السجل', at === 'history' || at === 'play')}
+      {tab('#/players', 'players', 'اللاعبين', at === 'players' || at === 'player' || at === 'vs')}
+    </nav>
+  )
+}
+
+function Main({ r }) {
+  const [a, b, c] = r
+  const params = new URLSearchParams(location.hash.split('?')[1] || '')
+  switch (a) {
+    case undefined: return <Home />
+    case 'games': return b === 'new' ? <GameForm /> : <Games />
+    case 'game': return c === 'edit' ? <GameForm id={b} key={b} /> : <GameView id={b} key={b} />
+    case 'log': return <LogPlay id={b} presetGame={params.get('game')} key={(b || 'new') + (params.get('game') || '')} />
+    case 'history': return <History />
+    case 'play': return <PlayView id={b} />
+    case 'players': return <Players />
+    case 'player': return <PlayerView id={b} key={b} />
+    case 'vs': return <VersusView a={b} b={c} />
+    case 'me': return <Me />
+    default: return <Home />
+  }
+}
+
+export default function App() {
+  const { idx, loadError, reload, me, guest } = useStore()
+  const r = useRoute()
+
+  if (!idx) {
+    return (
+      <div className="splash">
+        <h1 className="brand">طاولتنا</h1>
+        {loadError
+          ? <><p>{loadError}</p><button className="btn gold" onClick={reload}>حاول مرة ثانية</button></>
+          : <div className="dice-load" aria-label="يحمّل"><Pawn color="#E9B425" size={36} /></div>}
+      </div>
+    )
+  }
+  if (!me && !guest) return <><Login /><Toast /></>
+
+  const top = r[0] === undefined
+  return (
+    <div className="app">
+      {top && (
+        <header className="topbar home-top">
+          <h1 className="brand">طاولتنا</h1>
+          {me
+            ? <a className="me-pill" href="#/me" aria-label="حسابي"><span>{me.name}</span><Pawn color={me.color} size={24} /></a>
+            : null}
+        </header>
+      )}
+      {DEMO && top && <p className="demo-banner">نسخة تجريبية ببيانات وهمية</p>}
+      <main><Main r={r} /></main>
+      <Nav at={r[0] || ''} />
+      <Toast />
+    </div>
+  )
+}
