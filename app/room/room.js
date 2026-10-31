@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import GAMES from './data.json'
-import { buildCatan, catanSequence } from './catan.js'
+import BOXES from './boxes.json'
 
 // ===================================================================
 //  غرفة طاولتنا — دولاب وطاولة في غرفة وحدة (الوحدات بالمتر)
@@ -38,8 +38,10 @@ const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.02, 4
 
 // ---------- التحميل ----------
 const manager = new THREE.LoadingManager()
-manager.onProgress = (_, done, total) => { $('bar').style.width = `${Math.round(done / total * 100)}%` }
-manager.onLoad = () => { $('loading').classList.add('done'); intro() }
+manager.onProgress = (_, done, total) => { $('bar').style.width = `${Math.round(done / total * 60)}%` }
+let texReady = false
+manager.onLoad = () => { texReady = true; maybeStart() }
+function maybeStart() { if (texReady && boxesReady && !maybeStart.done) { maybeStart.done = true; $('loading').classList.add('done'); intro() } }
 const loader = new THREE.TextureLoader(manager)
 loader.setCrossOrigin('anonymous')
 const maxAniso = renderer.capabilities.getMaxAnisotropy()
@@ -138,114 +140,162 @@ const cellOf = (c, r) => ({ // r = 0 أسفل
   c, r,
 })
 
-// ---------- العلب ----------
-function boxSize(g) {
-  if (['strategy', 'family', 'adventure'].includes(g.c) || g.w >= 2.3) return { w: .296, d: .296, h: Math.min(.1, .05 + g.w * .011), k: 'L' }
-  if (g.c === 'duel' || g.w >= 1.85) return { w: .23, d: .175, h: .055, k: 'M' }
-  return { w: .145, d: .105, h: .042, k: 'S' }
+// ---------- العلب (مقاسات وصور حقيقية من BGG) ----------
+const IN = .0254
+const CDN = 'https://cf.geekdo-images.com/'
+function realBox(g) {
+  const b = BOXES[g.id]
+  if (!b) return null
+  return {
+    L: b[0] * IN, W: b[1] * IN, D: b[2] * IN,
+    front: b[3] ? CDN + b[3].replace('~', '/fit-in/700x700/filters:strip_icc()/') : null,
+    back: b[4] ? CDN + b[4].replace('^', '/fit-in/1024x1024/filters:no_upscale():strip_icc()/') : null,
+  }
 }
-// ترتيب: كل تصنيف يبدأ بمربع، والعلب نايمة فوق بعض (مثل ما ترصّها في البيت)
-const cellsOrder = []
-for (let r = K.n - 1; r >= 0; r--) for (let c = 0; c < K.n; c++) cellsOrder.push([c, r])
-let ci = 0
-const placed = []
-const catCells = {}
-const MAXH = K.cell - .015
-for (const cat of ORDER) {
-  const list = GAMES.filter(g => g.c === cat).map(g => ({ g, s: boxSize(g) }))
-    .sort((a, b) => 'LMS'.indexOf(a.s.k) - 'LMS'.indexOf(b.s.k) || b.s.h - a.s.h)
-  let cell = null, cols = []
-  const newCell = () => { cell = cellOf(...cellsOrder[ci++]); cols = []; (catCells[cat] ||= []).push(cell) }
-  for (const it of list) {
-    const { s } = it
-    if (!cell) newCell()
-    let col = cols.find(c => c.k === s.k && c.h + s.h <= MAXH)
-    if (!col) {
-      const usedW = cols.reduce((a, c) => a + c.w + .012, 0)
-      if (usedW + s.w > K.cell - .012) { newCell(); col = null }
-      if (!col) { col = { k: s.k, w: s.w, h: 0, items: [] }; cols.push(col) }
-    }
-    col.items.push(it); col.cell = cell
-    it.y0 = col.h; col.h += s.h
-    it.col = col
-  }
-  // نوزّع الأعمدة بالمنتصف داخل كل مربع
-  for (const cell2 of catCells[cat]) {
-    const cs = placed.length >= 0 ? [] : []
-    const columns = new Set(list.filter(it => it.col.cell === cell2).map(it => it.col))
-    const arr = [...columns]
-    const total = arr.reduce((a, c) => a + c.w, 0) + (arr.length - 1) * .012
-    let x = cell2.x - total / 2
-    for (const col of arr) { col.x = x + col.w / 2; x += col.w + .012 }
-    void cs
-  }
-  for (const it of list) placed.push({ ...it, cell: it.col.cell, x: it.col.x, y: it.col.cell.y + it.y0 + it.s.h / 2 })
+function fallbackSize(g) {
+  if (['strategy', 'family', 'adventure'].includes(g.c) || g.w >= 2.3) return { L: .296, W: .296, D: Math.min(.09, .05 + g.w * .011) }
+  if (g.c === 'duel' || g.w >= 1.85) return { L: .23, W: .175, D: .05 }
+  return { L: .15, W: .105, D: .038 }
 }
 
-// نسيج الظهر (spine) يترسم على canvas: لون من الغلاف + صورة صغيرة + الاسم
-function spineCanvas(g, s, img) {
-  const W = 512, H = Math.max(64, Math.round(W * s.h / s.w))
+// الجوانب: نمدّ لون حافة الغلاف على الجنب (مثل الطباعة الحقيقية) + صورة صغيرة + الاسم
+function sideCanvas(g, img, edge, lenM, hM) {
+  const W = 640, H = Math.max(56, Math.round(W * hM / lenM))
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H
   const x = cv.getContext('2d')
-  let base = CATS[g.c][1]
+  let lum = .4
   if (img) {
-    const t = document.createElement('canvas'); t.width = t.height = 1
-    const tx = t.getContext('2d'); tx.drawImage(img, 0, 0, 1, 1)
-    const [r, gg, b] = tx.getImageData(0, 0, 1, 1).data
-    base = `rgb(${r},${gg},${b})`
-  }
-  x.fillStyle = base; x.fillRect(0, 0, W, H)
-  if (img) {
-    // شريط من فن الغلاف بشفافية
-    x.globalAlpha = .35; x.drawImage(img, 0, img.height * .35, img.width, img.height * .3, 0, 0, W, H); x.globalAlpha = 1
-    const sq = H * .78
-    x.save(); x.beginPath(); x.roundRect(H * .11, H * .11, sq, sq, 6); x.clip(); x.drawImage(img, H * .11, H * .11, sq, sq); x.restore()
-  }
-  const g2 = x.createLinearGradient(0, 0, 0, H); g2.addColorStop(0, 'rgba(255,255,255,.18)'); g2.addColorStop(.5, 'rgba(255,255,255,0)'); g2.addColorStop(1, 'rgba(0,0,0,.25)')
-  x.fillStyle = g2; x.fillRect(0, 0, W, H)
-  // لون النص حسب سطوع الخلفية
-  const lum = (() => { const m = base.match(/\d+/g); if (!m || m.length < 3) return .4; return (.299 * m[0] + .587 * m[1] + .114 * m[2]) / 255 })()
-  x.fillStyle = lum > .62 ? '#1d1a17' : '#ffffff'
+    const iw = img.width, ih = img.height, k = .1
+    // شريط الحافة (أفقي دايماً على الجنب)
+    const band = document.createElement('canvas'); band.width = 48; band.height = 6
+    const bx = band.getContext('2d')
+    bx.imageSmoothingQuality = 'high'
+    if (edge === 'bottom') bx.drawImage(img, 0, ih * (1 - k), iw, ih * k, 0, 0, 48, 6)
+    else if (edge === 'top') bx.drawImage(img, 0, 0, iw, ih * k, 0, 0, 48, 6)
+    else {
+      bx.save(); bx.translate(24, 3); bx.rotate(edge === 'right' ? Math.PI / 2 : -Math.PI / 2)
+      bx.drawImage(img, edge === 'right' ? iw * (1 - k) : 0, 0, iw * k, ih, -3, -24, 6, 48); bx.restore()
+    }
+    x.imageSmoothingEnabled = true; x.imageSmoothingQuality = 'high'
+    x.drawImage(band, 0, 0, W, H)
+    const d = bx.getImageData(0, 0, 48, 6).data
+    let r = 0, gg = 0, bb = 0; for (let i = 0; i < d.length; i += 4) { r += d[i]; gg += d[i + 1]; bb += d[i + 2] }
+    const n = d.length / 4; lum = (.299 * r + .587 * gg + .114 * bb) / n / 255
+    // صورة صغيرة من الغلاف في طرف الجنب
+    const sq = H * .74, pad = H * .13
+    x.save(); x.shadowColor = 'rgba(0,0,0,.35)'; x.shadowBlur = 6; x.beginPath(); x.roundRect(pad, pad, sq * (iw / ih > 1.2 ? 1.3 : 1), sq, 4); x.clip()
+    x.drawImage(img, pad, pad, sq * (iw / ih > 1.2 ? 1.3 : 1), sq); x.restore()
+  } else { x.fillStyle = CATS[g.c][1]; x.fillRect(0, 0, W, H) }
+  // لمعة الطباعة وتظليل الحواف
+  const gr = x.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, 'rgba(255,255,255,.16)'); gr.addColorStop(.45, 'rgba(255,255,255,0)'); gr.addColorStop(1, 'rgba(0,0,0,.22)')
+  x.fillStyle = gr; x.fillRect(0, 0, W, H)
+  const name = g.n
+  x.fillStyle = lum > .6 ? '#1b1815' : '#ffffff'
+  x.shadowColor = lum > .6 ? 'rgba(255,255,255,.4)' : 'rgba(0,0,0,.55)'; x.shadowBlur = 3; x.shadowOffsetY = 1
   x.textBaseline = 'middle'; x.direction = 'ltr'
-  let fs = Math.round(H * .42)
-  x.font = `600 ${fs}px Alexandria, system-ui, sans-serif`
-  const left = img ? H * 1.02 : H * .3
-  const maxW = W - left - H * .25
-  while (x.measureText(g.n).width > maxW && fs > 12) { fs -= 1; x.font = `600 ${fs}px Alexandria, system-ui, sans-serif` }
-  x.fillText(g.n, left, H / 2 + 1, maxW)
+  const left = img ? H * 1.25 : H * .35, maxW = W - left - H * .3
+  let fs = Math.round(H * .44)
+  const font = f => `700 ${f}px Alexandria, system-ui, sans-serif`
+  x.font = font(fs); while (x.measureText(name).width > maxW && fs > 11) x.font = font(--fs)
+  x.fillText(name, left, H / 2 + 1, maxW)
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso
   return t
 }
+function imgTexture(img, rot = 0) {
+  const t = new THREE.Texture(img); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso
+  if (rot) { t.center.set(.5, .5); t.rotation = rot }
+  t.needsUpdate = true; return t
+}
 
-const boxes = []
-const hitTargets = []
-for (const p of placed) {
-  const { g, s } = p
-  const side = new THREE.MeshStandardMaterial({ color: CATS[g.c][1], roughness: .55, envMapIntensity: .4 })
-  const spine = new THREE.MeshStandardMaterial({ map: spineCanvas(g, s, null), roughness: .5, envMapIntensity: .4 })
-  const top = new THREE.MeshStandardMaterial({ color: CATS[g.c][1], roughness: .45, envMapIntensity: .5 })
-  const bottom = new THREE.MeshStandardMaterial({ color: '#d9d2c7', roughness: .8 })
-  // [px, nx, py, ny, pz, nz]
-  const lid = mesh(new RoundedBoxGeometry(s.w, s.h, s.d, 2, .0025), [side, side, top, bottom, spine, side])
-  const grp = new THREE.Group()
-  grp.add(lid)
-  const base = mesh(new THREE.BoxGeometry(s.w - .006, s.h - .006, s.d - .006), M.boxIn)
-  base.visible = false; grp.add(base)
-  grp.position.set(p.x, p.y, KF - s.d / 2 - .012)
-  shelf.add(grp)
-  Object.assign(p, { grp, lid, base, mats: { side, spine, top }, home: grp.position.clone() })
-  lid.userData.box = p
-  hitTargets.push(lid)
-  boxes.push(p)
-  // صورة الغلاف (عن طريق وسيط يسمح باستخدامها في المحرّك)
-  loadImage(proxy(g.img, 512)).then(img => {
-    if (!img) return
-    const ct = new THREE.Texture(img); ct.colorSpace = THREE.SRGBColorSpace; ct.anisotropy = maxAniso; ct.needsUpdate = true
-    top.map = ct; top.color.set('#ffffff'); top.needsUpdate = true
-    spine.map.dispose(); spine.map = spineCanvas(g, s, img); spine.needsUpdate = true
-    const avg = spine.map.image.getContext('2d').getImageData(4, 4, 1, 1).data
-    side.color.setRGB(avg[0] / 255, avg[1] / 255, avg[2] / 255, THREE.SRGBColorSpace)
-  })
+const cellsOrder = []
+for (let r = K.n - 1; r >= 0; r--) for (let c = 0; c < K.n; c++) cellsOrder.push([c, r])
+const MAXH = K.cell - .012, MAXD = .372, MAXW = K.cell - .014
+const boxes = [], hitTargets = [], catCells = {}
+let boxesReady = false
+
+async function buildBoxes() {
+  // نحمّل الأغلفة أول عشان نعرف اتجاه كل علبة (طولي ولا عرضي)
+  const withTimeout = (p, ms) => Promise.race([p, new Promise(r => setTimeout(() => r(null), ms))])
+  let done = 0
+  const items = await Promise.all(GAMES.map(async g => {
+    const rb = realBox(g)
+    let img = await withTimeout(loadImage(proxy(rb?.front || g.img, 700)), 15000)
+    if (!img && rb?.front) img = await withTimeout(loadImage(proxy(g.img, 512)), 8000)
+    done++; $('bar').style.width = `${Math.round(60 + done / GAMES.length * 40)}%`
+    const size = rb || fallbackSize(g)
+    const portrait = img ? img.height > img.width * 1.04 : false
+    // x = عرض الغلاف، z = طول الغلاف، y = سماكة العلبة
+    let sx = portrait ? size.W : size.L, sz = portrait ? size.L : size.W
+    const sy = size.D
+    // إذا ما دخلت المربع بالطول، ندوّرها؛ وإذا ما دخلت أبداً نصغّرها شوي
+    let rot = 0
+    if (sx > MAXW || sz > MAXD) {
+      if (sz <= MAXW && sx <= MAXD) rot = Math.PI / 2
+      else { const k = Math.min(MAXW / Math.min(sx, sz), MAXD / Math.max(sx, sz), 1); sx *= k; sz *= k; if (sx > sz) rot = Math.PI / 2 }
+    }
+    const fw = rot ? sz : sx, fd = rot ? sx : sz
+    return { g, rb, img, s: { w: sx, h: sy, d: sz }, rot, fw, fd }
+  }))
+
+  // الرص: كل تصنيف يبدأ بمربع؛ العلب نايمة فوق بعض، الأصغر فوق الأكبر
+  let ci = 0
+  for (const cat of ORDER) {
+    const list = items.filter(it => it.g.c === cat).sort((a, b) => b.fw * b.fd - a.fw * a.fd || b.s.h - a.s.h)
+    let cell = null, cols = []
+    const newCell = () => { cell = cellOf(...cellsOrder[ci++]); cols = []; cell.cols = cols; (catCells[cat] ||= []).push(cell) }
+    for (const it of list) {
+      if (!cell) newCell()
+      let col = cols.find(c => { const top = c.items[c.items.length - 1]; return it.fw <= top.fw + .004 && it.fd <= top.fd + .004 && c.h + it.s.h <= MAXH })
+      if (!col) {
+        const usedW = cols.reduce((a, c) => a + c.w + .01, 0)
+        if (usedW + it.fw > K.cell - .01) newCell()
+        col = { w: it.fw, h: 0, items: [] }; cols.push(col)
+      }
+      it.y0 = col.h; it.idx = col.items.length; col.h += it.s.h; col.items.push(it); it.col = col; it.cell = cell
+    }
+    for (const cl of catCells[cat]) {
+      const total = cl.cols.reduce((a, c) => a + c.w, 0) + (cl.cols.length - 1) * .01
+      let x = cl.x - total / 2
+      for (const c of cl.cols) { c.x = x + c.w / 2; x += c.w + .01 }
+    }
+  }
+
+  for (const it of items) {
+    const { g, img, s, rot, rb } = it
+    const box = { g, s, cell: it.cell, col: it.col, idx: it.idx, fd: it.fd }
+    const print = (map, rough = .42) => new THREE.MeshStandardMaterial({ map, roughness: rough, envMapIntensity: .55 })
+    const top = img ? print(imgTexture(img)) : new THREE.MeshStandardMaterial({ color: CATS[g.c][1], roughness: .45 })
+    const bottom = new THREE.MeshStandardMaterial({ color: '#d9d2c7', roughness: .6, envMapIntensity: .4 })
+    // [px, nx, py, ny, pz, nz]  — z+ = الحافة السفلية للغلاف
+    const mats = [
+      print(sideCanvas(g, img, 'right', s.d, s.h)), print(sideCanvas(g, img, 'left', s.d, s.h)),
+      top, bottom,
+      print(sideCanvas(g, img, 'bottom', s.w, s.h)), print(sideCanvas(g, img, 'top', s.w, s.h)),
+    ]
+    const lid = mesh(new RoundedBoxGeometry(s.w, s.h, s.d, 2, Math.min(.0022, s.h * .08)), mats)
+    const grp = new THREE.Group(); grp.add(lid)
+    const base = mesh(new THREE.BoxGeometry(s.w - .005, s.h - .004, s.d - .005), M.boxIn); base.visible = false; grp.add(base)
+    grp.rotation.y = rot
+    grp.position.set(it.col.x, it.cell.y + it.y0 + s.h / 2, KF - it.fd / 2 - .014)
+    shelf.add(grp)
+    Object.assign(box, { grp, lid, base, home: grp.position.clone(), homeQ: grp.quaternion.clone() })
+    lid.userData.box = box
+    hitTargets.push(lid); boxes.push(box); it.box = box
+    // الظهر الخلفي للعلبة (يتحمّل بعدين)
+    if (rb?.back) loadImage(proxy(rb.back, 700)).then(bi => { if (bi) { bottom.map = imgTexture(bi, Math.PI); bottom.color.set('#ffffff'); bottom.needsUpdate = true } })
+  }
+  for (const it of items) it.box.colItems = it.col.items.map(x => x.box)
+  addLabels()
+  boxesReady = true
+}
+
+// لما نسحب علبة من نص الكومة، اللي فوقها تنزل؛ ولما ترجع ترتفع
+function shiftAbove(p, dir, dur = .35) {
+  const above = p.colItems.filter(q => q.idx > p.idx && q !== current)
+  for (const q of above) {
+    const y0 = q.grp.position.y, y1 = q.home.y + (dir < 0 ? -p.s.h : 0)
+    animate(dur, k => { q.grp.position.y = y0 + (y1 - y0) * ease(k) })
+  }
 }
 
 // لوحات التصنيف: بطاقة صغيرة على حافة الرف تحت أول مربع
@@ -259,10 +309,12 @@ function labelTexture(text, color) {
   const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = maxAniso; return t
 }
 const cellHits = []
+function addLabels() {
 for (const [cat, cells] of Object.entries(catCells)) {
   const c0 = cells[0]
   const lab = mesh(new THREE.PlaneGeometry(.2, .0375), new THREE.MeshStandardMaterial({ map: labelTexture(CATS[cat][0], CATS[cat][1]), roughness: .6, transparent: true }), { cast: false })
   add(shelf, lab, c0.x, c0.y - K.t / 2, KF + .0015)
+}
 }
 for (let r = 0; r < K.n; r++) for (let c = 0; c < K.n; c++) {
   const cl = cellOf(c, r)
@@ -407,9 +459,10 @@ function pickBox(p) {
   // ننقل العلبة من الدولاب للمشهد (بنفس مكانها)
   const start = worldPoseOnShelf(p)
   scene.attach(p.grp)
-  const pulled = start.pos.clone().add(new THREE.Vector3(0, .012, p.s.d * .7))
-  // العلب اللي فوقها تنزل شوي؟ (نخليها ثابتة للبساطة)
+  const startQ = p.grp.quaternion.clone()
+  const pulled = start.pos.clone().add(new THREE.Vector3(0, .004, p.fd * .75))
   animate(.45, k => { p.grp.position.lerpVectors(start.pos, pulled, ease(k)) }, () => {
+    shiftAbove(p, -1)
     const end = new THREE.Vector3(TB.x + .36, TOP + p.s.h / 2 + .002, TB.z + .05)
     const endQ = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -.35, 0))
     const from = pulled.clone()
@@ -418,7 +471,7 @@ function pickBox(p) {
       const e = ease(k)
       p.grp.position.lerpVectors(from, end, e)
       p.grp.position.y += Math.sin(Math.PI * e) * .35
-      tmpQ.identity().slerp(endQ, e); p.grp.quaternion.copy(tmpQ)
+      tmpQ.copy(startQ).slerp(endQ, e); p.grp.quaternion.copy(tmpQ)
       p.grp.rotation.x += Math.sin(Math.PI * e) * .25
     }, () => {
       state = 'table'; ui()
@@ -440,7 +493,6 @@ function openBox(p) {
   }, () => unfoldBoard(p))
 }
 function unfoldBoard(p) {
-  if (p.g.id === 13) return playCatan(p)
   const imgs = p.g.setup.length ? p.g.setup : [p.g.img]
   setBoardImage(imgs[0])
   boardG.visible = true
@@ -463,7 +515,6 @@ function toShelf() {
   sheet.classList.remove('on')
   const p = current
   orbit.on = false
-  if (catan.active) { packCatan(p, () => closeBox(p)); return }
   animate(.6, k => { hinge.rotation.z = -Math.PI * .98 * ease(k) }, () => {
     const s0 = boardG.position.clone(), s1 = p.grp.position.clone().setY(TOP + p.s.h + .01)
     animate(.45, k => { const e = ease(k); boardG.position.lerpVectors(s0, s1, e); boardG.scale.setScalar(1 - .55 * e) }, () => {
@@ -478,81 +529,20 @@ function closeBox(p) {
     p.base.visible = false
     const from = p.grp.position.clone(), fromQ = p.grp.quaternion.clone()
     const home = p.home.clone(); shelf.localToWorld(home)
-    const pulled = home.clone().add(new THREE.Vector3(0, .012, p.s.d * .7))
+    const pulled = home.clone().add(new THREE.Vector3(0, .004, p.fd * .75))
     goCell(p.cell.c, p.cell.r)
     animate(1.3, k => {
       const e = ease(k)
       p.grp.position.lerpVectors(from, pulled, e); p.grp.position.y += Math.sin(Math.PI * e) * .3
-      p.grp.quaternion.copy(fromQ).slerp(new THREE.Quaternion(), e)
+      p.grp.quaternion.copy(fromQ).slerp(p.homeQ, e)
     }, () => {
+      shiftAbove(p, 1, .3)
       animate(.4, k => p.grp.position.lerpVectors(pulled, home, ease(k)), () => {
-        shelf.attach(p.grp); p.grp.position.copy(p.home); p.grp.quaternion.identity()
+        shelf.attach(p.grp); p.grp.position.copy(p.home); p.grp.quaternion.copy(p.homeQ)
         current = null; busy = false
       })
     })
   })
-}
-
-// ---------- Catan مجسّم ----------
-const PLAYER_COLORS = ['#D64545', '#3B6FD8', '#E0A21B', '#F2EEE6']
-const catan = { built: null, active: false }
-const CAT_CENTER = new THREE.Vector3(TB.x - .15, TOP, TB.z - .01)
-function playCatan(p) {
-  if (!catan.built) {
-    catan.built = buildCatan(PLAYER_COLORS)
-    catan.built.root.position.copy(CAT_CENTER)
-    catan.built.root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true } })
-    scene.add(catan.built.root)
-  }
-  const { root, parts } = catan.built
-  root.visible = true; catan.active = true
-  const boxTop = root.worldToLocal(p.grp.position.clone().setY(TOP + p.s.h + .01))
-  for (const pt of parts) { pt.obj.position.copy(boxTop); pt.obj.scale.setScalar(.001) }
-  const seq = catanSequence(parts)
-  const fly = (pt, delay, dur, arc, spin = 0) => {
-    const from = boxTop.clone()
-    let t0 = -delay
-    animate(dur + delay, k => {
-      t0 = k * (dur + delay) - delay
-      const kk = Math.max(0, Math.min(1, t0 / dur))
-      const e = ease(kk)
-      pt.obj.position.lerpVectors(from, pt.to.pos, e)
-      pt.obj.position.y += Math.sin(Math.PI * kk) * arc
-      pt.obj.scale.setScalar(kk <= 0 ? .001 : .35 + .65 * Math.min(1, kk * 1.6))
-      pt.obj.quaternion.copy(pt.to.quat)
-      if (spin) pt.obj.rotateY((1 - e) * spin)
-    }, () => { pt.obj.position.copy(pt.to.pos); pt.obj.scale.setScalar(1); pt.obj.quaternion.copy(pt.to.quat) })
-  }
-  // نقرّب الكاميرا على اللوح
-  flyTo(views.table(.6, .5, CAT_CENTER.x + .02), 1.2)
-  seq.sea.forEach(pt => fly(pt, 0, .6, .05))
-  seq.tiles.forEach((pt, i) => fly(pt, .45 + i * .075, .55, .14, Math.PI * (i % 2 ? 1 : -1)))
-  const t1 = .45 + seq.tiles.length * .075 + .4
-  seq.tokens.forEach((pt, i) => fly(pt, t1 + i * .045, .4, .07))
-  const t2 = t1 + seq.tokens.length * .045 + .3
-  seq.pieces.forEach((pt, i) => fly(pt, t2 + i * .06, .45, .09, .8))
-  const total = t2 + seq.pieces.length * .06 + .5
-  animate(total, () => {}, () => {
-    fillSheet(p.g, p.g.setup.length ? p.g.setup : [])
-    $('thumbs').innerHTML = ''
-    sheet.classList.add('on'); busy = false
-    orbit.on = true; hint.textContent = 'اسحب بإصبعك عشان تلف حول اللوح'; hint.classList.remove('off')
-    setTimeout(() => hint.classList.add('off'), 3500)
-  })
-}
-function packCatan(p, done) {
-  const { root, parts } = catan.built
-  const boxTop = root.worldToLocal(p.grp.position.clone().setY(TOP + p.s.h + .01))
-  const list = [...parts].reverse()
-  list.forEach((pt, i) => {
-    const from = pt.obj.position.clone(), d = i * .012
-    animate(.4 + d, k => {
-      const kk = Math.max(0, (k * (.4 + d) - d) / .4); const e = ease(Math.min(1, kk))
-      pt.obj.position.lerpVectors(from, boxTop, e); pt.obj.position.y += Math.sin(Math.PI * e) * .06
-      pt.obj.scale.setScalar(Math.max(.001, 1 - e))
-    })
-  })
-  animate(.5 + list.length * .012, () => {}, () => { root.visible = false; catan.active = false; done() })
 }
 
 // ---------- الدوران حول اللوح ----------
@@ -661,5 +651,6 @@ addEventListener('resize', resize)
 camState.pos.set(1.6, 1.5, 3.6); camState.tgt.set(-.3, .8, -.6)
 function intro() { flyTo(views.overview(), 2.2) }
 ui(); frame()
+buildBoxes().then(maybeStart)
 window.__room = { orbitBy: (dx, dy) => { sph.setFromVector3(camState.pos.clone().sub(camState.tgt)); sph.theta -= dx; sph.phi = THREE.MathUtils.clamp(sph.phi - dy, .25, 1.2); camState.pos.copy(camState.tgt).add(new THREE.Vector3().setFromSpherical(sph)) }, goCell, goOverview, toShelf, pick: n => pickBox(boxes.find(b => b.g.n === n) || boxes.find(b => b.g.n.includes(n))), boxes, get state() { return state } }
 void target
