@@ -5,6 +5,8 @@ import { gameStats, allGameStats, daysSince } from '../stats'
 import { CATEGORIES, catOf, weightLabel } from '../categories'
 import { Cover, Empty, ScoreBadge, TopBar, Section, PlayerTag, RatingInput, Field, Confirm, Weight, ago, fmtDate, fmtScore, playersText, timeText, range, IconUsers, IconClock } from '../ui'
 import { PlayCard } from './History'
+import Cabinet, { CabinetHint } from './Cabinet'
+import TableHero from './TableHero'
 
 const SORTS = [
   ['cat', 'التصانيف'],
@@ -39,9 +41,11 @@ function GameTile({ g }) {
 export default function Games() {
   const { idx, me } = useStore()
   const [q, setQ] = useState('')
+  const [view, setView] = useState(() => read('tw-gview', 'shelf'))
   const [cat, setCat] = useState(() => read('tw-gcat', 'all'))
   const [sort, setSort] = useState(() => read('tw-gsort2', 'cat'))
   const [players, setPlayers] = useState(0)
+  const setV = v => { setView(v); write('tw-gview', v) }
   const setC = c => { setCat(c); write('tw-gcat', c) }
   const setS = s => { setSort(s); write('tw-gsort2', s) }
 
@@ -52,40 +56,58 @@ export default function Games() {
     return m
   }, [all])
 
-  const list = useMemo(() => {
-    const t = q.trim().toLowerCase()
-    const f = all.filter(g =>
-      (!t || g.game.name.toLowerCase().includes(t)) &&
-      (cat === 'all' || catOf(g.game).id === cat) &&
-      (!players || ((g.game.min_players ?? 1) <= players && (g.game.max_players ?? 99) >= players)))
-    const by = {
-      cat: (a, b) => a.game.name.localeCompare(b.game.name),
-      plays: (a, b) => b.plays.length - a.plays.length || a.game.name.localeCompare(b.game.name),
-      rating: (a, b) => (b.avg ?? -1) - (a.avg ?? -1),
-      weight: (a, b) => (a.game.weight ?? 9) - (b.game.weight ?? 9),
-      name: (a, b) => a.game.name.localeCompare(b.game.name),
-    }[sort]
-    return f.sort(by)
-  }, [all, q, cat, sort, players])
+  const t = q.trim().toLowerCase()
+  const matches = g => (!t || g.game.name.toLowerCase().includes(t)) &&
+    (!players || ((g.game.min_players ?? 1) <= players && (g.game.max_players ?? 99) >= players))
+  const by = {
+    cat: (a, b) => a.game.name.localeCompare(b.game.name),
+    plays: (a, b) => b.plays.length - a.plays.length || a.game.name.localeCompare(b.game.name),
+    rating: (a, b) => (b.avg ?? -1) - (a.avg ?? -1),
+    weight: (a, b) => (a.game.weight ?? 9) - (b.game.weight ?? 9),
+    name: (a, b) => a.game.name.localeCompare(b.game.name),
+  }[sort]
+  const sorted = useMemo(() => [...all].sort(by), [all, sort]) // eslint-disable-line react-hooks/exhaustive-deps
+  const shelves = useMemo(() => [...CATEGORIES, { id: 'other' }]
+    .map(c => ({ c: c.id === 'other' ? catOf({}) : c, games: sorted.filter(g => catOf(g.game).id === c.id) }))
+    .filter(x => x.games.length), [sorted])
+  const lit = sorted.filter(matches).length
 
-  const grouped = sort === 'cat' && cat === 'all'
-    ? [...CATEGORIES, { id: 'other' }].map(c => ({ c: c.id === 'other' ? catOf({}) : c, games: list.filter(g => catOf(g.game).id === c.id) })).filter(x => x.games.length)
-    : null
+  const list = sorted.filter(g => matches(g) && (cat === 'all' || catOf(g.game).id === cat))
+  const grouped = sort === 'cat' && cat === 'all' ? shelves.map(x => ({ ...x, games: x.games.filter(matches) })).filter(x => x.games.length) : null
+
+  const pickCat = id => {
+    if (view === 'shelf') {
+      const el = document.getElementById(`shelf-${id}`)
+      if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 90, behavior: 'smooth' })
+    } else setC(id)
+  }
 
   return (
     <div className="page stack">
       <header className="page-head">
-        <h1>الألعاب</h1><span className="count">{idx.games.length}</span>
+        <h1>{view === 'shelf' ? 'الدولاب' : 'الألعاب'}</h1><span className="count">{idx.games.length} لعبة</span>
         {me && <button className="btn small primary" onClick={() => go('/games/new')}>أضف لعبة</button>}
       </header>
 
       {idx.games.length > 0 && (
         <>
-          <input className="input" type="search" placeholder="دوّر على لعبة" value={q} onChange={e => setQ(e.target.value)} />
-          <div className="chips-scroll" role="tablist" aria-label="التصنيف">
-            <button role="tab" aria-selected={cat === 'all'} className={`chip ${cat === 'all' ? 'on' : ''}`} onClick={() => setC('all')}>الكل <small>{idx.games.length}</small></button>
+          <div className="row gap">
+            <input className="input" type="search" placeholder="دوّر على لعبة" value={q} onChange={e => setQ(e.target.value)} />
+            <div className="seg-toggle" role="tablist" aria-label="طريقة العرض">
+              <button role="tab" aria-selected={view === 'shelf'} className={view === 'shelf' ? 'on' : ''} onClick={() => setV('shelf')} title="الدولاب">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true"><rect x="3.5" y="3" width="17" height="18" rx="2" /><path d="M3.5 9.5h17M3.5 15.5h17M7 6v3M9.5 5v4.5M14 13v2.5M16.5 12v3.5" /></svg>
+                <span className="sr">الدولاب</span>
+              </button>
+              <button role="tab" aria-selected={view === 'grid'} className={view === 'grid' ? 'on' : ''} onClick={() => setV('grid')} title="شبكة">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5" /><rect x="13" y="4" width="7" height="7" rx="1.5" /><rect x="4" y="13" width="7" height="7" rx="1.5" /><rect x="13" y="13" width="7" height="7" rx="1.5" /></svg>
+                <span className="sr">شبكة</span>
+              </button>
+            </div>
+          </div>
+          <div className="chips-scroll" role={view === 'shelf' ? undefined : 'tablist'} aria-label="التصنيف">
+            {view === 'grid' && <button role="tab" aria-selected={cat === 'all'} className={`chip ${cat === 'all' ? 'on' : ''}`} onClick={() => setC('all')}>الكل <small>{idx.games.length}</small></button>}
             {CATEGORIES.filter(c => counts[c.id]).map(c => (
-              <button key={c.id} role="tab" aria-selected={cat === c.id} className={`chip ${cat === c.id ? 'on' : ''}`} style={{ '--t': c.tone }} onClick={() => setC(c.id)}>
+              <button key={c.id} className={`chip ${view === 'grid' && cat === c.id ? 'on' : ''}`} style={{ '--t': c.tone }} onClick={() => pickCat(c.id)}>
                 <i className="dot" />{c.name} <small>{counts[c.id]}</small>
               </button>
             ))}
@@ -101,24 +123,36 @@ export default function Games() {
             <label className="mini-select">
               <span>رتّب</span>
               <select value={sort} onChange={e => setS(e.target.value)}>
-                {SORTS.map(([k, l]) => <option key={k} value={k}>{l}</option>)}
+                {SORTS.map(([k, l]) => <option key={k} value={k}>{k === 'cat' ? 'الأبجدي' : l}</option>)}
               </select>
             </label>
           </div>
         </>
       )}
 
-      {!idx.games.length && <Empty title="ما فيه ألعاب للحين" text="أضف ألعابك عشان تبدأون تسجلون وتقيّمون." action={me && <button className="btn primary" onClick={() => go('/games/new')}>أضف لعبة</button>} />}
-      {idx.games.length > 0 && !list.length && <Empty title="ما فيه لعبة تطابق" text="جرّب تغيّر البحث أو عدد اللاعبين أو التصنيف." />}
+      {!idx.games.length && <Empty title="الدولاب فاضي" text="أضف ألعابك وبتنصف على الأرفف حسب تصنيفها." action={me && <button className="btn primary" onClick={() => go('/games/new')}>أضف لعبة</button>} />}
 
-      {grouped
-        ? grouped.map(({ c, games }) => (
-          <section key={c.id} className="cat-block" style={{ '--t': c.tone }}>
-            <div className="cat-head"><h2><i className="dot" />{c.name}</h2><span>{c.hint}</span></div>
-            <div className="game-grid">{games.map(g => <GameTile key={g.game.id} g={g} />)}</div>
-          </section>
-        ))
-        : <div className="game-grid">{list.map(g => <GameTile key={g.game.id} g={g} />)}</div>}
+      {idx.games.length > 0 && view === 'shelf' && (
+        <>
+          <CabinetHint total={all.length} lit={lit} players={players} />
+          <Cabinet groups={shelves} isDim={g => !matches(g)} />
+          <p className="cab-foot">طول العلبة على حسب صعوبة اللعبة، والرقم الصغير عدد مرات ما لعبناها.</p>
+        </>
+      )}
+
+      {idx.games.length > 0 && view === 'grid' && (
+        <>
+          {!list.length && <Empty title="ما فيه لعبة تطابق" text="جرّب تغيّر البحث أو عدد اللاعبين أو التصنيف." />}
+          {grouped
+            ? grouped.map(({ c, games }) => (
+              <section key={c.id} className="cat-block" style={{ '--t': c.tone }}>
+                <div className="cat-head"><h2><i className="dot" />{c.name}</h2><span>{c.hint}</span></div>
+                <div className="game-grid">{games.map(g => <GameTile key={g.game.id} g={g} />)}</div>
+              </section>
+            ))
+            : <div className="game-grid">{list.map(g => <GameTile key={g.game.id} g={g} />)}</div>}
+        </>
+      )}
     </div>
   )
 }
@@ -144,13 +178,10 @@ export function GameView({ id }) {
     <div className="page has-action">
       <TopBar title={game.name} backTo="/games" right={canEdit && <button className="btn small ghost" onClick={() => go(`/game/${id}/edit`)}>تعديل</button>} />
       <div className="stack">
-        <div className="glass game-hero" style={{ '--t': c.tone }}>
-          <Cover game={game} className="lg" />
-          <div className="gh-info">
-            <a className="cat-pill" href="#/games" onClick={() => write('tw-gcat', c.id)}><i className="dot" />{c.name}</a>
-            <div className="gh-avg"><ScoreBadge value={st.avg} big /><span>{st.ratings.length ? `تقييم الشلة من ${st.ratings.length}` : 'ما أحد قيّمها'}</span></div>
-            <p className="muted small">{st.plays.length} قيم، {ago(daysSince(st.lastPlayed))}{owner ? `، لعبة ${owner.name}` : ''}</p>
-          </div>
+        <TableHero game={game} />
+        <div className="game-meta">
+          <a className="cat-pill" href="#/games" onClick={() => write('tw-gcat', c.id)} style={{ '--t': c.tone }}><i className="dot" />{c.name}</a>
+          <div className="gh-avg"><ScoreBadge value={st.avg} big /><span>{st.ratings.length ? `تقييم الشلة من ${st.ratings.length}` : 'ما أحد قيّمها'}<br /><small className="muted">{st.plays.length} قيم، {ago(daysSince(st.lastPlayed))}{owner ? `، لعبة ${owner.name}` : ''}</small></span></div>
         </div>
 
         <div className="facts-grid">
