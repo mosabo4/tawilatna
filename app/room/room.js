@@ -2,6 +2,7 @@ import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js'
 import GAMES from './data.json'
+import { buildCatan, catanSequence } from './catan.js'
 
 // ===================================================================
 //  غرفة طاولتنا — دولاب وطاولة في غرفة وحدة (الوحدات بالمتر)
@@ -361,9 +362,9 @@ const views = {
     const wy = shelf.position.y + cl.y + K.cell / 2
     return { pos: new THREE.Vector3(SX + cl.x + .02, wy + .06, SZF + d), tgt: new THREE.Vector3(SX + cl.x, wy - .01, SZF) }
   },
-  table() {
-    const d = hfovFit(BOARD.w * 1.5 + .25, BOARD.d * 2.4)
-    const t = new THREE.Vector3(TB.x - .04, TOP, TB.z - .02)
+  table(w = BOARD.w * 1.5 + .25, dd = BOARD.d * 2.4, cx = TB.x - .04) {
+    const d = hfovFit(w, dd)
+    const t = new THREE.Vector3(cx, TOP, TB.z - .02)
     // ننزل نقطة النظر شوي لتحت عشان اللوح يطلع فوق البطاقة
     return { pos: new THREE.Vector3(t.x + .1, t.y + d * .72, t.z + d * .72), tgt: t.clone().add(new THREE.Vector3(0, 0, .26)) }
   },
@@ -439,6 +440,7 @@ function openBox(p) {
   }, () => unfoldBoard(p))
 }
 function unfoldBoard(p) {
+  if (p.g.id === 13) return playCatan(p)
   const imgs = p.g.setup.length ? p.g.setup : [p.g.img]
   setBoardImage(imgs[0])
   boardG.visible = true
@@ -451,7 +453,7 @@ function unfoldBoard(p) {
     boardG.scale.setScalar(.45 + .55 * e)
   }, () => {
     animate(.8, k => { hinge.rotation.z = -Math.PI * .98 * (1 - ease(k)) }, () => {
-      fillSheet(p.g, imgs); sheet.classList.add('on'); busy = false
+      fillSheet(p.g, imgs); sheet.classList.add('on'); busy = false; orbit.on = true
     })
   })
 }
@@ -460,31 +462,136 @@ function toShelf() {
   busy = true
   sheet.classList.remove('on')
   const p = current
+  orbit.on = false
+  if (catan.active) { packCatan(p, () => closeBox(p)); return }
   animate(.6, k => { hinge.rotation.z = -Math.PI * .98 * ease(k) }, () => {
     const s0 = boardG.position.clone(), s1 = p.grp.position.clone().setY(TOP + p.s.h + .01)
     animate(.45, k => { const e = ease(k); boardG.position.lerpVectors(s0, s1, e); boardG.scale.setScalar(1 - .55 * e) }, () => {
       boardG.visible = false
-      const lid = p.lid, l0 = lid.position.clone(), l1 = new THREE.Vector3(0, 0, 0)
-      animate(.55, k => { const e = ease(k); lid.position.lerpVectors(l0, l1, e); lid.position.y += Math.sin(Math.PI * e) * .1; lid.rotation.x = 0 }, () => {
-        p.base.visible = false
-        const from = p.grp.position.clone(), fromQ = p.grp.quaternion.clone()
-        const home = p.home.clone(); shelf.localToWorld(home)
-        const pulled = home.clone().add(new THREE.Vector3(0, .012, p.s.d * .7))
-        goCell(p.cell.c, p.cell.r)
-        animate(1.3, k => {
-          const e = ease(k)
-          p.grp.position.lerpVectors(from, pulled, e); p.grp.position.y += Math.sin(Math.PI * e) * .3
-          p.grp.quaternion.copy(fromQ).slerp(new THREE.Quaternion(), e)
-        }, () => {
-          animate(.4, k => p.grp.position.lerpVectors(pulled, home, ease(k)), () => {
-            shelf.attach(p.grp); p.grp.position.copy(p.home); p.grp.quaternion.identity()
-            current = null; busy = false
-          })
-        })
+      closeBox(p)
+    })
+  })
+}
+function closeBox(p) {
+  const lid = p.lid, l0 = lid.position.clone(), l1 = new THREE.Vector3(0, 0, 0)
+  animate(.55, k => { const e = ease(k); lid.position.lerpVectors(l0, l1, e); lid.position.y += Math.sin(Math.PI * e) * .1; lid.rotation.x = 0 }, () => {
+    p.base.visible = false
+    const from = p.grp.position.clone(), fromQ = p.grp.quaternion.clone()
+    const home = p.home.clone(); shelf.localToWorld(home)
+    const pulled = home.clone().add(new THREE.Vector3(0, .012, p.s.d * .7))
+    goCell(p.cell.c, p.cell.r)
+    animate(1.3, k => {
+      const e = ease(k)
+      p.grp.position.lerpVectors(from, pulled, e); p.grp.position.y += Math.sin(Math.PI * e) * .3
+      p.grp.quaternion.copy(fromQ).slerp(new THREE.Quaternion(), e)
+    }, () => {
+      animate(.4, k => p.grp.position.lerpVectors(pulled, home, ease(k)), () => {
+        shelf.attach(p.grp); p.grp.position.copy(p.home); p.grp.quaternion.identity()
+        current = null; busy = false
       })
     })
   })
 }
+
+// ---------- Catan مجسّم ----------
+const PLAYER_COLORS = ['#D64545', '#3B6FD8', '#E0A21B', '#F2EEE6']
+const catan = { built: null, active: false }
+const CAT_CENTER = new THREE.Vector3(TB.x - .15, TOP, TB.z - .01)
+function playCatan(p) {
+  if (!catan.built) {
+    catan.built = buildCatan(PLAYER_COLORS)
+    catan.built.root.position.copy(CAT_CENTER)
+    catan.built.root.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true } })
+    scene.add(catan.built.root)
+  }
+  const { root, parts } = catan.built
+  root.visible = true; catan.active = true
+  const boxTop = root.worldToLocal(p.grp.position.clone().setY(TOP + p.s.h + .01))
+  for (const pt of parts) { pt.obj.position.copy(boxTop); pt.obj.scale.setScalar(.001) }
+  const seq = catanSequence(parts)
+  const fly = (pt, delay, dur, arc, spin = 0) => {
+    const from = boxTop.clone()
+    let t0 = -delay
+    animate(dur + delay, k => {
+      t0 = k * (dur + delay) - delay
+      const kk = Math.max(0, Math.min(1, t0 / dur))
+      const e = ease(kk)
+      pt.obj.position.lerpVectors(from, pt.to.pos, e)
+      pt.obj.position.y += Math.sin(Math.PI * kk) * arc
+      pt.obj.scale.setScalar(kk <= 0 ? .001 : .35 + .65 * Math.min(1, kk * 1.6))
+      pt.obj.quaternion.copy(pt.to.quat)
+      if (spin) pt.obj.rotateY((1 - e) * spin)
+    }, () => { pt.obj.position.copy(pt.to.pos); pt.obj.scale.setScalar(1); pt.obj.quaternion.copy(pt.to.quat) })
+  }
+  // نقرّب الكاميرا على اللوح
+  flyTo(views.table(.6, .5, CAT_CENTER.x + .02), 1.2)
+  seq.sea.forEach(pt => fly(pt, 0, .6, .05))
+  seq.tiles.forEach((pt, i) => fly(pt, .45 + i * .075, .55, .14, Math.PI * (i % 2 ? 1 : -1)))
+  const t1 = .45 + seq.tiles.length * .075 + .4
+  seq.tokens.forEach((pt, i) => fly(pt, t1 + i * .045, .4, .07))
+  const t2 = t1 + seq.tokens.length * .045 + .3
+  seq.pieces.forEach((pt, i) => fly(pt, t2 + i * .06, .45, .09, .8))
+  const total = t2 + seq.pieces.length * .06 + .5
+  animate(total, () => {}, () => {
+    fillSheet(p.g, p.g.setup.length ? p.g.setup : [])
+    $('thumbs').innerHTML = ''
+    sheet.classList.add('on'); busy = false
+    orbit.on = true; hint.textContent = 'اسحب بإصبعك عشان تلف حول اللوح'; hint.classList.remove('off')
+    setTimeout(() => hint.classList.add('off'), 3500)
+  })
+}
+function packCatan(p, done) {
+  const { root, parts } = catan.built
+  const boxTop = root.worldToLocal(p.grp.position.clone().setY(TOP + p.s.h + .01))
+  const list = [...parts].reverse()
+  list.forEach((pt, i) => {
+    const from = pt.obj.position.clone(), d = i * .012
+    animate(.4 + d, k => {
+      const kk = Math.max(0, (k * (.4 + d) - d) / .4); const e = ease(Math.min(1, kk))
+      pt.obj.position.lerpVectors(from, boxTop, e); pt.obj.position.y += Math.sin(Math.PI * e) * .06
+      pt.obj.scale.setScalar(Math.max(.001, 1 - e))
+    })
+  })
+  animate(.5 + list.length * .012, () => {}, () => { root.visible = false; catan.active = false; done() })
+}
+
+// ---------- الدوران حول اللوح ----------
+const orbit = { on: false, drag: null }
+const sph = new THREE.Spherical()
+renderer.domElement.addEventListener('pointerdown', e => { if (orbit.on && !tween) orbit.drag = { x: e.clientX, y: e.clientY } })
+addEventListener('pointerup', () => { orbit.drag = null })
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!orbit.on || !orbit.drag || tween || pinch0) return
+  const dx = e.clientX - orbit.drag.x, dy = e.clientY - orbit.drag.y
+  orbit.drag = { x: e.clientX, y: e.clientY }
+  sph.setFromVector3(camState.pos.clone().sub(camState.tgt))
+  sph.theta -= dx * .008
+  sph.phi = THREE.MathUtils.clamp(sph.phi - dy * .006, .25, 1.2)
+  camState.pos.copy(camState.tgt).add(new THREE.Vector3().setFromSpherical(sph))
+})
+// تكبير بإصبعين
+const touches = new Map()
+let pinch0 = null
+renderer.domElement.addEventListener('pointerdown', e => { touches.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (touches.size === 2) { orbit.drag = null; const [a, b] = [...touches.values()]; pinch0 = { d: Math.hypot(a.x - b.x, a.y - b.y), r: camState.pos.distanceTo(camState.tgt) } } })
+renderer.domElement.addEventListener('pointermove', e => {
+  if (!touches.has(e.pointerId)) return
+  touches.set(e.pointerId, { x: e.clientX, y: e.clientY })
+  if (orbit.on && pinch0 && touches.size === 2) {
+    const [a, b] = [...touches.values()]
+    const d = Math.hypot(a.x - b.x, a.y - b.y)
+    sph.setFromVector3(camState.pos.clone().sub(camState.tgt))
+    sph.radius = THREE.MathUtils.clamp(pinch0.r * pinch0.d / d, .3, 1.6)
+    camState.pos.copy(camState.tgt).add(new THREE.Vector3().setFromSpherical(sph))
+  }
+})
+const endTouch = e => { touches.delete(e.pointerId); if (touches.size < 2) pinch0 = null }
+addEventListener('pointerup', endTouch); addEventListener('pointercancel', endTouch)
+renderer.domElement.addEventListener('wheel', e => {
+  if (!orbit.on) return
+  sph.setFromVector3(camState.pos.clone().sub(camState.tgt))
+  sph.radius = THREE.MathUtils.clamp(sph.radius * (1 + e.deltaY * .001), .35, 1.6)
+  camState.pos.copy(camState.tgt).add(new THREE.Vector3().setFromSpherical(sph))
+}, { passive: true })
 
 // ---------- البطاقة ----------
 function fillSheet(g, imgs) {
@@ -554,5 +661,5 @@ addEventListener('resize', resize)
 camState.pos.set(1.6, 1.5, 3.6); camState.tgt.set(-.3, .8, -.6)
 function intro() { flyTo(views.overview(), 2.2) }
 ui(); frame()
-window.__room = { goCell, goOverview, toShelf, pick: n => pickBox(boxes.find(b => b.g.n.includes(n))), boxes, get state() { return state } }
+window.__room = { orbitBy: (dx, dy) => { sph.setFromVector3(camState.pos.clone().sub(camState.tgt)); sph.theta -= dx; sph.phi = THREE.MathUtils.clamp(sph.phi - dy, .25, 1.2); camState.pos.copy(camState.tgt).add(new THREE.Vector3().setFromSpherical(sph)) }, goCell, goOverview, toShelf, pick: n => pickBox(boxes.find(b => b.g.n === n) || boxes.find(b => b.g.n.includes(n))), boxes, get state() { return state } }
 void target
