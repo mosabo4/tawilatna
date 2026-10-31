@@ -424,7 +424,9 @@
   for (const p of boxes) p.o.style.transform = poseShelf(p)
 
   cam(caseX, -H / 2, front, .1, 0, 0, true)
-  requestAnimationFrame(() => requestAnimationFrame(() => { world.classList.remove('instant'); goCase() }))
+  // نبدأ من بعيد ونقرّب للدولاب (setTimeout عشان يشتغل حتى لو الصفحة بالخلفية)
+  void world.offsetWidth
+  setTimeout(() => { world.classList.remove('instant'); goCase() }, 80)
   window.addEventListener('resize', () => { state === 'case' ? views.case() : state === 'cubby' ? views.cubby(...curCubby) : views.table() })
   // للتجربة
   window.__room = { pick: n => pick(boxes.find(b => b.g.n.includes(n))), goCubby, goCase, toShelf, boxes }
