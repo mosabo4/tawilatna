@@ -62,10 +62,11 @@ function numberTexture(n) {
 const rnd = (() => { let s = 7; return () => (s = (s * 9301 + 49297) % 233280) / 233280 })()
 function decorate(tile, type) {
   const top = TILE_H / 2
-  const spots = n => Array.from({ length: n }, (_, i) => { const a = i / n * Math.PI * 2 + rnd() * .6; const d = R * (.28 + rnd() * .3); return [Math.cos(a) * d, Math.sin(a) * d] })
+  // الزينة حول الطرف، والنص فاضي للرقم
+  const spots = n => Array.from({ length: n }, (_, i) => { const a = i / n * Math.PI * 2 + rnd() * .5; const d = R * (.52 + rnd() * .16); return [Math.cos(a) * d, Math.sin(a) * d] })
   if (type === 'forest') {
     const leaf = std('#2F6A2E', .8), trunk = std('#5B3A22', .9)
-    for (const [x, z] of [...spots(4), [0, 0]]) {
+    for (const [x, z] of spots(5)) {
       const s = .75 + rnd() * .45
       const t1 = m(new THREE.CylinderGeometry(.0025, .003, .008 * s, 6), trunk); t1.position.set(x, top + .004 * s, z); tile.add(t1)
       const c1 = m(new THREE.ConeGeometry(.011 * s, .026 * s, 8), leaf); c1.position.set(x, top + .008 * s + .012 * s, z); tile.add(c1)
@@ -73,7 +74,7 @@ function decorate(tile, type) {
     }
   } else if (type === 'mountains') {
     const rock = std('#7D838C', .85), snow = std('#F2F2F0', .6)
-    for (const [x, z, s] of [[-.012, .006, 1.2], [.014, -.004, .95], [.002, -.018, .8]]) {
+    for (const [x, z, s] of [[-.024, .012, 1.05], [.025, .006, .9], [.0, -.028, .85]]) {
       const c = m(new THREE.ConeGeometry(.018 * s, .03 * s, 5), rock); c.position.set(x, top + .015 * s, z); c.rotation.y = rnd() * 3; tile.add(c)
       const cap = m(new THREE.ConeGeometry(.0065 * s, .011 * s, 5), snow); cap.position.set(x, top + .025 * s, z); cap.rotation.y = c.rotation.y; tile.add(cap)
     }
@@ -85,9 +86,9 @@ function decorate(tile, type) {
     }
   } else if (type === 'fields') {
     const wheat = std('#D9A92E', .9)
-    for (let row = -2; row <= 2; row++) {
-      const len = R * (1.4 - Math.abs(row) * .25)
-      const w = m(new THREE.BoxGeometry(len, .005, .005), wheat); w.position.set(0, top + .0025, row * .012); w.rotation.y = .5; tile.add(w)
+    for (const side of [-1, 1]) for (let row = 0; row < 2; row++) {
+      const z = side * (.02 + row * .011), len = R * (1.05 - row * .35)
+      const w = m(new THREE.BoxGeometry(len, .005, .005), wheat); w.position.set(0, top + .0025, z); tile.add(w)
     }
   } else if (type === 'pasture') {
     const wool = std('#FAF7F0', .95), head = std('#2B2620', .7)
@@ -96,10 +97,10 @@ function decorate(tile, type) {
       const h = m(new THREE.SphereGeometry(.003, 8, 6), head); h.position.set(x + .008, top + .007, z); tile.add(h)
     }
     const bush = std('#5E9A45', .9)
-    const b = m(new THREE.SphereGeometry(.007, 8, 6), bush); b.position.set(-.02, top + .004, .018); b.scale.y = .7; tile.add(b)
+    const b = m(new THREE.SphereGeometry(.007, 8, 6), bush); b.position.set(-.026, top + .004, .022); b.scale.y = .7; tile.add(b)
   } else if (type === 'desert') {
     const dune = std('#D8C08A', .95)
-    for (const [x, z, s] of [[-.015, .01, 1], [.016, -.008, .8]]) {
+    for (const [x, z, s] of [[-.024, .016, 1], [.026, -.012, .8]]) {
       const d = m(new THREE.SphereGeometry(.016 * s, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), dune); d.scale.y = .35; d.position.set(x, top, z); tile.add(d)
     }
   }
@@ -151,14 +152,13 @@ export function buildCatan(players) {
   })
 
   // الأرقام
-  const tokGeo = new THREE.CylinderGeometry(.0125, .0125, .003, 28)
+  const tokGeo = new THREE.CylinderGeometry(.0155, .0155, .003, 32)
   const tokSide = std('#E9DDBF', .6)
   for (const c of centers) {
     if (!c.num) continue
     const tok = m(tokGeo, [tokSide, std('#ffffff', .55, { map: numberTexture(c.num) }), tokSide])
     // نحطه في جهة من الأرض عشان ما يغطي الزينة كثير
-    tok.position.set(c.x, .01 + TILE_H + .0015 + (c.type === 'mountains' || c.type === 'forest' ? .0 : 0), c.z + (c.type === 'forest' || c.type === 'mountains' ? R * .45 : 0))
-    if (c.type === 'forest' || c.type === 'mountains') tok.position.y += .0
+    tok.position.set(c.x, .01 + TILE_H + .0016, c.z)
     tok.rotation.y = Math.PI
     root.add(tok)
     parts.push({ obj: tok, kind: 'token', to: { pos: tok.position.clone(), quat: tok.quaternion.clone() } })
