@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#d9cfc2">
+<title>غرفة طاولتنا</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Alexandria:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #2B2620; --muted: #7A7066; --line: rgba(60, 45, 30, .12); --accent: #5B6CFF; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #1a1612; font-family: 'Alexandria', system-ui, sans-serif; color: var(--ink); }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  canvas { display: block; touch-action: none; }
+
+  .glass { background: rgba(255, 252, 247, .72); border: 1px solid rgba(255, 255, 255, .6); backdrop-filter: blur(20px) saturate(1.2); -webkit-backdrop-filter: blur(20px) saturate(1.2); box-shadow: 0 10px 30px -12px rgba(40, 25, 10, .35); }
+  .top { position: fixed; z-index: 3; inset: calc(env(safe-area-inset-top) + 12px) 12px auto; display: flex; align-items: center; justify-content: space-between; gap: 10px; pointer-events: none; }
+  .top > * { pointer-events: auto; }
+  .where { padding: 8px 14px; border-radius: 99px; font-size: 13px; font-weight: 500; }
+  .where small { color: var(--muted); font-weight: 400; margin-inline-start: 6px; }
+  .back { width: 40px; height: 40px; border-radius: 50%; border: 0; display: grid; place-items: center; transition: opacity .3s, transform .3s; }
+  .back[hidden] { display: grid; opacity: 0; transform: scale(.8); pointer-events: none; }
+  .back svg { width: 18px; height: 18px; }
+  .hint { position: fixed; z-index: 2; bottom: calc(env(safe-area-inset-bottom) + 20px); inset-inline: 0; margin: 0 auto; width: max-content; max-width: 90vw; padding: 9px 16px; border-radius: 99px; font-size: 13px; color: var(--ink); transition: opacity .4s, transform .4s; }
+  .hint.off { opacity: 0; transform: translateY(10px); }
+
+  .sheet { position: fixed; z-index: 4; inset: auto 10px calc(env(safe-area-inset-bottom) + 10px); max-width: 480px; margin: 0 auto; padding: 18px 16px 14px; border-radius: 26px; transform: translateY(130%); transition: transform .55s cubic-bezier(.2,.8,.2,1); }
+  .sheet.on { transform: none; }
+  .s-name { font-size: 19px; font-weight: 600; unicode-bidi: plaintext; text-align: right; line-height: 1.35; }
+  .s-cat { display: inline-flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; color: var(--muted); }
+  .s-cat i { width: 8px; height: 8px; border-radius: 50%; background: var(--t); }
+  .facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 14px 0 12px; }
+  .facts div { padding: 9px 11px; border-radius: 16px; background: rgba(255, 255, 255, .7); border: 1px solid var(--line); }
+  .facts span { display: block; font-size: 11px; color: var(--muted); }
+  .facts b { font-size: 14px; font-weight: 500; }
+  .thumbs { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding: 2px; }
+  .thumbs button { flex: none; width: 58px; height: 42px; border-radius: 11px; border: 0; padding: 0; background-size: cover; background-position: center; opacity: .55; transition: opacity .2s; }
+  .thumbs button.on { opacity: 1; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--accent); }
+  .actions { display: flex; gap: 8px; margin-top: 14px; }
+  .btn { flex: 1; min-height: 46px; border-radius: 15px; border: 0; font-weight: 500; font-size: 14px; }
+  .btn.primary { background: linear-gradient(135deg, #5B7CFF, #A35BFF); color: #fff; box-shadow: 0 10px 22px -12px rgba(91, 108, 255, .9); }
+  .btn.ghost { background: rgba(255, 255, 255, .75); border: 1px solid var(--line); }
+
+  .loading { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; background: radial-gradient(circle at 50% 40%, #3a3028, #15110e); color: #EDE4D8; transition: opacity .8s; }
+  .loading.done { opacity: 0; pointer-events: none; }
+  .loading div { text-align: center; }
+  .loading p { margin: 14px 0 0; font-size: 13px; color: #B9AC9C; }
+  .bar { width: 160px; height: 3px; border-radius: 3px; background: rgba(255, 255, 255, .12); overflow: hidden; margin: 0 auto; }
+  .bar i { display: block; height: 100%; width: 0; background: #EDE4D8; transition: width .3s; }
+  .brand { font-size: 26px; font-weight: 600; margin-bottom: 14px; }
+</style>
+</head>
+<body>
+<div class="loading" id="loading"><div><div class="brand">طاولتنا</div><div class="bar"><i id="bar"></i></div><p>نجهّز الغرفة…</p></div></div>
+
+<div class="top">
+  <div class="where glass" id="where">الدولاب</div>
+  <button class="back glass" id="back" hidden aria-label="رجوع"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></button>
+</div>
+<p class="hint glass" id="hint">اضغط على أي مربع في الدولاب</p>
+
+<div class="sheet glass" id="sheet" aria-live="polite">
+  <div class="s-name" id="sName"></div>
+  <div class="s-cat" id="sCat"></div>
+  <div class="facts" id="facts"></div>
+  <div class="thumbs" id="thumbs"></div>
+  <div class="actions">
+    <button class="btn ghost" id="toShelf">رجّعها للرف</button>
+    <button class="btn primary" id="log">سجّل قيم</button>
+  </div>
+</div>
+<script type="module" src="./room.js"></script>
+</body>
+</html>
