@@ -32,7 +32,7 @@ function Nav({ at }) {
       {me
         ? <a href="#/log" className="tab-add" aria-label="سجّل قيم"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></a>
         : <button className="tab-add login" onClick={() => setGuest(false)}>ادخل</button>}
-      {tab('#/friday', 'friday', 'الجمعة', at === 'friday')}
+      {tab('#/friday', 'friday', 'الجلسة', at === 'friday')}
       {tab('#/board', 'board', 'الشلة', ['board', 'players', 'player', 'vs', 'history', 'play'].includes(at))}
     </nav>
   )

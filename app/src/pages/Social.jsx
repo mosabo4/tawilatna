@@ -3,19 +3,20 @@ import { useStore, go } from '../store'
 import { api } from '../api'
 import { Avatar, Section, Empty, Cover, Confirm, playersText, fmtDate } from '../ui'
 
-// ---------- الجمعة الجاية ----------
+// ---------- الجلسة الجاية ----------
+// مفتاح الجلسة: أول جمعة بعد آخر قيم مسجّل (القاعدة تبي تاريخ جمعة). ما يظهر للناس،
+// وفايدته إن الاختيارات تتصفّر لحالها أول ما تنسجل أقيام الجلسة.
 const pad2 = n => String(n).padStart(2, '0')
-export function nextFriday(from = new Date()) {
-  const d = new Date(from.getFullYear(), from.getMonth(), from.getDate())
-  d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7))
+export function sessionKey(idx) {
+  const last = idx.plays.reduce((m, p) => (p.played_on > m ? p.played_on : m), '2000-01-01')
+  const d = new Date(last + 'T00:00:00')
+  d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7 || 7))
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
 }
-const dayFmt = new Intl.DateTimeFormat('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long' })
-export const fridayLabel = w => (w === nextFriday() && new Date().getDay() === 5 ? 'الليلة' : `الجمعة ${dayFmt.format(new Date(w + 'T00:00:00'))}`)
 
 export function useFriday() {
   const { idx, me, act } = useStore()
-  const week = nextFriday()
+  const week = sessionKey(idx)
   const picks = useMemo(() => (idx.picks || []).filter(p => p.week === week), [idx, week])
   const byGame = useMemo(() => {
     const m = new Map()
@@ -33,7 +34,7 @@ export function useFriday() {
 
 export function FridayButton({ gameId }) {
   const { me } = useStore()
-  const { mine, toggle, busy, byGame, week } = useFriday()
+  const { mine, toggle, busy, byGame } = useFriday()
   if (!me) return null
   const on = mine.has(gameId)
   const others = (byGame.get(gameId) || []).filter(p => p && p.id !== me.id)
@@ -41,7 +42,7 @@ export function FridayButton({ gameId }) {
     <div className="friday-btn-wrap">
       <button className={`friday-btn ${on ? 'on' : ''}`} disabled={busy === gameId} onClick={() => toggle(gameId)} aria-pressed={on}>
         <span className="fb-check" aria-hidden="true">{on ? '✓' : '+'}</span>
-        <span>{on ? `بتجربها ${fridayLabel(week)}` : `أبي أجربها ${fridayLabel(week)}`}</span>
+        <span>{on ? 'بتجربها الجلسة الجاية' : 'أبي أجربها الجلسة الجاية'}</span>
       </button>
       {others.length > 0 && <span className="fb-others">{others.map(p => <Avatar key={p.id} player={p} size={22} />)}<small>{others.length === 1 ? `${others[0].name} بعد` : `و${others.length} غيرك`}</small></span>}
     </div>
@@ -50,7 +51,7 @@ export function FridayButton({ gameId }) {
 
 export function Friday() {
   const { idx, me } = useStore()
-  const { week, picks, byGame, mine, toggle, busy } = useFriday()
+  const { picks, byGame, mine, toggle, busy } = useFriday()
   const [q, setQ] = useState('')
   const ranked = useMemo(() => [...byGame.entries()]
     .map(([id, ps]) => ({ game: idx.gamesById.get(id), ps: ps.filter(Boolean) }))
@@ -63,7 +64,7 @@ export function Friday() {
 
   return (
     <div className="page">
-      <header className="page-head"><h1>الجمعة الجاية</h1><span className="count">{fridayLabel(week)}</span></header>
+      <header className="page-head"><h1>الجلسة الجاية</h1></header>
       <div className="stack">
         <Section title="وش ودّ الشلة يجربون" action={<span className="muted small">{pickers ? `${pickers} اختاروا` : ''}</span>}>
           {ranked.length ? (
@@ -100,7 +101,7 @@ export function Friday() {
                 )
               })}
             </ul>
-            <p className="hint pad-x pad-b">الاختيارات تتصفّر كل أسبوع تلقائياً.</p>
+            <p className="hint pad-x pad-b">الاختيارات تتصفّر لحالها أول ما تسجلون أقيام الجلسة.</p>
           </Section>
         ) : <Empty title="ادخل باسمك" text="عشان تختار الألعاب اللي ودك تجربها." />}
       </div>
@@ -227,13 +228,13 @@ export function Board() {
 
 export function FridayCard() {
   const { idx } = useStore()
-  const { week, byGame, mine } = useFriday()
+  const { byGame, mine } = useFriday()
   const top = [...byGame.entries()].sort((a, b) => b[1].length - a[1].length).slice(0, 3).map(([id, ps]) => ({ g: idx.gamesById.get(id), n: ps.length })).filter(x => x.g)
   return (
     <a className="glass friday-card" href="#/friday" onClick={e => { e.preventDefault(); go('/friday') }}>
       <div className="fc-text">
-        <small>{fridayLabel(week)}</small>
-        <strong>{top.length ? `الأكثر طلباً: ${top[0].g.name}` : 'وش نلعب الجمعة؟'}</strong>
+        <small>الجلسة الجاية</small>
+        <strong>{top.length ? `الأكثر طلباً: ${top[0].g.name}` : 'وش نلعب الجلسة الجاية؟'}</strong>
         <span>{mine.size ? `اخترت ${mine.size} لعبة` : 'اختر الألعاب اللي ودك تجربها'}</span>
       </div>
       <div className="fc-covers">{top.map(x => <Cover key={x.g.id} game={x.g} className="xs" />)}</div>
