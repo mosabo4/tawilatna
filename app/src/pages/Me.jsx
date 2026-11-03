@@ -5,25 +5,6 @@ import { Avatar, TopBar, Section, Field, Empty } from '../ui'
 
 const PALETTE = ['#D93A3A', '#2F6FDB', '#E9B425', '#2E9E5B', '#8A4FD8', '#EE7A2B', '#1BA6A6', '#D6458F', '#6B7A2E', '#4B4F58']
 
-function PinChange() {
-  const { act, updatePin } = useStore()
-  const [n, setN] = useState('')
-  const [busy, setBusy] = useState(false)
-  const save = async e => {
-    e.preventDefault()
-    setBusy(true)
-    try { await act((p, pin) => api.changePin(p, pin, n), 'تغيّر رمزك'); updatePin(n); setN('') } catch { /* toast */ } finally { setBusy(false) }
-  }
-  return (
-    <form className="pad form" onSubmit={save}>
-      <Field label="الرمز الجديد" hint="من 4 إلى 8 أرقام. لا تنساه، المسؤول بس يقدر يرجّعه لك.">
-        <input className="input pin-input" dir="ltr" inputMode="numeric" autoComplete="new-password" value={n} onChange={e => setN(e.target.value.replace(/\D/g, '').slice(0, 8))} placeholder="••••" />
-      </Field>
-      <button className="btn primary" disabled={n.length < 4 || busy}>غيّر رمزي</button>
-    </form>
-  )
-}
-
 function PlayerEditor({ player, onDone }) {
   const { act, me } = useStore()
   const [f, setF] = useState({ name: player?.name || '', color: player?.color || PALETTE[6], is_admin: !!player?.is_admin, pin: '' })
@@ -75,7 +56,7 @@ export default function Me() {
           <div><b>{me.name}</b>{me.is_admin && <span className="tag">مسؤول</span>}</div>
           <a className="more" href={`#/player/${me.id}`}>إحصائياتي</a>
         </div>
-        <Section title="رمزي"><PinChange /></Section>
+        <p className="hint pad-x">رمزك ثابت. لو نسيته، المسؤول يقدر يعطيك رمز جديد.</p>
 
         {me.is_admin && (
           <Section title="إدارة اللاعبين" action={editing !== 'new' && <button className="btn small ghost" onClick={() => setEditing('new')}>أضف لاعب</button>}>

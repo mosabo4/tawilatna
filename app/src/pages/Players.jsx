@@ -63,7 +63,7 @@ export function PlayerView({ id }) {
           <div className="lead-info">
             <small>{st.currentStreak >= 2 ? `على سلسلة ${st.currentStreak} فوز` : 'نسبة الفوز'}</small>
             <strong>{player.name}</strong>
-            <p>يفوز في {st.plays ? pct(st.winRate) : '0%'} من قيماته</p>
+            <p>يفوز في {st.plays ? pct(st.winRate) : '0%'} من أقيامه</p>
           </div>
         </div>
         <div className="row3">
@@ -122,7 +122,7 @@ export function PlayerView({ id }) {
           </Section>
         )}
 
-        <Section title="آخر قيماته">
+        <Section title="آخر أقيامه">
           {st.recent.length
             ? <div className="play-list">{st.recent.map(p => <PlayCard key={p.id} play={p} />)}</div>
             : <Empty title="ما لعب للحين" />}
@@ -164,7 +164,7 @@ export function VersusView({ a, b }) {
       )}
       <p className="vs-sub">{total ? `لعبوا مع بعض ${total} قيم${v.tie ? `، وتعادلوا ${v.tie}` : ''}. الرقم يعني كم مرة خلّص قدّام الثاني.` : 'ما لعبوا مع بعض للحين.'}</p>
       <div className="stack">
-        {v.shared.length > 0 && <Section title="قيماتهم مع بعض"><div className="play-list">{v.shared.slice(0, 30).map(p => <PlayCard key={p.id} play={p} />)}</div></Section>}
+        {v.shared.length > 0 && <Section title="أقيامهم مع بعض"><div className="play-list">{v.shared.slice(0, 30).map(p => <PlayCard key={p.id} play={p} />)}</div></Section>}
       </div>
     </div>
   )

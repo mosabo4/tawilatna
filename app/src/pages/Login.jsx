@@ -35,7 +35,7 @@ export default function Login() {
       <div className="login">
         <div className="login-brand">
           <h1 className="brand big">طاولتنا</h1>
-          <p>ألعابنا، قيماتنا، ومين يكسب مين.</p>
+          <p>ألعابنا، أقيامنا، ومين يكسب مين.</p>
         </div>
         <div className="glass login-card">
           <h2 className="login-q">مين أنت؟</h2>

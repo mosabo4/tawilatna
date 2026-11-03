@@ -560,3 +560,60 @@ textarea.input { resize: vertical; }
 .lb-close { position: absolute; top: calc(14px + env(safe-area-inset-top)); left: 14px; width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: #fff; font-size: 16px; }
 .lb-nav { position: absolute; bottom: calc(24px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 18px; color: var(--muted); font-size: 13px; }
 .lb-nav button { width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--line); background: var(--card); color: #fff; font-size: 22px; line-height: 1; }
+
+/* ---------- الجمعة الجاية ---------- */
+.friday-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; text-decoration: none; color: inherit; }
+.friday-card .fc-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.friday-card small { color: var(--accent-text); font-size: 12px; font-weight: 500; }
+.friday-card strong { font-size: 16px; font-weight: 600; unicode-bidi: plaintext; text-align: start; }
+.friday-card span { color: var(--muted); font-size: 13px; }
+.fc-covers { display: flex; }
+.fc-covers > * + * { margin-inline-start: -14px; }
+.fc-covers .cover { box-shadow: 0 4px 12px rgba(0, 0, 0, .4); }
+
+.friday-btn-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.friday-btn { display: inline-flex; align-items: center; gap: 9px; padding: 10px 16px 10px 14px; border-radius: 99px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-size: 14px; min-height: 44px; transition: background .2s, border-color .2s; }
+.friday-btn .fb-check { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--card-strong); font-size: 13px; }
+.friday-btn.on { background: var(--grad); border-color: transparent; color: #fff; }
+.friday-btn.on .fb-check { background: rgba(255, 255, 255, .25); }
+.fb-others { display: inline-flex; align-items: center; gap: 4px; }
+.fb-others small { color: var(--muted); font-size: 12px; margin-inline-start: 4px; }
+
+.friday-rank, .pick-list, .comments, .posts { list-style: none; margin: 0; padding: 0; }
+.friday-rank li a { display: flex; align-items: center; gap: 10px; padding: 9px 16px; color: inherit; text-decoration: none; }
+.friday-rank li + li a { border-top: 1px solid var(--line); }
+.friday-rank .rk { width: 18px; color: var(--muted-2); font-size: 13px; text-align: center; }
+.friday-rank .nm, .pick-list .nm { flex: 1; min-width: 0; display: flex; flex-direction: column; unicode-bidi: plaintext; text-align: start; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.friday-rank .nm small { color: var(--muted-2); font-size: 11.5px; }
+.friday-rank .avs { display: flex; }
+.friday-rank .avs > * + * { margin-inline-start: -7px; }
+.friday-rank .votes { min-width: 26px; height: 26px; border-radius: 9px; display: grid; place-items: center; background: var(--grad); color: #fff; font-size: 13px; }
+.pick-list { padding: 8px 8px 4px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.pick-list li { min-width: 0; }
+.pick-list .nm { display: block; }
+.pick-list button { width: 100%; display: flex; align-items: center; gap: 8px; padding: 6px 8px 6px 6px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); text-align: start; font-size: 13px; min-height: 48px; }
+.pick-list button.on { border-color: rgba(157, 180, 255, .7); background: rgba(91, 124, 255, .18); }
+.pick-list .pk { width: 20px; height: 20px; flex: none; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: 11px; }
+.pick-list button.on .pk { background: var(--grad); border-color: transparent; color: #fff; }
+
+/* ---------- التعليقات واللوحة ---------- */
+.comment, .post { display: flex; gap: 10px; padding: 10px 16px; align-items: flex-start; }
+.comments .comment + .comment, .posts .post + .post { border-top: 1px solid var(--line); }
+.comment > div, .post-body { flex: 1; min-width: 0; }
+.c-head { display: flex; align-items: baseline; gap: 8px; }
+.c-head b { font-size: 14px; font-weight: 600; }
+.c-head small { color: var(--muted-2); font-size: 11.5px; }
+.c-head .link-btn { margin-inline-start: auto; }
+.comment p, .post p { margin: 3px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.65; font-size: 14px; unicode-bidi: plaintext; text-align: start; }
+.comment.mine { background: rgba(91, 124, 255, .08); }
+.c-actions { margin-top: 4px; }
+.c-count { margin-inline-start: auto; align-self: center; }
+.link-btn.danger { color: var(--danger); }
+.compose { padding-bottom: 8px; }
+.posts { border-top: 1px solid var(--line); }
+.post.mine .c-head b { color: var(--accent-text); }
+
+.shilla-row { display: flex; gap: 14px; overflow-x: auto; scrollbar-width: none; margin: 0 -16px; padding: 4px 16px; }
+.shilla-row::-webkit-scrollbar { display: none; }
+.shilla-row a { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; text-decoration: none; flex: none; }
+.quick-links .btn { flex: 1; }

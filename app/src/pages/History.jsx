@@ -62,7 +62,7 @@ export default function History() {
           {idx.games.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
         </select>
       </div>
-      {groups.length === 0 && <Empty title="ما فيه قيمات هنا" text={player || game ? 'جرّب تغيّر الفلتر.' : 'سجّل أول قيم من زر الزائد تحت.'} />}
+      {groups.length === 0 && <Empty title="ما فيه أقيام هنا" text={player || game ? 'جرّب تغيّر الفلتر.' : 'سجّل أول قيم من زر الزائد تحت.'} />}
       {groups.map(([k, plays]) => (
         <section key={k} className="glass section">
           <div className="section-head"><h2>{fmtMonth(k + '-01')}</h2><span className="muted small">{plays.length} قيم</span></div>

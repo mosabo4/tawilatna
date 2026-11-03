@@ -3,6 +3,7 @@ import { useStore, go } from '../store'
 import { leaderboard, allGameStats, daysSince } from '../stats'
 import { Avatar, Donut, Section, Empty, Cover, ScoreBadge, ago, pct } from '../ui'
 import { PlayCard } from './History'
+import { FridayCard } from './Social'
 
 export default function Home() {
   const { idx, me } = useStore()
@@ -21,7 +22,7 @@ export default function Home() {
   if (!idx.games.length) {
     return (
       <div className="page">
-        <Empty title="الطاولة فاضية" text="ابدأ بإضافة ألعابك، بعدها تقدرون تسجلون القيمات وتقيّمونها."
+        <Empty title="الطاولة فاضية" text="ابدأ بإضافة ألعابك، بعدها تقدرون تسجلون الأقيام وتقيّمونها."
           action={me && <button className="btn primary" onClick={() => go('/games/new')}>أضف أول لعبة</button>} />
       </div>
     )
@@ -35,7 +36,7 @@ export default function Home() {
           <div className="lead-info">
             <small>المتصدر</small>
             <strong>{leader.player.name}</strong>
-            <p>{leader.wins} فوز، ويفوز في {pct(leader.winRate)} من قيماته</p>
+            <p>{leader.wins} فوز، ويفوز في {pct(leader.winRate)} من أقيامه</p>
           </div>
         </a>
       ) : (
@@ -43,6 +44,8 @@ export default function Home() {
           <div className="lead-info"><small>المتصدر</small><strong>ما أحد للحين</strong><p>أول واحد يفوز يتصدّر هنا.</p></div>
         </div>
       )}
+
+      <FridayCard />
 
       <div className="row3">
         <a href="#/history"><b>{idx.plays.length}</b><span>قيم</span></a>
@@ -69,7 +72,7 @@ export default function Home() {
       </Section>
 
       {idx.plays.length > 0 && (
-        <Section title="آخر القيمات" action={<a className="more" href="#/history">السجل</a>}>
+        <Section title="آخر الأقيام" action={<a className="more" href="#/history">السجل</a>}>
           <div className="play-list">{idx.plays.slice(0, 3).map(p => <PlayCard key={p.id} play={p} />)}</div>
         </Section>
       )}

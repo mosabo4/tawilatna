@@ -7,6 +7,7 @@ import { Cover, Empty, ScoreBadge, TopBar, Section, PlayerTag, RatingInput, Fiel
 import { PlayCard } from './History'
 import Cabinet, { CabinetHint } from './Cabinet'
 import TableHero from './TableHero'
+import { FridayButton, GameComments } from './Social'
 
 const SORTS = [
   ['cat', 'التصانيف'],
@@ -190,6 +191,7 @@ export function GameView({ id }) {
           <div><span>الصعوبة</span><b>{game.weight != null ? <><Weight value={game.weight} compact /> {weightLabel(game.weight)}</> : '—'}</b></div>
           <div><span>سنة الإصدار</span><b>{game.year || '—'}</b></div>
         </div>
+        <FridayButton gameId={game.id} />
         {game.bgg_id && <a className="bgg-link" href={`https://boardgamegeek.com/boardgame/${game.bgg_id}`} target="_blank" rel="noreferrer">صفحتها في BoardGameGeek ↗</a>}
 
         {me && (
@@ -230,7 +232,9 @@ export function GameView({ id }) {
           </Section>
         )}
 
-        <Section title="القيمات">
+        <GameComments gameId={game.id} />
+
+        <Section title="الأقيام">
           {st.plays.length
             ? <div className="play-list">{st.plays.slice(0, 20).map(p => <PlayCard key={p.id} play={p} showGame={false} />)}</div>
             : <p className="muted pad">ما انلعبت للحين. أول قيم لها يكون تاريخي.</p>}

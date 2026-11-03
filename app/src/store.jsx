@@ -65,11 +65,7 @@ export function StoreProvider({ children }) {
     }
   }, [session, reload, notify, logout])
 
-  const updatePin = useCallback(newPin => {
-    const s = { ...session, pin: newPin }; writeSession(s); setSession(s)
-  }, [session])
-
-  const value = { data, idx, loadError, reload, session, me, guest, setGuest, login, logout, act, notify, toast, updatePin }
+  const value = { data, idx, loadError, reload, session, me, guest, setGuest, login, logout, act, notify, toast }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }
 

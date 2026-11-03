@@ -19,6 +19,9 @@ export const ERRORS = {
   name_taken: 'هذا الاسم مستخدم',
   not_found: 'العنصر غير موجود، يمكن انحذف',
   dup_game: 'هذي اللعبة موجودة من قبل',
+  bad_week: 'التاريخ لازم يكون يوم جمعة',
+  too_long: 'النص طويل، اختصره شوي',
+  empty: 'اكتب شي أول',
   network: 'ما قدرنا نوصل للخادم. تأكد من الإنترنت وحاول مرة ثانية',
 }
 
@@ -37,7 +40,14 @@ async function sbLoad() {
     q('ratings'),
   ])
   for (const r of [players, games, plays, results, ratings]) if (r.error) throw new ApiError('network')
-  return { players: players.data, games: games.data, plays: plays.data, results: results.data, ratings: ratings.data }
+  // الجداول الجديدة: لو التحديث ما انشغّل في القاعدة، نكمل بدونها
+  const [picks, comments, posts] = await Promise.all([
+    q('friday_picks'), q('game_comments'), q('posts').order('created_at', { ascending: false }).limit(200),
+  ])
+  return {
+    players: players.data, games: games.data, plays: plays.data, results: results.data, ratings: ratings.data,
+    picks: picks.error ? [] : picks.data, comments: comments.error ? [] : comments.data, posts: posts.error ? [] : posts.data,
+  }
 }
 
 async function sbCall(fn, args) {
@@ -48,7 +58,7 @@ async function sbCall(fn, args) {
 }
 
 // ---------------- Demo (localStorage) ----------------
-const DKEY = 'tawilatna-demo-v2'
+const DKEY = 'tawilatna-demo-v3'
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2))
 function seedDemo() {
   const names = [['مصعب', '#D93A3A', true], ['هاني', '#2F6FDB'], ['معتز', '#E9B425'], ['فارس', '#2E9E5B'], ['اياد', '#8A4FD8'], ['محمدي', '#EE7A2B']]
@@ -67,7 +77,12 @@ function seedDemo() {
     ps.forEach((p, k) => results.push({ play_id: id, player_id: p.id, position: k + 1, score: null }))
   }
   players.forEach(p => games.forEach(gm => { if (rnd() > 0.55) ratings.push({ game_id: gm.id, player_id: p.id, score: Math.round((4 + rnd() * 6) * 2) / 2, updated_at: new Date().toISOString() }) }))
-  return { players, games, plays, results, ratings }
+  const posts = [
+    { id: uid(), player_id: players[1].id, body: 'مين جاي الجمعة؟ أنا جايب Catan 🎲', created_at: new Date(Date.now() - 3600e3 * 5).toISOString() },
+    { id: uid(), player_id: players[3].id, body: 'أنا موجود، بس أبي نجرب شي جديد هالمرة', created_at: new Date(Date.now() - 3600e3 * 3).toISOString() },
+  ]
+  const comments = [{ game_id: games[0].id, player_id: players[2].id, body: 'أحلى لعبة للبداية، قواعدها بسيطة', updated_at: new Date().toISOString() }]
+  return { players, games, plays, results, ratings, picks: [], comments, posts }
 }
 function dGet() {
   try { const s = JSON.parse(localStorage.getItem(DKEY)); if (s) return s } catch { /* ignore */ }
@@ -81,7 +96,7 @@ function dAuth(s, player, pin) {
   return p
 }
 const demo = {
-  load: async () => { const s = dGet(); return { ...s, players: s.players.map(({ pin, ...p }) => p) } },
+  load: async () => { const s = dGet(); return { picks: [], comments: [], posts: [], ...s, players: s.players.map(({ pin: _pin, ...p }) => p) } },
   login: async (player, pin) => { dAuth(dGet(), player, pin); return { ok: true } },
   setRating: async (player, pin, game, score) => {
     const s = dGet(); dAuth(s, player, pin)
@@ -133,10 +148,32 @@ const demo = {
     s.results = s.results.filter(r => !playIds.has(r.play_id)); s.ratings = s.ratings.filter(r => r.game_id !== id)
     dSet(s); return { ok: true }
   },
-  changePin: async (player, pin, newPin) => {
+  toggleFriday: async (player, pin, week, game) => {
+    const s = dGet(); dAuth(s, player, pin); s.picks ||= []
+    const i = s.picks.findIndex(x => x.week === week && x.game_id === game && x.player_id === player)
+    if (i >= 0) s.picks.splice(i, 1); else s.picks.push({ week, game_id: game, player_id: player, created_at: new Date().toISOString() })
+    dSet(s); return { ok: true, picked: i < 0 }
+  },
+  setComment: async (player, pin, game, body) => {
+    const s = dGet(); dAuth(s, player, pin); s.comments ||= []
+    s.comments = s.comments.filter(c => !(c.game_id === game && c.player_id === player))
+    const b = (body || '').trim()
+    if (b.length > 500) throw new ApiError('too_long')
+    if (b) s.comments.push({ game_id: game, player_id: player, body: b, updated_at: new Date().toISOString() })
+    dSet(s); return { ok: true }
+  },
+  addPost: async (player, pin, body) => {
+    const s = dGet(); dAuth(s, player, pin); s.posts ||= []
+    const b = (body || '').trim()
+    if (!b) throw new ApiError('empty'); if (b.length > 1000) throw new ApiError('too_long')
+    s.posts.unshift({ id: uid(), player_id: player, body: b, created_at: new Date().toISOString() })
+    dSet(s); return { ok: true }
+  },
+  deletePost: async (player, pin, id) => {
     const s = dGet(); const me = dAuth(s, player, pin)
-    if (!/^[0-9]{4,8}$/.test(newPin)) throw new ApiError('bad_new_pin')
-    me.pin = newPin; dSet(s); return { ok: true }
+    const p = (s.posts || []).find(x => x.id === id); if (!p) throw new ApiError('not_found')
+    if (p.player_id !== player && !me.is_admin) throw new ApiError('forbidden')
+    s.posts = s.posts.filter(x => x.id !== id); dSet(s); return { ok: true }
   },
   savePlayer: async (player, pin, data) => {
     const s = dGet(); const me = dAuth(s, player, pin)
@@ -164,7 +201,10 @@ const real = {
   deletePlay: (p, pin, id) => sbCall('delete_play', { p_player: p, p_pin: pin, p_play: id }),
   saveGame: (p, pin, game) => sbCall('save_game', { p_player: p, p_pin: pin, p_game: game }),
   deleteGame: (p, pin, id) => sbCall('delete_game', { p_player: p, p_pin: pin, p_game: id }),
-  changePin: (p, pin, n) => sbCall('change_pin', { p_player: p, p_pin: pin, p_new_pin: n }),
+  toggleFriday: (p, pin, week, g) => sbCall('toggle_friday', { p_player: p, p_pin: pin, p_week: week, p_game: g }),
+  setComment: (p, pin, g, body) => sbCall('set_comment', { p_player: p, p_pin: pin, p_game: g, p_body: body }),
+  addPost: (p, pin, body) => sbCall('add_post', { p_player: p, p_pin: pin, p_body: body }),
+  deletePost: (p, pin, id) => sbCall('delete_post', { p_player: p, p_pin: pin, p_post: id }),
   savePlayer: (p, pin, d) => sbCall('save_player', { p_player: p, p_pin: pin, p_data: d }),
 }
 
