@@ -193,6 +193,7 @@ export function Board() {
         <div className="row gap quick-links">
           <a className="btn ghost small" href="#/players">الترتيب والإحصائيات</a>
           <a className="btn ghost small" href="#/history">سجل الأقيام</a>
+          <a className="btn ghost small" href="#/levels">الليفلات</a>
         </div>
 
         <Section title="اللوحة">

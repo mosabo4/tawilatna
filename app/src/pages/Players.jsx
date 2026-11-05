@@ -3,15 +3,18 @@ import { useStore, go } from '../store'
 import { playerStats, versus } from '../stats'
 import { Avatar, Donut, TopBar, Section, Empty, fmtDate, fmtScore, ScoreBadge } from '../ui'
 import { PlayCard } from './History'
+import { useLevels } from './Levels'
 
 export function PlayerView({ id }) {
   const { idx, me, logout } = useStore()
   const player = idx.playersById.get(id)
   const st = useMemo(() => (player ? playerStats(idx, id) : null), [idx, id, player])
+  const levels = useLevels()
   if (!player) return <div className="page"><TopBar title="لاعب" backTo="/players" /><Empty title="هذا اللاعب غير موجود" /></div>
   const ratings = idx.ratings.filter(r => r.player_id === id).sort((x, y) => y.score - x.score)
   const records = [...st.games].sort((x, y) => y.plays - x.plays)
   const others = idx.players.filter(p => p.id !== id)
+  const lv = levels.get(id)
 
   return (
     <div className="page">
@@ -25,6 +28,15 @@ export function PlayerView({ id }) {
             <p>{st.plays ? `المستوى ${st.points ?? '—'} · فاز ${st.wins} من ${st.plays} قيم` : 'ما لعب للحين'}</p>
           </div>
         </div>
+        {lv && (
+          <a className="glass lv-home" href="#/levels">
+            <span className="lv-main">
+              <span className="lv-top"><b>ليفل {lv.level} · {lv.title}</b><small>{lv.xp} XP</small></span>
+              <span className="lv-bar"><span style={{ width: `${Math.max(3, lv.progress * 100)}%`, '--c': player.color }} /></span>
+              <small className="lv-hint">🏅 {lv.achievements.filter(a => a.done).length} من {lv.achievements.length} إنجاز</small>
+            </span>
+          </a>
+        )}
         <div className="row3">
           <div><b>{st.wins}</b><span>فوز</span></div>
           <div><b>{st.plays}</b><span>قيم</span></div>

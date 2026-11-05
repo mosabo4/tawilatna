@@ -4,6 +4,7 @@ import { leaderboard, allGameStats, daysSince } from '../stats'
 import { Avatar, Donut, Section, Empty, Cover, ScoreBadge, ago } from '../ui'
 import { PlayCard } from './History'
 import { FridayCard } from './Social'
+import { useLevels, LevelPill } from './Levels'
 
 export default function Home() {
   const { idx, me } = useStore()
@@ -29,6 +30,8 @@ export default function Home() {
       .filter(x => x.game).sort((a, b) => (a.score != null) - (b.score != null) || b.n - a.n)
   }, [idx, me])
   const unrated = myGames.filter(x => x.score == null)
+  const levels = useLevels()
+  const myLv = me ? levels.get(me.id) : null
 
   if (!idx.games.length) {
     return (
@@ -67,6 +70,17 @@ export default function Home() {
           </div>
           {unrated.length > 3 && <p className="rn-more">والباقي ({unrated.length - 3}) تحت في «ألعابك»</p>}
         </div>
+      )}
+
+      {myLv && (
+        <a className="glass lv-home" href="#/levels">
+          <span className="lv-av"><Avatar player={me} size={44} /><LevelPill level={myLv.level} /></span>
+          <span className="lv-main">
+            <span className="lv-top"><b>ليفل {myLv.level} · {myLv.title}</b><small>باقي {myLv.need - myLv.into} XP</small></span>
+            <span className="lv-bar"><span style={{ width: `${Math.max(3, myLv.progress * 100)}%`, '--c': me.color }} /></span>
+            {myLv.nextReward && <small className="lv-hint">الجائزة الجاية: {myLv.nextReward.icon} {myLv.nextReward.name} (ليفل {myLv.nextReward.level})</small>}
+          </span>
+        </a>
       )}
 
       <FridayCard />

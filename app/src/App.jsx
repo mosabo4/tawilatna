@@ -10,6 +10,7 @@ import Me from './pages/Me'
 import { Friday, Board } from './pages/Social'
 import Ranking from './pages/Ranking'
 import Recap from './pages/Recap'
+import Levels from './pages/Levels'
 import { DEMO } from './api'
 
 const I = {
@@ -37,7 +38,7 @@ function Nav({ at }) {
         ? <a href="#/log" className="tab-add" aria-label="سجّل قيم"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></a>
         : <button className="tab-add login" onClick={() => setGuest(false)}>ادخل</button>}
       {tab('#/friday', 'friday', 'الجلسة', at === 'friday')}
-      {tab('#/board', 'board', 'الشلة', ['board', 'history', 'play'].includes(at))}
+      {tab('#/board', 'board', 'الشلة', ['board', 'history', 'play', 'levels'].includes(at))}
     </nav>
   )
 }
@@ -58,6 +59,7 @@ function Main({ r }) {
     case 'me': return <Me />
     case 'friday': return <Friday />
     case 'board': return <Board />
+    case 'levels': return <Levels />
     default: return <Home />
   }
 }
