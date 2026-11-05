@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useStore, go } from '../store'
 import { api, DEMO } from '../api'
+import { availableMonths, monthName } from '../recap'
 import { Avatar, TopBar, Section, Field, Empty } from '../ui'
 
 const PALETTE = ['#D93A3A', '#2F6FDB', '#E9B425', '#2E9E5B', '#8A4FD8', '#EE7A2B', '#1BA6A6', '#D6458F', '#6B7A2E', '#4B4F58']
@@ -43,6 +44,24 @@ function PlayerEditor({ player, onDone }) {
   )
 }
 
+function RecapLauncher() {
+  const { idx } = useStore()
+  const months = availableMonths(idx)
+  const [m, setM] = useState(months[0])
+  const start = () => { document.documentElement.requestFullscreen?.().catch(() => {}); go(`/recap/${m}`) }
+  return (
+    <div className="pad form">
+      <p className="hint" style={{ margin: 0 }}>عرض كامل للشهر بالإحصائيات والجوائز، تعرضه على الشلة. اضغط على الشاشة أو الأسهم عشان تنتقل بين الشرائح.</p>
+      <div className="row gap">
+        <select className="input" value={m} onChange={e => setM(e.target.value)} aria-label="الشهر">
+          {months.map(x => <option key={x} value={x}>{monthName(x)}</option>)}
+        </select>
+        <button className="btn primary" onClick={start}>▶ اعرض</button>
+      </div>
+    </div>
+  )
+}
+
 function LockToggle() {
   const { data, act } = useStore()
   const locked = !!data?.settings?.login_locked
@@ -74,6 +93,7 @@ export default function Me() {
         </div>
         <p className="hint pad-x">رمزك ثابت. لو نسيته، المسؤول يقدر يعطيك رمز جديد.</p>
 
+        {me.is_admin && <Section title="ملخص الشهر 🎬"><RecapLauncher /></Section>}
         {me.is_admin && <Section title="دخول الشلة"><LockToggle /></Section>}
 
         {me.is_admin && (

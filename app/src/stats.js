@@ -19,10 +19,8 @@ export function buildIndex(data) {
 
 // ---------- الترتيب ----------
 // كل قيم: نقطة عن كل لاعب خلّصت قدّامه، ونص نقطة لو تعادلتوا.
-// المستوى = (نقاطك + 5) ÷ (اللي لعبت ضدهم + 10)، يعني كأن الكل بدأ بـ 10 خصوم وهميين غلب نصهم،
-// عشان اللي لعب قليل ما يطير فوق بالحظ. الألعاب التعاونية ما تدخل.
-export const PRIOR = 10
-export const levelOf = (beat, faced) => (faced ? Math.round(((beat + PRIOR / 2) / (faced + PRIOR)) * 100) : null)
+// المستوى = نقاطك ÷ كل اللي لعبت ضدهم (نسبة مئوية). الألعاب التعاونية ما تدخل.
+export const levelOf = (beat, faced) => (faced ? Math.round((beat / faced) * 100) : null)
 export const counts = (play, game) => play.results.length > 1 && game?.category !== 'coop'
 
 export function standings(idx, filter = () => true) {

@@ -20,7 +20,7 @@ export function PlayerView({ id }) {
         <div className="glass lead">
           <Donut value={(st.points ?? 0) / 100}><Avatar player={player} size={56} /></Donut>
           <div className="lead-info">
-            <small>{st.currentStreak >= 2 ? `على سلسلة ${st.currentStreak} فوز` : 'المستوى'}</small>
+            <small>المستوى</small>
             <strong>{player.name}</strong>
             <p>{st.plays ? `المستوى ${st.points ?? '—'} · فاز ${st.wins} من ${st.plays} قيم` : 'ما لعب للحين'}</p>
           </div>
@@ -28,15 +28,13 @@ export function PlayerView({ id }) {
         <div className="row3">
           <div><b>{st.wins}</b><span>فوز</span></div>
           <div><b>{st.plays}</b><span>قيم</span></div>
-          <div><b>{st.podiums}</b><span>بالثلاثة الأوائل</span></div>
+          <div><b>{st.points ?? '—'}</b><span>المستوى</span></div>
         </div>
       </div>
 
       <div className="stack">
         <div className="glass facts">
           <dl>
-            <div><dt>سلسلة الفوز الحالية</dt><dd>{st.currentStreak ? `${st.currentStreak} على التوالي` : 'ما فيه'}</dd></div>
-            <div><dt>أطول سلسلة فوز</dt><dd>{st.bestStreak}</dd></div>
             <div><dt>ملعبه</dt><dd>{st.bestGame ? <a href={`#/game/${st.bestGame.game.id}`}>{st.bestGame.game.name} ({st.bestGame.wins} فوز)</a> : '—'}</dd></div>
             <div><dt>أكثر لعبة لعبها</dt><dd>{st.mostPlayed ? <a href={`#/game/${st.mostPlayed.game.id}`}>{st.mostPlayed.game.name}</a> : '—'}</dd></div>
             <div><dt>لعبته المفضلة</dt><dd>{st.favorite ? <a href={`#/game/${st.favorite.game.id}`}>{st.favorite.game.name} ({fmtScore(st.favorite.score)})</a> : '—'}</dd></div>

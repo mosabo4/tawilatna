@@ -19,6 +19,17 @@ export default function Home() {
     .sort((a, b) => (b.days ?? 1e9) - (a.days ?? 1e9))
     .slice(0, 4)
 
+  // ألعابي: اللي لعبتها، وهل قيّمتها
+  const myGames = useMemo(() => {
+    if (!me) return []
+    const m = new Map()
+    for (const p of idx.plays) if (p.results.some(r => r.player_id === me.id)) m.set(p.game_id, (m.get(p.game_id) || 0) + 1)
+    const rated = new Map(idx.ratings.filter(r => r.player_id === me.id).map(r => [r.game_id, r.score]))
+    return [...m.entries()].map(([id, n]) => ({ game: idx.gamesById.get(id), n, score: rated.get(id) }))
+      .filter(x => x.game).sort((a, b) => (a.score != null) - (b.score != null) || b.n - a.n)
+  }, [idx, me])
+  const unrated = myGames.filter(x => x.score == null)
+
   if (!idx.games.length) {
     return (
       <div className="page">
@@ -46,6 +57,18 @@ export default function Home() {
         </div>
       )}
 
+      {unrated.length > 0 && (
+        <div className="glass rate-nudge">
+          <div className="rn-head"><span aria-hidden="true">⭐</span><div><b>{unrated.length === 1 ? 'عندك لعبة لعبتها وما قيّمتها' : `عندك ${unrated.length} ألعاب لعبتها وما قيّمتها`}</b><small>قيّمها عشان يطلع تقييم الشلة صح</small></div></div>
+          <div className="rn-list">
+            {unrated.slice(0, 3).map(x => (
+              <a key={x.game.id} href={`#/game/${x.game.id}`} className="rn-item"><Cover game={x.game} className="xs" /><span>{x.game.name}</span><em>قيّم</em></a>
+            ))}
+          </div>
+          {unrated.length > 3 && <p className="rn-more">والباقي ({unrated.length - 3}) تحت في «ألعابك»</p>}
+        </div>
+      )}
+
       <FridayCard />
 
       <div className="row3">
@@ -53,6 +76,21 @@ export default function Home() {
         <a href="#/games"><b>{idx.games.length}</b><span>لعبة</span></a>
         <a href="#/history"><b>{thisMonth}</b><span>هالشهر</span></a>
       </div>
+
+      {myGames.length > 0 && (
+        <Section title="ألعابك" action={<span className="muted small">{myGames.length} لعبة لعبتها</span>}>
+          <div className="mini-games my-games">
+            {myGames.map(x => (
+              <a key={x.game.id} className="mini-game" href={`#/game/${x.game.id}`}>
+                <Cover game={x.game} className="sm" />
+                <span className="mg-name">{x.game.name}</span>
+                {x.score != null ? <ScoreBadge value={x.score} /> : <span className="rate-tag">قيّمها</span>}
+                <small className="muted">{x.n === 1 ? 'مرة' : `${x.n} مرات`}</small>
+              </a>
+            ))}
+          </div>
+        </Section>
+      )}
 
       {idx.plays.length > 0 && (
         <Section title="آخر الأقيام" action={<a className="more" href="#/history">السجل</a>}>

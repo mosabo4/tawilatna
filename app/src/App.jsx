@@ -9,6 +9,7 @@ import { PlayerView, VersusView } from './pages/Players'
 import Me from './pages/Me'
 import { Friday, Board } from './pages/Social'
 import Ranking from './pages/Ranking'
+import Recap from './pages/Recap'
 import { DEMO } from './api'
 
 const I = {
@@ -76,6 +77,8 @@ export default function App() {
     )
   }
   if (!me && !guest) return <><Login /><Toast /></>
+
+  if (r[0] === 'recap') return <><Recap month={r[1] || new Date().toISOString().slice(0, 7)} key={r[1]} /><Toast /></>
 
   const top = r[0] === undefined
   return (
