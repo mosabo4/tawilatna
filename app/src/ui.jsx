@@ -38,8 +38,21 @@ export function initials(player, all) {
   const clash = all?.some(o => o.id !== player.id && o.name.trim()[0] === n[0])
   return clash ? n.slice(0, 2) : n[0]
 }
+// صور الشلة (بدون خلفية) — الراس يطلع من الدائرة لفوق
+const PHOTOS = { 'مصعب': 'musab', 'هاني': 'hani', 'محمدي': 'mohammadi', 'معتز': 'muataz', 'فارس': 'fares', 'اياد': 'eyad', 'إياد': 'eyad' }
+export const photoOf = p => (p && PHOTOS[p.name.trim()] ? `${import.meta.env.BASE_URL}players/${PHOTOS[p.name.trim()]}.webp` : null)
+
 export function Avatar({ player, size = 28, ring }) {
   const { idx } = useStore()
+  const src = photoOf(player)
+  if (src) {
+    return (
+      <span className={`avatar photo ${ring ? 'ring' : ''}`} style={{ '--c': player.color || '#5A6088', '--s': `${size}px`, width: size, height: size }} aria-hidden="true">
+        <span className="av-clip"><img src={src} alt="" loading="lazy" decoding="async" /></span>
+        <span className="av-pop"><img src={src} alt="" loading="lazy" decoding="async" /></span>
+      </span>
+    )
+  }
   const st = { '--c': player?.color || '#5A6088', width: size, height: size, fontSize: Math.round(size * (initials(player, idx?.players).length > 1 ? 0.36 : 0.42)) }
   return <span className={`avatar ${ring ? 'ring' : ''}`} style={st} aria-hidden="true">{initials(player, idx?.players)}</span>
 }

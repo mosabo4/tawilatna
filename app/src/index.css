@@ -760,3 +760,12 @@ textarea.input { resize: vertical; }
 .rc-kbar { height: 12px; border-radius: 99px; background: rgba(255, 255, 255, .08); overflow: hidden; }
 .rc-kbar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(270deg, var(--c), color-mix(in srgb, var(--c) 40%, transparent)); }
 @media (max-width: 560px) { .rc-know > div { grid-template-columns: 1fr 34px; } .rc-kbar { grid-column: 1 / -1; grid-row: 2; } .rc-know small { grid-column: 1 / -1; } }
+
+/* ---------- صور اللاعبين: الراس يطلع من الدائرة ---------- */
+.avatar.photo { position: relative; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--c) 40%, #fff) 0%, var(--c) 55%, color-mix(in srgb, var(--c) 50%, #000) 100%); box-shadow: 0 4px 14px -6px var(--c); overflow: visible; }
+.avatar.photo img { position: absolute; left: 50%; width: 108%; max-width: none; transform: translateX(-50%); pointer-events: none; user-select: none; }
+.av-clip { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }
+.av-clip img { top: calc(var(--s) * -.16); }
+.av-pop { position: absolute; left: 0; right: 0; top: calc(var(--s) * -.4); height: calc(var(--s) * .9); overflow: hidden; }
+.av-pop img { top: calc(var(--s) * .24); }
+.avatar.photo.ring { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--c), 0 0 28px color-mix(in srgb, var(--c) 60%, transparent); }
