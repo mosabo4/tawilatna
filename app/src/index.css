@@ -617,3 +617,10 @@ textarea.input { resize: vertical; }
 .shilla-row::-webkit-scrollbar { display: none; }
 .shilla-row a { display: flex; flex-direction: column; align-items: center; gap: 5px; color: var(--muted); font-size: 12px; text-decoration: none; flex: none; }
 .quick-links .btn { flex: 1; }
+
+/* ---------- النقاط ---------- */
+.pr-stat.main b { color: var(--accent-text); font-size: 17px; }
+.how-body p { margin: 0 0 6px; font-size: 14px; }
+.how-body ul { margin: 0 0 8px; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; color: var(--muted); line-height: 1.7; }
+.how-body b { color: var(--ink); }
+.rank-list .w { min-width: 30px; }

@@ -17,6 +17,9 @@ export function buildIndex(data) {
   return { ...data, playersById: players, gamesById: games, plays }
 }
 
+// النقاط: معدل المركز في كل الأقيام، مع 4 أقيام «متوسطة» وهمية تنضاف للكل،
+// عشان اللي لعب قليل ما يطير فوق بالحظ، وكل ما لعب أكثر تقرب نقاطه من مستواه الحقيقي
+export const PRIOR = 4
 const winnersOf = play => play.results.filter(r => r.position === 1).map(r => r.player_id)
 
 export function playerStats(idx, playerId) {
@@ -29,8 +32,12 @@ export function playerStats(idx, playerId) {
     const won = r.position === 1
     if (won) wins++
     if (r.position <= 3 && n > 1) podiums++
-    // 1 = أول، 0 = آخر
-    rel += n > 1 ? (n - r.position) / (n - 1) : 1
+    // كم نسبة اللاعبين اللي خلّص قدّامهم: الأول 1، الأخير 0، والتعادل نص
+    if (n > 1) {
+      let beat = 0
+      for (const o of p.results) if (o !== r) beat += o.position > r.position ? 1 : o.position === r.position ? 0.5 : 0
+      rel += beat / (n - 1)
+    } else rel += 0.5
     const g = perGame.get(p.game_id) || { plays: 0, wins: 0 }
     g.plays++; if (won) g.wins++
     perGame.set(p.game_id, g)
@@ -51,6 +58,7 @@ export function playerStats(idx, playerId) {
     plays: mine.length, wins, podiums,
     winRate: mine.length ? wins / mine.length : 0,
     avgFinish: mine.length ? rel / mine.length : 0,
+    points: mine.length ? Math.round(((rel + PRIOR * 0.5) / (mine.length + PRIOR)) * 100) : null,
     currentStreak: current, bestStreak: best,
     games, mostPlayed, bestGame, favorite, ratedCount: myRatings.length,
     lastPlayed: mine[0]?.played_on || null,
@@ -61,7 +69,7 @@ export function playerStats(idx, playerId) {
 export function leaderboard(idx) {
   return idx.players
     .map(p => ({ player: p, ...playerStats(idx, p.id) }))
-    .sort((a, b) => b.wins - a.wins || b.winRate - a.winRate || b.plays - a.plays)
+    .sort((a, b) => (b.plays > 0) - (a.plays > 0) || (b.points ?? 0) - (a.points ?? 0) || b.wins - a.wins || b.plays - a.plays)
 }
 
 export function gameStats(idx, gameId) {

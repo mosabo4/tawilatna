@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useStore, go } from '../store'
 import { leaderboard, allGameStats, daysSince } from '../stats'
-import { Avatar, Donut, Section, Empty, Cover, ScoreBadge, ago, pct } from '../ui'
+import { Avatar, Donut, Section, Empty, Cover, ScoreBadge, ago } from '../ui'
 import { PlayCard } from './History'
 import { FridayCard } from './Social'
 
@@ -11,7 +11,7 @@ export default function Home() {
   const games = useMemo(() => allGameStats(idx), [idx])
   const month = new Date().toISOString().slice(0, 7)
   const thisMonth = idx.plays.filter(p => p.played_on.startsWith(month)).length
-  const leader = board.find(b => b.plays > 0 && b.wins > 0)
+  const leader = board.find(b => b.plays > 0)
 
   const topRated = games.filter(g => g.avg != null).sort((a, b) => b.avg - a.avg).slice(0, 4)
   const forgotten = games
@@ -32,11 +32,11 @@ export default function Home() {
     <div className="page stack">
       {leader ? (
         <a className="glass lead" href={`#/player/${leader.player.id}`}>
-          <Donut value={leader.winRate}><Avatar player={leader.player} size={56} /></Donut>
+          <Donut value={leader.points / 100}><Avatar player={leader.player} size={56} /></Donut>
           <div className="lead-info">
             <small>المتصدر</small>
             <strong>{leader.player.name}</strong>
-            <p>{leader.wins} فوز، ويفوز في {pct(leader.winRate)} من أقيامه</p>
+            <p>{leader.points} نقطة · فاز {leader.wins} من {leader.plays} قيم</p>
           </div>
         </a>
       ) : (
@@ -53,7 +53,7 @@ export default function Home() {
         <a href="#/history"><b>{thisMonth}</b><span>هالشهر</span></a>
       </div>
 
-      <Section title="الترتيب" action={<a className="more" href="#/players">الكل</a>}>
+      <Section title="الترتيب بالنقاط" action={<a className="more" href="#/players">كيف تنحسب؟</a>}>
         {board.some(b => b.plays) ? (
           <ol className="rank-list">
             {board.map((b, i) => (
@@ -62,8 +62,8 @@ export default function Home() {
                   <span className="rk">{i + 1}</span>
                   <Avatar player={b.player} size={28} />
                   <span className="nm">{b.player.name}</span>
-                  <span className="pc">{b.plays ? pct(b.winRate) : '—'}</span>
-                  <span className="w">{b.wins}</span>
+                  <span className="pc">{b.plays ? `${b.wins} فوز من ${b.plays}` : 'ما لعب'}</span>
+                  <span className="w">{b.points ?? '—'}</span>
                 </a>
               </li>
             ))}
