@@ -1,8 +1,25 @@
 // كل الحسابات تتم على الجهاز من البيانات الكاملة (العدد صغير)
 
+// الإضافات المعروفة (احتياط لين يشتغل تحديث القاعدة)
+const EXP_FALLBACK = {
+  'Catan: 5–6 Player Extension': 'Catan', 'Catan: Cities & Knights': 'Catan',
+  'Clank! Adventuring Party': 'Clank!: A Deck-Building Adventure', 'Coup: Reformation': 'Coup',
+}
 export function buildIndex(data) {
   const players = new Map(data.players.map(p => [p.id, p]))
-  const games = new Map(data.games.map(g => [g.id, g]))
+  const byName = new Map(data.games.map(g => [g.name, g]))
+  const allGames = data.games.map(g => {
+    const base = g.base_game_id !== undefined && g.base_game_id !== null ? g.base_game_id : (EXP_FALLBACK[g.name] ? byName.get(EXP_FALLBACK[g.name])?.id || null : null)
+    return { ...g, base_game_id: base }
+  })
+  const games = new Map(allGames.map(g => [g.id, g]))
+  const expansionsOf = new Map()
+  for (const g of allGames) if (g.base_game_id && games.has(g.base_game_id)) {
+    if (!expansionsOf.has(g.base_game_id)) expansionsOf.set(g.base_game_id, [])
+    expansionsOf.get(g.base_game_id).push(g)
+  }
+  const expOfPlay = new Map()
+  for (const pe of data.playExp || []) { if (!expOfPlay.has(pe.play_id)) expOfPlay.set(pe.play_id, []); expOfPlay.get(pe.play_id).push(pe.game_id) }
   const resultsByPlay = new Map()
   for (const r of data.results) {
     if (!resultsByPlay.has(r.play_id)) resultsByPlay.set(r.play_id, [])
@@ -12,9 +29,14 @@ export function buildIndex(data) {
   // plays: الأحدث أولاً، ومع كل قيم نتائجه
   const plays = data.plays
     .filter(p => games.has(p.game_id))
-    .map(p => ({ ...p, results: resultsByPlay.get(p.id) || [] }))
+    .map(p => {
+      const g = games.get(p.game_id)
+      const exps = [...new Set([...(expOfPlay.get(p.id) || []), ...(g.base_game_id ? [g.id] : [])])]
+      return { ...p, game_id: g.base_game_id && games.has(g.base_game_id) ? g.base_game_id : p.game_id, expansions: exps, results: resultsByPlay.get(p.id) || [] }
+    })
     .sort((a, b) => b.played_on.localeCompare(a.played_on) || (b.created_at || '').localeCompare(a.created_at || ''))
-  return { ...data, playersById: players, gamesById: games, plays }
+  const baseGames = allGames.filter(g => !(g.base_game_id && games.has(g.base_game_id)))
+  return { ...data, games: baseGames, allGames, expansionsOf, playersById: players, gamesById: games, plays }
 }
 
 // ---------- الترتيب ----------

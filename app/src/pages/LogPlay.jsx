@@ -14,6 +14,7 @@ export default function LogPlay({ id, presetGame }) {
     : [])
   const [useScores, setUseScores] = useState(() => !!existing?.results.some(r => r.score != null))
   const [notes, setNotes] = useState(existing?.notes || '')
+  const [exps, setExps] = useState(existing?.expansions || [])
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
@@ -62,6 +63,11 @@ export default function LogPlay({ id, presetGame }) {
         id: existing?.id, game_id: gameId, played_on: date, notes: notes.trim(),
         results: rows.map(r => ({ player_id: r.player_id, position: r.position, score: useScores && r.score !== '' ? Number(r.score) : null })),
       }), existing ? 'انحفظ التعديل' : 'انسجل القيم')
+      const avail = new Set((idx.expansionsOf?.get(gameId) || []).map(g => g.id))
+      const chosen = exps.filter(x => avail.has(x))
+      if (chosen.length || existing?.expansions?.length) {
+        try { await act((p, pin) => api.setPlayExpansions(p, pin, res.id, chosen)) } catch { /* toast */ }
+      }
       go(`/play/${res.id}`)
     } catch { /* toast shown */ } finally { setBusy(false) }
   }
@@ -81,7 +87,19 @@ export default function LogPlay({ id, presetGame }) {
               <b>{game.name}</b>
               <button className="link-btn" onClick={() => setGameId('')}>غيّر</button>
             </div>
-          ) : idx.games.length ? (
+          ) : null}
+          {game && (idx.expansionsOf?.get(game.id) || []).length > 0 && (
+            <div className="exp-pick">
+              <span className="muted small">لعبتوا بإضافة؟</span>
+              <div className="chips-wrap">
+                {idx.expansionsOf.get(game.id).map(e => {
+                  const on = exps.includes(e.id)
+                  return <button key={e.id} type="button" className={`chip ${on ? 'on' : ''}`} aria-pressed={on} onClick={() => setExps(x => on ? x.filter(y => y !== e.id) : [...x, e.id])}>{on ? '✓ ' : '+ '}{e.name.replace(/^.*?:\s*/, '')}</button>
+                })}
+              </div>
+            </div>
+          )}
+          {game ? null : idx.games.length ? (
             <>
               {idx.games.length > 6 && <input className="input" type="search" placeholder="دوّر على لعبة" value={q} onChange={e => setQ(e.target.value)} />}
               <div className="game-picker">

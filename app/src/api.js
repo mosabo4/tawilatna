@@ -42,13 +42,15 @@ async function sbLoad() {
   ])
   for (const r of [players, games, plays, results, ratings]) if (r.error) throw new ApiError('network')
   // الجداول الجديدة: لو التحديث ما انشغّل في القاعدة، نكمل بدونها
-  const [picks, comments, posts, settings] = await Promise.all([
+  const [picks, comments, posts, settings, playExp, expRatings] = await Promise.all([
     q('friday_picks'), q('game_comments'), q('posts').order('created_at', { ascending: false }).limit(200), q('app_settings'),
+    q('play_expansions'), q('expansion_ratings'),
   ])
   return {
     players: players.data, games: games.data, plays: plays.data, results: results.data, ratings: ratings.data,
     picks: picks.error ? [] : picks.data, comments: comments.error ? [] : comments.data, posts: posts.error ? [] : posts.data,
     settings: (!settings.error && settings.data?.[0]) || {},
+    playExp: playExp.error ? [] : playExp.data, expRatings: expRatings.error ? [] : expRatings.data,
   }
 }
 
@@ -99,7 +101,7 @@ function dAuth(s, player, pin) {
   return p
 }
 const demo = {
-  load: async () => { const s = dGet(); return { picks: [], comments: [], posts: [], settings: {}, ...s, players: s.players.map(({ pin: _pin, ...p }) => p) } },
+  load: async () => { const s = dGet(); return { picks: [], comments: [], posts: [], settings: {}, playExp: [], expRatings: [], ...s, players: s.players.map(({ pin: _pin, ...p }) => p) } },
   login: async (player, pin) => { dAuth(dGet(), player, pin); return { ok: true } },
   setRating: async (player, pin, game, score) => {
     const s = dGet(); dAuth(s, player, pin)
@@ -193,6 +195,21 @@ const demo = {
     }
     dSet(s); return { ok: true, id }
   },
+  setExpRating: async (player, pin, exp, delta) => {
+    const s = dGet(); dAuth(s, player, pin); s.expRatings ||= []
+    s.expRatings = s.expRatings.filter(r => !(r.expansion_id === exp && r.player_id === player))
+    if (delta != null) s.expRatings.push({ expansion_id: exp, player_id: player, delta, updated_at: new Date().toISOString() })
+    dSet(s); return { ok: true }
+  },
+  setPlayExpansions: async (player, pin, play, games) => {
+    const s = dGet(); dAuth(s, player, pin); s.playExp = (s.playExp || []).filter(x => x.play_id !== play)
+    for (const g of games || []) s.playExp.push({ play_id: play, game_id: g })
+    dSet(s); return { ok: true }
+  },
+  setGameBase: async (player, pin, game, base) => {
+    const s = dGet(); dAuth(s, player, pin); const g = s.games.find(x => x.id === game); if (!g) throw new ApiError('not_found')
+    g.base_game_id = base || null; dSet(s); return { ok: true }
+  },
   setLoginLock: async (player, pin, locked) => {
     const s = dGet(); const me = dAuth(s, player, pin)
     if (!me.is_admin) throw new ApiError('forbidden')
@@ -215,6 +232,9 @@ const real = {
   deletePost: (p, pin, id) => sbCall('delete_post', { p_player: p, p_pin: pin, p_post: id }),
   savePlayer: (p, pin, d) => sbCall('save_player', { p_player: p, p_pin: pin, p_data: d }),
   setLoginLock: (p, pin, locked) => sbCall('set_login_lock', { p_player: p, p_pin: pin, p_locked: locked }),
+  setExpRating: (p, pin, exp, delta) => sbCall('set_exp_rating', { p_player: p, p_pin: pin, p_exp: exp, p_delta: delta }),
+  setPlayExpansions: (p, pin, play, games) => sbCall('set_play_expansions', { p_player: p, p_pin: pin, p_play: play, p_games: games }),
+  setGameBase: (p, pin, game, base) => sbCall('set_game_base', { p_player: p, p_pin: pin, p_game: game, p_base: base }),
 }
 
 export const api = DEMO ? demo : real

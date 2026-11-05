@@ -3,6 +3,7 @@ import { useStore, go } from '../store'
 import { api } from '../api'
 import { gameStats, allGameStats, daysSince, standings } from '../stats'
 import { StandingRows } from './Ranking'
+import { ExpansionsSection } from './Expansions'
 import { CATEGORIES, catOf, weightLabel } from '../categories'
 import { Cover, Empty, ScoreBadge, TopBar, Section, PlayerTag, RatingInput, Field, Confirm, Weight, ago, fmtDate, fmtScore, playersText, timeText, range, IconUsers, IconClock } from '../ui'
 import { PlayCard } from './History'
@@ -166,6 +167,17 @@ export function GameView({ id }) {
   const table = useMemo(() => standings(idx, p => p.game_id === id), [idx, id])
   const [saving, setSaving] = useState(false)
   if (!game) return <div className="page"><TopBar title="لعبة" backTo="/games" /><Empty title="هذي اللعبة غير موجودة" text="يمكن انحذفت." /></div>
+  const base = game.base_game_id ? idx.gamesById.get(game.base_game_id) : null
+  if (base) {
+    return (
+      <div className="page">
+        <TopBar title={game.name} backTo={`/game/${base.id}`} right={me && <button className="btn small ghost" onClick={() => go(`/game/${id}/edit`)}>تعديل</button>} />
+        <div className="stack">
+          <a className="glass exp-banner" href={`#/game/${base.id}`}><Cover game={game} className="sm" /><span><small>إضافة للعبة</small><b>{base.name}</b><em>تقييمها وأقيامها في صفحة اللعبة الأصلية ←</em></span></a>
+        </div>
+      </div>
+    )
+  }
 
   const mine = me ? st.ratings.find(r => r.player_id === me.id)?.score ?? null : null
   const owner = idx.playersById.get(game.owner_id)
@@ -201,6 +213,8 @@ export function GameView({ id }) {
             <div className="pad-x"><RatingInput value={mine} onChange={rate} disabled={saving} /></div>
           </Section>
         )}
+
+        <ExpansionsSection game={game} baseAvg={st.avg} />
 
         <Section title="تقييمات الشلة">
           {ratingsSorted.length ? (
@@ -247,7 +261,7 @@ export function GameForm({ id }) {
     min_players: game?.min_players ?? '', max_players: game?.max_players ?? '',
     play_minutes: game?.play_minutes ?? '', max_minutes: game?.max_minutes ?? '',
     weight: game?.weight ?? '', year: game?.year ?? '', bgg_id: game?.bgg_id ?? '',
-    owner_id: game?.owner_id || me?.id || '',
+    owner_id: game?.owner_id || me?.id || '', base: game?.base_game_id || '',
   }))
   const [busy, setBusy] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
@@ -270,6 +284,9 @@ export function GameForm({ id }) {
         weight: f.weight === '' ? null : Math.min(5, Math.max(1, Number(f.weight))), year: n(f.year), bgg_id: n(f.bgg_id),
         owner_id: f.owner_id || null,
       }), game ? 'انحفظت اللعبة' : 'انضافت اللعبة')
+      if ((f.base || null) !== (game?.base_game_id || null)) {
+        try { await act((p, pin) => api.setGameBase(p, pin, res.id || game.id, f.base || null)) } catch { /* toast */ }
+      }
       if (game) history.back(); else location.replace(`#/game/${res.id}`)
     } catch { /* toast */ } finally { setBusy(false) }
   }
@@ -293,6 +310,12 @@ export function GameForm({ id }) {
             <select className="input" value={f.category} onChange={set('category')}>
               <option value="">بدون تصنيف</option>
               {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </Field>
+          <Field label="هل هي إضافة؟" hint="لو هي إضافة (Expansion) ما تنلعب لحالها، اختر لعبتها الأصلية. ما بتطلع في الرف لحالها، وتنلعب وتتقيّم مع الأصلية.">
+            <select className="input" value={f.base} onChange={set('base')}>
+              <option value="">لا، لعبة مستقلة</option>
+              {idx.games.filter(g => g.id !== game?.id).sort((a, b) => a.name.localeCompare(b.name)).map(g => <option key={g.id} value={g.id}>إضافة لـ {g.name}</option>)}
             </select>
           </Field>
           <Field label="رابط صورة الغلاف (اختياري)" hint="من BoardGameGeek: افتح صورة اللعبة، اضغط عليها مطوّل وانسخ عنوان الصورة.">

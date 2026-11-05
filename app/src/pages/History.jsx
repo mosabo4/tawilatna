@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { ExpTags } from './Expansions'
 import { useStore, go } from '../store'
 import { Avatar, Empty, Cover, fmtDate, fmtMonth, TopBar } from '../ui'
 
@@ -12,6 +13,7 @@ export function PlayCard({ play, showGame = true }) {
       <div className="pc-body">
         <div className="pc-head">
           <b className="pc-game">{showGame ? game?.name : fmtDate(play.played_on)}</b>
+          <ExpTags play={play} />
           {showGame && <span className="pc-date">{fmtDate(play.played_on)}</span>}
         </div>
         <ol className="pc-results">
@@ -87,7 +89,7 @@ export function PlayView({ id }) {
         <div className="glass pad">
           <a className="play-game" href={`#/game/${play.game_id}`}>
             {game && <Cover game={game} className="sm" />}
-            <div><b>{game?.name}</b><span className="muted">{fmtDate(play.played_on)}{creator ? `، سجّله ${creator.name}` : ''}</span></div>
+            <div><b>{game?.name}</b><ExpTags play={play} /><span className="muted">{fmtDate(play.played_on)}{creator ? `، سجّله ${creator.name}` : ''}</span></div>
           </a>
           <ol className="final-standings">
             {play.results.map(r => {
