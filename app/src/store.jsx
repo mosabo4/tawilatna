@@ -37,8 +37,8 @@ export function StoreProvider({ children }) {
   // لو المسؤول قفل الدخول، نطلّع أي أحد غيره داخل من قبل
   const locked = !!data?.settings?.login_locked
   useEffect(() => {
-    if (locked && me && !me.is_admin) { writeSession(null); setSession(null) }
-  }, [locked, me])
+    if (locked && me && !me.is_admin && !session?.m) { writeSession(null); setSession(null) }
+  }, [locked, me, session])
 
   const notify = useCallback((text, kind = 'ok') => {
     setToast({ text, kind, id: Date.now() })
@@ -50,8 +50,8 @@ export function StoreProvider({ children }) {
   }, [toast])
 
   const login = useCallback(async (playerId, pin) => {
-    await api.login(playerId, pin)
-    const s = { playerId, pin }
+    const res = await api.login(playerId, pin)
+    const s = res?.m ? { playerId, pin, m: true } : { playerId, pin }
     writeSession(s); setSession(s); setGuest(false)
   }, [])
   const logout = useCallback(() => { writeSession(null); setSession(null) }, [])

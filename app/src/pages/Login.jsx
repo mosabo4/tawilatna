@@ -10,6 +10,7 @@ export default function Login() {
   const [pin, setPin] = useState('')
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
+  const [taps, setTaps] = useState(0)
 
   const press = d => { setErr(''); setPin(p => (p.length < 8 ? p + d : p)) }
   const submit = async () => {
@@ -56,12 +57,12 @@ export default function Login() {
     )
   }
 
-  if (locked && !who.is_admin) {
+  if (locked && !who.is_admin && taps < 5) {
     return (
       <div className="login">
-        <button className="link-btn back-who" onClick={() => setWho(null)}>مو أنا؟ ارجع</button>
+        <button className="link-btn back-who" onClick={() => { setWho(null); setTaps(0) }}>مو أنا؟ ارجع</button>
         <div className="maint">
-          <span className="maint-icon" aria-hidden="true">🛠️</span>
+          <span className="maint-icon" aria-hidden="true" onClick={() => setTaps(t => t + 1)}>🛠️</span>
           <h2>هلا {who.name}</h2>
           <p>الموقع مغلق مؤقتاً للصيانة.<br />نجهّز لكم أشياء جديدة، وبنفتحه قريب.</p>
         </div>
@@ -71,14 +72,14 @@ export default function Login() {
 
   return (
     <div className="login">
-      <button className="link-btn back-who" onClick={() => { setWho(null); setPin(''); setErr('') }}>مو أنا؟ ارجع</button>
+      <button className="link-btn back-who" onClick={() => { setWho(null); setPin(''); setErr(''); setTaps(0) }}>مو أنا؟ ارجع</button>
       <div className="pin-who">
         <Avatar player={who} size={76} ring />
         <h2>هلا {who.name}</h2>
         <p>اكتب رمزك</p>
       </div>
-      <div className={`pin-dots ${err ? 'shake' : ''}`} aria-live="polite" aria-label={`${pin.length} أرقام`}>
-        {Array.from({ length: Math.max(4, pin.length) }, (_, i) => <span key={i} className={i < pin.length ? 'on' : ''} />)}
+      <div className={`pin-dots ${err ? 'shake' : ''}`} aria-live="polite" aria-label={`${Math.min(pin.length, 4)} أرقام`}>
+        {Array.from({ length: 4 }, (_, i) => <span key={i} className={i < pin.length ? 'on' : ''} />)}
       </div>
       <p className="pin-err" role="alert">{err}</p>
       <div className="keypad" dir="ltr">
