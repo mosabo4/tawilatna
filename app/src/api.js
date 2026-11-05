@@ -10,7 +10,7 @@ const sb = DEMO ? null : createClient(URL, KEY, { auth: { persistSession: false 
 export const ERRORS = {
   bad_pin: 'الرمز غير صحيح',
   locked: 'محاولات كثيرة خاطئة. جرّب بعد 10 دقائق',
-  closed: 'الدخول مقفل مؤقتاً، نرتّب الموقع وبنفتحه قريب. تقدر تتفرج بدون دخول',
+  closed: 'الموقع مقفل مؤقتاً، نرتّب أشياء وبنفتحه قريب',
   no_player: 'هذا اللاعب غير موجود',
   forbidden: 'هذا الإجراء للمسؤول أو لمن سجّله فقط',
   no_players: 'اختر لاعب واحد على الأقل',

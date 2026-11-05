@@ -68,11 +68,11 @@ function LockToggle() {
   const [busy, setBusy] = useState(false)
   const flip = async () => {
     setBusy(true)
-    try { await act((p, pin) => api.setLoginLock(p, pin, !locked), locked ? 'انفتح الدخول للكل' : 'انقفل الدخول، أنت بس تقدر تدخل') } catch { /* toast */ } finally { setBusy(false) }
+    try { await act((p, pin) => api.setLoginLock(p, pin, !locked), locked ? 'انفتح الدخول للكل' : 'انقفل الموقع، أنت بس تقدر تدخل') } catch { /* toast */ } finally { setBusy(false) }
   }
   return (
     <div className="pad lock-row">
-      <div><b>{locked ? '🔒 الدخول مقفل' : '🔓 الدخول مفتوح'}</b><p className="hint">{locked ? 'أنت بس تقدر تدخل. الباقين يتفرجون بدون دخول.' : 'الكل يقدر يدخل برمزه.'}</p></div>
+      <div><b>{locked ? '🔒 الدخول مقفل' : '🔓 الدخول مفتوح'}</b><p className="hint">{locked ? 'الموقع مقفل على الكل: ما أحد يقدر يدخل ولا يتفرج غيرك.' : 'الكل يقدر يدخل برمزه.'}</p></div>
       <button className={`btn small ${locked ? 'primary' : 'ghost'}`} disabled={busy} onClick={flip}>{locked ? 'افتح للكل' : 'اقفل'}</button>
     </div>
   )

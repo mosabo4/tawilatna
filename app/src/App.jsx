@@ -63,7 +63,7 @@ function Main({ r }) {
 }
 
 export default function App() {
-  const { idx, loadError, reload, me, guest } = useStore()
+  const { idx, data, loadError, reload, me, guest } = useStore()
   const r = useRoute()
 
   if (!idx) {
@@ -76,7 +76,8 @@ export default function App() {
       </div>
     )
   }
-  if (!me && !guest) return <><Login /><Toast /></>
+  const locked = !!data?.settings?.login_locked
+  if (!me && (!guest || locked)) return <><Login /><Toast /></>
 
   if (r[0] === 'recap') return <><Recap month={r[1] || new Date().toISOString().slice(0, 7)} key={r[1]} /><Toast /></>
 
