@@ -3,7 +3,7 @@ import { useStore } from '../store'
 import { Avatar, Section } from '../ui'
 import { usePerks, PALETTE, FRAMES, TITLE_STYLES, TitleBadge } from '../perks'
 import { STICKERS, Sticker } from '../stickers'
-import { Character, CUSTOM, OPTION_NAMES, ACTIONS, Stage } from '../characters'
+import { Character, CUSTOM, OPTION_NAMES, ACTIONS, Stage, IMG_CHARS, imgSrc } from '../characters'
 
 function Lock({ level, L, title, children }) {
   const open = L >= level
@@ -21,6 +21,24 @@ export function CharacterEditor() {
   const { perks, set, level: L, active } = usePerks()
   const ch = perks.char || {}
   const setCh = (k, v) => set({ char: { ...ch, [k]: v } })
+  const ic = IMG_CHARS[me.name.trim()]
+  const curStyle = ch.style ?? ic?.def
+  if (ic) {
+    const s = ic.styles[curStyle]
+    return (
+      <Section title="شخصيتك">
+        <div className="style-pick">
+          {Object.entries(ic.styles).map(([k, v]) => (
+            <button key={k} className={`sp ${curStyle === k ? 'on' : ''}`} onClick={() => setCh('style', k)}>
+              <img src={imgSrc(ic.slug, k, 'idle')} alt="" /><span>{v.name}</span>
+            </button>
+          ))}
+        </div>
+        {s && <div className="pose-strip">{s.gallery.map(g => <img key={g} src={imgSrc(ic.slug, curStyle, g)} alt="" />)}</div>}
+        <p className="hint pad-x pad-b">اختر أسلوب الرسم، ويتغيّر شكل شخصيتك في كل مكان: صفحة اللاعبين، والمسرح، وحسابك.</p>
+      </Section>
+    )
+  }
   return (
     <Section title="شخصيتك">
       <div className="char-edit">

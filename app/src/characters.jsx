@@ -95,18 +95,55 @@ function Hat({ type }) {
   return null
 }
 
+// ---------- شخصيات مرسومة جاهزة (صور) ----------
+// d = اتجاه الحركة في الصورة (l يسار، r يمين) عشان نقلبها صح في المسرح
+export const IMG_CHARS = {
+  'مصعب': { slug: 'musab', def: 'd', styles: {
+    a: { name: 'ثلاثي الأبعاد', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'side', laugh: 'cheer', cry: 'idle', dance: 'cheer', cheer: ['fist', 'r'] }, gallery: ['idle', 'side', 'cheer', 'throw', 'fist'] },
+    b: { name: 'كرتون', poses: { idle: 'cross', punch: ['hammer', 'r'], hit: 'think', laugh: 'trophy', cry: 'think', dance: 'trophy', cheer: 'trophy' }, gallery: ['idle', 'cross', 'hammer', 'trophy', 'think', 'relax'] },
+    c: { name: 'مجسّم', poses: { idle: 'idle', punch: ['point', 'l'], hit: 'front', laugh: 'sit', cry: 'front', dance: ['run', 'l'], cheer: 'sit' }, gallery: ['idle', 'front', 'point', 'run', 'sit'] },
+    d: { name: 'تشيبي', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'shock', laugh: 'laugh', cry: 'shock', dance: 'cheer', cheer: 'cheer' }, gallery: ['idle', 'three', 'throw', 'laugh', 'shock', 'cheer'] },
+    e: { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'front', laugh: 'cards', cry: 'front', dance: 'jump', cheer: 'jump' }, gallery: ['idle', 'front', 'throw', 'cards', 'jump'] },
+  } },
+}
+export const imgSrc = (slug, style, pose) => `${import.meta.env.BASE_URL}chars/${slug}/${style}/${pose}.webp`
+
 // pose: idle | punch | hit | dance | laugh | cry | cheer
-export function Character({ player, custom, pose = 'idle', size = 120, flip }) {
+export function Character({ player, custom, pose = 'idle', size = 120, flip, variant = 'flat' }) {
+  const ic = IMG_CHARS[player?.name?.trim()]
+  const st = custom?.style ?? ic?.def
+  if (ic && st && st !== 'svg' && ic.styles[st]) {
+    const p = ic.styles[st].poses[pose] || ic.styles[st].poses.idle
+    const [file, dir] = Array.isArray(p) ? p : [p, null]
+    const want = flip ? 'l' : 'r'
+    const mirror = dir ? dir !== want : !!flip
+    return <img className={`chr chr-img pose-${pose} ${mirror ? 'flip' : ''}`} src={imgSrc(ic.slug, st, file)} alt={player.name} style={{ height: size * 4 / 3 }} draggable="false" />
+  }
   const look = lookOf(player, custom)
   const hat = look.hat === 'none' ? null : look.hat
   const glasses = look.glasses === 'none' ? null : look.glasses
   const mood = pose === 'hit' ? 'hit' : pose === 'laugh' ? 'laugh' : pose === 'cry' ? 'cry' : 'idle'
   const dark = shade(look.outfit, .82)
   return (
-    <svg className={`chr pose-${pose} ${flip ? 'flip' : ''}`} width={size} height={size * 4 / 3} viewBox="0 0 120 160" aria-label={player?.name}>
+    <svg className={`chr pose-${pose} v-${variant} ${flip ? 'flip' : ''}`} width={size} height={size * 4 / 3} viewBox="0 0 120 160" aria-label={player?.name}>
+      {variant !== 'flat' && (
+        <defs>
+          <filter id="stk" x="-20%" y="-20%" width="140%" height="140%">
+            <feMorphology in="SourceAlpha" operator="dilate" radius="3.2" result="d" />
+            <feFlood floodColor="#fff" /><feComposite in2="d" operator="in" result="o" />
+            <feDropShadow in="o" dx="0" dy="3" stdDeviation="2.5" floodColor="#000" floodOpacity=".35" result="os" />
+            <feMerge><feMergeNode in="os" /><feMergeNode in="SourceGraphic" /></feMerge>
+          </filter>
+          <filter id="wob" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency=".035" numOctaves="2" seed="4" result="n" />
+            <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" />
+          </filter>
+          <radialGradient id="gloss" cx="35%" cy="25%" r="70%"><stop offset="0" stopColor="#fff" stopOpacity=".45" /><stop offset=".45" stopColor="#fff" stopOpacity="0" /><stop offset="1" stopColor="#000" stopOpacity=".08" /></radialGradient>
+        </defs>
+      )}
       {look.aura && <ellipse className={`aura aura-${look.aura}`} cx="60" cy="90" rx="50" ry="66" />}
       <ellipse cx="60" cy="154" rx="30" ry="5" fill="#000" opacity=".25" className="shadow" />
-      <g className="body">
+      <g className="body" filter={variant === 'sticker' ? 'url(#stk)' : variant === 'doodle' ? 'url(#wob)' : undefined}>
         <g className="arm arm-b" style={{ transformOrigin: '40px 98px' }}>
           <rect x="30" y="94" width="13" height="34" rx="6.5" fill={dark} /><circle cx="36" cy="130" r="6.5" fill={look.skin} />
         </g>
@@ -124,6 +161,7 @@ export function Character({ player, custom, pose = 'idle', size = 120, flip }) {
           <Face look={look} mood={mood} />
           <Glasses type={mood === 'idle' ? glasses : null} />
           <Hat type={hat} />
+          {variant === 'sticker' && <ellipse cx="60" cy="60" rx="28" ry="30" fill="url(#gloss)" pointerEvents="none" />}
         </g>
         <g className="arm arm-f" style={{ transformOrigin: '80px 98px' }}>
           <rect x="77" y="94" width="13" height="34" rx="6.5" fill={look.outfit} stroke={dark} strokeWidth="1" /><circle className="fist" cx="84" cy="130" r="7" fill={look.skin} />
