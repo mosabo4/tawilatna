@@ -1,3 +1,4 @@
+import { useState } from 'react'
 // شخصيات الشلة الكرتونية (رسم أصلي بـ SVG) — كل وحدة تشبه صاحبها، وتتعدّل مع الليفلات
 /* eslint-disable react/prop-types */
 
@@ -98,10 +99,12 @@ function Hat({ type }) {
 // ---------- شخصيات مرسومة جاهزة (صور) ----------
 // d = اتجاه الحركة في الصورة (l يسار، r يمين) عشان نقلبها صح في المسرح
 export const K_POSES = ['idle', 'bust', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown', 'f_happy', 'f_angry', 'f_shock', 'f_smug', 'f_cry']
+const N = { name: 'الجديد', cards: ['card1', 'card2', 'card3', 'card4'], poses: { idle: 'card1', punch: ['punch', 'r'], dice: ['dice', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: ['fight', 'r'], jump: 'jump', flag: 'flag', crown: 'crown' }, gallery: ['card1', 'card2', 'card3', 'card4', 'fight', 'dance', 'jump', 'punch', 'hit', 'laugh', 'cry', 'dice', 'flag', 'crown'] }
 const E = { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'r'], dice: ['throw', 'r'], hit: 'front', laugh: 'cards', cry: 'front', dance: 'jump', cheer: 'jump' }, gallery: ['idle', 'front', 'three', 'cards', 'jump', 'throw'] }
 const K = { name: 'كرتون', poses: { idle: 'idle', punch: ['punch', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: 'fight' }, gallery: ['idle', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown'] }
 export const IMG_CHARS = {
-  'مصعب': { slug: 'musab', def: 'e', styles: {
+  'مصعب': { slug: 'musab', def: 'n', styles: {
+    n: N,
     k: K,
     a: { name: 'ثلاثي الأبعاد', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'side', laugh: 'cheer', cry: 'idle', dance: 'cheer', cheer: ['fist', 'r'] }, gallery: ['idle', 'side', 'cheer', 'throw', 'fist'] },
     b: { name: 'كرتون 1', poses: { idle: 'cross', punch: ['hammer', 'r'], hit: 'think', laugh: 'trophy', cry: 'think', dance: 'trophy', cheer: 'trophy' }, gallery: ['idle', 'cross', 'hammer', 'trophy', 'think', 'relax'] },
@@ -109,20 +112,22 @@ export const IMG_CHARS = {
     d: { name: 'تشيبي', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'shock', laugh: 'laugh', cry: 'shock', dance: 'cheer', cheer: 'cheer' }, gallery: ['idle', 'three', 'throw', 'laugh', 'shock', 'cheer'] },
     e: { ...E, gallery: ['idle', 'front', 'throw', 'cards', 'jump'] },
   } },
-  'هاني': { slug: 'hani', def: 'e', styles: { e: E, k: K } },
-  'محمدي': { slug: 'mohammadi', def: 'e', styles: { e: E, k: K } },
-  'معتز': { slug: 'muataz', def: 'e', styles: { e: E, k: K } },
-  'فارس': { slug: 'fares', def: 'e', styles: { e: E, k: K } },
-  'اياد': { slug: 'eyad', def: 'e', styles: { e: E, k: K } },
+  'هاني': { slug: 'hani', def: 'n', styles: { n: N, e: E, k: K } },
+  'محمدي': { slug: 'mohammadi', def: 'n', styles: { n: N, e: E, k: K } },
+  'معتز': { slug: 'muataz', def: 'n', styles: { n: N, e: E, k: K } },
+  'فارس': { slug: 'fares', def: 'n', styles: { n: N, e: E, k: K } },
+  'اياد': { slug: 'eyad', def: 'n', styles: { n: N, e: E, k: K } },
 }
 export const imgSrc = (slug, style, pose) => `${import.meta.env.BASE_URL}chars/${slug}/${style}/${pose}.webp`
 
 // pose: idle | punch | hit | dance | laugh | cry | cheer
 export function Character({ player, custom, pose = 'idle', size = 120, flip, variant = 'flat' }) {
+  const [cardPick] = useState(() => Math.floor(Math.random() * 4))
   const ic = IMG_CHARS[player?.name?.trim()]
   const st = custom?.style ?? ic?.def
   if (ic && st && st !== 'svg' && ic.styles[st]) {
-    const p = ic.styles[st].poses[pose] || (pose === 'dice' && st === 'k' ? ['dice', 'r'] : ic.styles[st].poses.punch) || ic.styles[st].poses.idle
+    const sty = ic.styles[st]
+    const p = (pose === 'idle' && sty.cards ? sty.cards[cardPick % sty.cards.length] : null) || sty.poses[pose] || (pose === 'dice' && st === 'k' ? ['dice', 'r'] : ic.styles[st].poses.punch) || ic.styles[st].poses.idle
     const [file, dir] = Array.isArray(p) ? p : [p, null]
     const want = flip ? 'l' : 'r'
     const mirror = dir ? dir !== want : !!flip
