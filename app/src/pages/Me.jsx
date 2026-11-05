@@ -2,6 +2,10 @@ import { useState } from 'react'
 import { useStore, go } from '../store'
 import { api, DEMO } from '../api'
 import { availableMonths, monthName } from '../recap'
+import Closet, { CharacterEditor } from './Closet'
+import { MyGames } from './Players'
+import { usePerks, TitleBadge } from '../perks'
+import { useLevels, LevelPill } from './Levels'
 import { Avatar, TopBar, Section, Field, Empty } from '../ui'
 
 const PALETTE = ['#D93A3A', '#2F6FDB', '#E9B425', '#2E9E5B', '#8A4FD8', '#EE7A2B', '#1BA6A6', '#D6458F', '#6B7A2E', '#4B4F58']
@@ -81,17 +85,24 @@ function LockToggle() {
 export default function Me() {
   const { me, idx, logout } = useStore()
   const [editing, setEditing] = useState(null) // player id | 'new'
+  const { active } = usePerks()
+  const levels = useLevels()
   if (!me) return <div className="page"><TopBar title="حسابي" /><Empty title="ما دخلت" /></div>
   return (
     <div className="page">
       <TopBar title="حسابي" />
       <div className="stack">
         <div className="glass pad me-card">
-          <Avatar player={me} size={48} />
-          <div><b>{me.name}</b>{me.is_admin && <span className="tag">مسؤول</span>}</div>
-          <a className="more" href={`#/player/${me.id}`}>إحصائياتي</a>
+          <span className="lv-av"><Avatar player={me} size={52} />{levels.get(me.id) && <LevelPill level={levels.get(me.id).level} />}</span>
+          <div className="me-name"><b>{me.name}</b>{active.title ? <TitleBadge title={active.title} small /> : me.is_admin && <span className="tag">مسؤول</span>}</div>
+          <a className="more" href={`#/player/${me.id}`}>صفحتي</a>
         </div>
-        <p className="hint pad-x">رمزك ثابت. لو نسيته، المسؤول يقدر يعطيك رمز جديد.</p>
+
+        <CharacterEditor />
+        <Closet />
+        <MyGames />
+
+        {me.is_admin && <h2 className="group-title">⚙️ إعدادات المسؤول</h2>}
 
         {me.is_admin && <Section title="ملخص الشهر 🎬"><RecapLauncher /></Section>}
         {me.is_admin && <Section title="دخول الشلة"><LockToggle /></Section>}
@@ -122,6 +133,7 @@ export default function Me() {
             <div className="pad"><button className="btn ghost" onClick={() => { api.reset(); location.reload() }}>رجّع البيانات التجريبية</button></div>
           </Section>
         )}
+        <p className="hint pad-x">رمزك ثابت. لو نسيته، المسؤول يقدر يعطيك رمز جديد.</p>
         <button className="btn danger-link" onClick={() => { logout(); go('/') }}>اطلع من الحساب</button>
       </div>
     </div>

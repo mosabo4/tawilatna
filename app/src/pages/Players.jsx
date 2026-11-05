@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
 import { useStore, go } from '../store'
 import { playerStats, versus } from '../stats'
-import { Avatar, Donut, TopBar, Section, Empty, fmtDate, fmtScore, ScoreBadge } from '../ui'
+import { Avatar, Donut, TopBar, Section, Empty, Cover, fmtDate, fmtScore, ScoreBadge } from '../ui'
 import { PlayCard } from './History'
-import { useLevels } from './Levels'
-import { usePerks } from '../perks'
+import { useLevels, LevelPill } from './Levels'
+import { usePerks, TitleBadge } from '../perks'
+import { Character } from '../characters'
 
 export function PlayerView({ id }) {
   const { idx, me, logout } = useStore()
@@ -139,5 +140,60 @@ export function VersusView({ a, b }) {
         {v.shared.length > 0 && <Section title="أقيامهم مع بعض"><div className="play-list">{v.shared.slice(0, 30).map(p => <PlayCard key={p.id} play={p} />)}</div></Section>}
       </div>
     </div>
+  )
+}
+
+// قائمة الشلة بشخصياتهم
+export default function PlayersList() {
+  const { idx, me } = useStore()
+  const { active } = usePerks()
+  const levels = useLevels()
+  const list = [...idx.players].sort((a, b) => (levels.get(b.id)?.xp || 0) - (levels.get(a.id)?.xp || 0))
+  return (
+    <div className="page">
+      <div className="stack">
+        <div className="crew">
+          {list.map(p => {
+            const lv = levels.get(p.id)
+            const mine = p.id === me?.id
+            return (
+              <a key={p.id} className={`glass crew-card ${mine && active.legend ? 'legend' : ''}`} href={`#/player/${p.id}`} style={{ '--c': (mine && active.color) || p.color }}>
+                <span className="crew-char"><Character player={p} custom={mine ? active.char : undefined} size={92} /></span>
+                <b>{p.name}</b>
+                {mine && active.title ? <TitleBadge title={active.title} small /> : <small>{lv?.title}</small>}
+                {lv && <span className="crew-lv"><LevelPill level={lv.level} /> ليفل</span>}
+              </a>
+            )
+          })}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ألعابي (لصفحة حسابي)
+export function MyGames() {
+  const { idx, me } = useStore()
+  const games = useMemo(() => {
+    const m = new Map()
+    for (const p of idx.plays) if (p.results.some(r => r.player_id === me.id)) m.set(p.game_id, (m.get(p.game_id) || 0) + 1)
+    const rated = new Map(idx.ratings.filter(r => r.player_id === me.id).map(r => [r.game_id, r.score]))
+    return [...m.entries()].map(([id, n]) => ({ game: idx.gamesById.get(id), n, score: rated.get(id) }))
+      .filter(x => x.game).sort((a, b) => (a.score != null) - (b.score != null) || b.n - a.n)
+  }, [idx, me])
+  if (!games.length) return null
+  return (
+    <Section title="ألعابك" action={<span className="muted small">{games.length} لعبة</span>}>
+      <div className="mini-games my-games">
+        {games.map(x => (
+          <a key={x.game.id} className="mini-game" href={`#/game/${x.game.id}`}>
+            <Cover game={x.game} className="sm" />
+            <span className="mg-name">{x.game.name}</span>
+            {x.score != null ? <ScoreBadge value={x.score} /> : <span className="rate-tag">قيّمها</span>}
+            <small className="muted">{x.n === 1 ? 'مرة' : `${x.n} مرات`}</small>
+          </a>
+        ))}
+      </div>
+    </Section>
   )
 }

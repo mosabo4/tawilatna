@@ -51,7 +51,7 @@ export default function History() {
 
   return (
     <div className="page stack">
-      <header className="page-head"><h1>السجل</h1><span className="count">{idx.plays.length} قيم</span></header>
+      <p className="muted small sub-count">{idx.plays.length} قيم مسجّل</p>
       <div className="filters row gap">
         <select className="input" value={player} onChange={e => setPlayer(e.target.value)} aria-label="فلترة حسب اللاعب">
           <option value="">كل اللاعبين</option>

@@ -1,41 +1,47 @@
-// جوائز الليفلات (تجربة على الجهاز). الإعدادات تنحفظ في المتصفح لين نربطها بالقاعدة.
+// جوائز الليفلات. الإعدادات تنحفظ في المتصفح لين نربطها بالقاعدة.
+/* eslint-disable react/prop-types */
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useStore } from './store'
 import { computeLevels } from './levels'
+import { CUSTOM } from './characters'
 
 const KEY = 'tw-perks'
 const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } }
 const write = p => { try { localStorage.setItem(KEY, JSON.stringify(p)) } catch { /* ignore */ } }
 
-// ---------- رسومات بكسل (أصلية) للطقطقة ----------
-const PIX = {
-  cry: { name: 'يبكي', rows: [
-    '..YYYY..', '.YYYYYY.', 'YKBYYKBY', 'YBYYYYBY', 'YBYKKYBY', 'YBYKKYBY', '.BYYYYB.', '.B.YY.B.'],
-    pal: { Y: '#FFD34D', K: '#3A2600', B: '#5BC8FF' } },
-  flag: { name: 'راية بيضاء', rows: [
-    'K.......', 'KWWWW...', 'KWWWWWW.', 'KWWWWWW.', 'KWWWW...', 'K.......', 'K.......', 'K.......'],
-    pal: { K: '#6B4A2B', W: '#F4F6FF' } },
-  snail: { name: 'حلزون', rows: [
-    '........', '..OOO...', '.OBBBO..', '.OBOBO.E', '.OBBOO.G', 'GGOOOGGG', 'GGGGGGG.', '........'],
-    pal: { O: '#C77A3A', B: '#F2C27A', G: '#8BD66B', E: '#3A2600' } },
-  zzz: { name: 'نايم', rows: [
-    '....ZZZ.', '......Z.', '..ZZZZ..', 'BBBBB...', 'BKBKB...', 'BBBBB...', 'BBKKB...', '.BBB....'],
-    pal: { Z: '#C3B8FF', B: '#FFD34D', K: '#3A2600' } },
-  potato: { name: 'بطاطس', rows: [
-    '..PPPP..', '.PPPPPP.', 'PPKPPKPP', 'PPPPPPPP', 'PPKKKKPP', 'PPPPPPPP', '.PPPPPP.', '..PPPP..'],
-    pal: { P: '#C9A26B', K: '#3A2600' } },
+export const PALETTE = ['#D93A3A', '#2F6FDB', '#E9B425', '#2E9E5B', '#8A4FD8', '#EE7A2B', '#1BA6A6', '#D6458F', '#00B3FF', '#FF5FA2', '#6B7A2E', '#4B4F58']
+
+export const FRAMES = [
+  { id: 'silver', name: 'فضي', level: 4 },
+  { id: 'neon', name: 'نيون', level: 5 },
+  { id: 'fire', name: 'نار', level: 6 },
+  { id: 'gold', name: 'ذهبي', level: 7 },
+  { id: 'electric', name: 'كهرباء', level: 8 },
+  { id: 'rainbow', name: 'قوس قزح', level: 9 },
+  { id: 'crown', name: 'تاج', level: 10 },
+  { id: 'diamond', name: 'ماسي', level: 12 },
+]
+
+// الألقاب المتاحة وتصميم شارة كل واحد
+export const TITLE_STYLES = {
+  'زائر الطاولة': { icon: '🚪', from: '#4B5578', to: '#2E3550', ring: '#8C96BC', min: 1 },
+  'من الشلة': { icon: '🤝', from: '#2F6FDB', to: '#5B3FD8', ring: '#9DB4FF', min: 3 },
+  'لاعب ثابت': { icon: '🛡️', from: '#1BA6A6', to: '#2E7D4F', ring: '#8FF0D6', min: 5 },
+  'خبير الدولاب': { icon: '🗝️', from: '#B8781F', to: '#7A3E12', ring: '#FFD36E', min: 8 },
+  'أسطورة الطاولة': { icon: '👑', from: '#C9A227', to: '#8A4FD8', ring: '#FFE59A', min: 10, shine: true },
+  'موسوعة': { icon: '📚', from: '#3D4FCF', to: '#1B2A7A', ring: '#AFC0FF', ach: 'g20' },
+  'على النار': { icon: '🔥', from: '#FF6A3D', to: '#B5172C', ring: '#FFC08A', ach: 'streak3' },
+  'ملك متنقل': { icon: '🌍', from: '#8A4FD8', to: '#D6458F', ring: '#F2B8FF', ach: 'catwins' },
+  'ساكن الطاولة': { icon: '🏠', from: '#2E9E5B', to: '#1F5E3A', ring: '#A6F0C2', ach: 's30' },
 }
-export const TEASES = Object.entries(PIX).map(([id, v]) => ({ id, name: v.name }))
-export function PixelArt({ id, size = 24 }) {
-  const art = PIX[id]; if (!art) return null
+export function TitleBadge({ title, small }) {
+  const st = TITLE_STYLES[title]; if (!st) return null
   return (
-    <svg width={size} height={size} viewBox="0 0 8 8" shapeRendering="crispEdges" aria-label={art.name} className="pixel">
-      {art.rows.flatMap((row, y) => [...row].map((c, x) => art.pal[c] ? <rect key={`${x}-${y}`} x={x} y={y} width="1" height="1" fill={art.pal[c]} /> : null))}
-    </svg>
+    <span className={`tbadge ${small ? 'sm' : ''} ${st.shine ? 'shine' : ''}`} style={{ '--f': st.from, '--t': st.to, '--r': st.ring }}>
+      <i aria-hidden="true">{st.icon}</i>{title}
+    </span>
   )
 }
-
-export const PALETTE = ['#D93A3A', '#2F6FDB', '#E9B425', '#2E9E5B', '#8A4FD8', '#EE7A2B', '#1BA6A6', '#D6458F', '#6B7A2E', '#4B4F58', '#00B3FF', '#FF5FA2']
 
 const Ctx = createContext({ active: {}, perks: {}, set: () => {}, level: 0, test: false })
 
@@ -44,18 +50,26 @@ export function PerksProvider({ children }) {
   const [perks, setPerks] = useState(read)
   useEffect(() => { const on = () => setPerks(read()); window.addEventListener('storage', on); return () => window.removeEventListener('storage', on) }, [])
   const set = v => { const n = { ...read(), ...v }; write(n); setPerks(n) }
-  const real = useMemo(() => (idx && me ? computeLevels(idx).get(me.id)?.level || 1 : 0), [idx, me])
+  const lv = useMemo(() => (idx && me ? computeLevels(idx).get(me.id) : null), [idx, me])
+  const real = lv?.level || 0
   const test = !!(perks.test && me?.is_admin)
   const L = test ? 99 : real
+  const doneAch = new Set(lv ? lv.achievements.filter(a => a.done).map(a => a.id) : [])
+  const titleOk = t => { const s = TITLE_STYLES[t]; return !!s && (test || (s.min ? real >= s.min : doneAch.has(s.ach))) }
+  const frameOk = f => { const x = FRAMES.find(y => y.id === f); return !!x && L >= x.level }
+  const ch = perks.char || {}
+  const charCustom = me ? Object.fromEntries(Object.entries(CUSTOM).filter(([k]) => ch[k] && L >= CUSTOM[k].level && !(k === 'hat' && ch[k] === 'crown' && L < 10)).map(([k]) => [k, ch[k]])) : {}
   const active = me ? {
     color: L >= 2 && perks.color,
-    title: L >= 3 && perks.title,
-    frame: (perks.frame === 'silver' && L >= 4) || (perks.frame === 'gold' && L >= 7) || (perks.frame === 'diamond' && L >= 12) ? perks.frame : null,
+    title: L >= 3 && perks.title && titleOk(perks.title) ? perks.title : null,
+    frame: perks.frame && frameOk(perks.frame) ? perks.frame : null,
     reacts: L >= 4,
     pin: L >= 5 && perks.pinned,
     tease: L >= 6 && perks.tease?.target && perks.tease.until > Date.now() ? perks.tease : null,
+    scene: L >= 7 && perks.scene?.target ? perks.scene : null,
     legend: L >= 10 && perks.legend,
-  } : {}
-  return <Ctx.Provider value={{ perks, set, active, level: L, realLevel: real, test }}>{children}</Ctx.Provider>
+    char: charCustom,
+  } : { char: {} }
+  return <Ctx.Provider value={{ perks, set, active, level: L, realLevel: real, test, titleOk, frameOk }}>{children}</Ctx.Provider>
 }
 export const usePerks = () => useContext(Ctx)

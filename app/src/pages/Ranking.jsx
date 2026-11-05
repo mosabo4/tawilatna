@@ -50,8 +50,8 @@ export default function Ranking() {
 
   return (
     <div className="page">
-      <header className="page-head"><h1>الترتيب</h1><span className="count">{total} قيم</span></header>
       <div className="stack">
+        <p className="muted small sub-count">{total} قيم محسوب في الترتيب</p>
         <Section
           title={cat === 'all' ? 'ترتيب الشلة' : current?.name}
           action={cat !== 'all' && <button className="link-btn" onClick={() => setCat('all')}>رجوع للعام</button>}

@@ -5,7 +5,7 @@ import Home from './pages/Home'
 import Games, { GameView, GameForm } from './pages/Games'
 import History, { PlayView } from './pages/History'
 import LogPlay from './pages/LogPlay'
-import { PlayerView, VersusView } from './pages/Players'
+import PlayersList, { PlayerView, VersusView } from './pages/Players'
 import Me from './pages/Me'
 import { Friday, Board } from './pages/Social'
 import Ranking from './pages/Ranking'
@@ -24,21 +24,45 @@ const I = {
 }
 const Icon = ({ d }) => <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{d}</svg>
 
+// الأقسام: كل قسم له تبويبات داخلية
+const SECTIONS = {
+  games: { title: 'الألعاب', tabs: [['games', 'الدولاب'], ['friday', 'الجلسة الجاية']] },
+  compete: { title: 'المنافسة', tabs: [['rank', 'الترتيب'], ['levels', 'الليفلات'], ['history', 'السجل']] },
+  shilla: { title: 'الشلة', tabs: [['board', 'اللوحة'], ['players', 'اللاعبين']] },
+}
+const SECTION_OF = { games: 'games', friday: 'games', rank: 'compete', levels: 'compete', history: 'compete', board: 'shilla', players: 'shilla' }
+
+function SectionHead({ at }) {
+  const { me } = useStore()
+  const sec = SECTIONS[SECTION_OF[at]]
+  return (
+    <header className="sec-head">
+      <div className="sec-top">
+        <h1>{sec.title}</h1>
+        {me && <a className="me-pill" href="#/me" aria-label="حسابي"><Avatar player={me} size={32} /></a>}
+      </div>
+      <nav className="subtabs" aria-label={sec.title}>
+        {sec.tabs.map(([k, t]) => <a key={k} href={`#/${k}`} className={at === k ? 'on' : ''} aria-current={at === k ? 'page' : undefined}>{t}</a>)}
+      </nav>
+    </header>
+  )
+}
+
 function Nav({ at }) {
   const { me, setGuest } = useStore()
   const tab = (href, key, label, active) => (
     <a href={href} className={`tab ${active ? 'on' : ''}`} aria-current={active ? 'page' : undefined}><Icon d={I[key]} /><span>{label}</span></a>
   )
+  const sec = SECTION_OF[at] || ({ game: 'games', play: 'compete', vs: 'compete', player: 'shilla' })[at]
   return (
     <nav className="bottom-nav" aria-label="التنقل">
       {tab('#/', 'home', 'الرئيسية', at === '')}
-      {tab('#/rank', 'rank', 'الترتيب', ['rank', 'players', 'player', 'vs'].includes(at))}
-      {tab('#/games', 'games', 'الألعاب', at === 'games' || at === 'game')}
+      {tab('#/games', 'games', 'الألعاب', sec === 'games')}
       {me
         ? <a href="#/log" className="tab-add" aria-label="سجّل قيم"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></a>
         : <button className="tab-add login" onClick={() => setGuest(false)}>ادخل</button>}
-      {tab('#/friday', 'friday', 'الجلسة', at === 'friday')}
-      {tab('#/board', 'board', 'الشلة', ['board', 'history', 'play', 'levels'].includes(at))}
+      {tab('#/rank', 'rank', 'المنافسة', sec === 'compete')}
+      {tab('#/board', 'players', 'الشلة', sec === 'shilla')}
     </nav>
   )
 }
@@ -53,7 +77,8 @@ function Main({ r }) {
     case 'log': return <LogPlay id={b} presetGame={params.get('game')} key={(b || 'new') + (params.get('game') || '')} />
     case 'history': return <History />
     case 'play': return <PlayView id={b} />
-    case 'players': case 'rank': return <Ranking />
+    case 'rank': return <Ranking />
+    case 'players': return <PlayersList />
     case 'player': return <PlayerView id={b} key={b} />
     case 'vs': return <VersusView a={b} b={c} />
     case 'me': return <Me />
@@ -89,10 +114,11 @@ export default function App() {
       {top && (
         <header className="topbar home-top">
           <h1 className="brand">طاولتنا</h1>
-          {me && <a className="me-pill" href="#/me" aria-label="حسابي"><span>{me.name}</span><Avatar player={me} size={30} /></a>}
+          {me && <a className="me-pill" href="#/me" aria-label="حسابي"><Avatar player={me} size={34} /></a>}
         </header>
       )}
       {DEMO && top && <p className="demo-banner">نسخة تجريبية: الأقيام والتقييمات وهمية</p>}
+      {SECTION_OF[r[0]] && <SectionHead at={r[0]} />}
       <main><Main r={r} /></main>
       <Nav at={r[0] || ''} />
       <Toast />

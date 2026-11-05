@@ -86,10 +86,10 @@ export default function Games() {
 
   return (
     <div className="page stack">
-      <header className="page-head">
-        <h1>{view === 'shelf' ? 'الدولاب' : 'الألعاب'}</h1><span className="count">{idx.games.length} لعبة</span>
-        {me && <button className="btn small primary" onClick={() => go('/games/new')}>أضف لعبة</button>}
-      </header>
+      <div className="games-bar">
+        <span className="muted small">{idx.games.length} لعبة</span>
+        {me && <button className="btn small primary" onClick={() => go('/games/new')}>+ أضف لعبة</button>}
+      </div>
 
       {idx.games.length > 0 && (
         <>

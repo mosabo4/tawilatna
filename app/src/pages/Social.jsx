@@ -65,7 +65,6 @@ export function Friday() {
 
   return (
     <div className="page">
-      <header className="page-head"><h1>الجلسة الجاية</h1></header>
       <div className="stack">
         <Section title="وش ودّ الشلة يجربون" action={<span className="muted small">{pickers ? `${pickers} اختاروا` : ''}</span>}>
           {ranked.length ? (
@@ -188,17 +187,7 @@ export function Board() {
   }
   return (
     <div className="page">
-      <header className="page-head"><h1>الشلة</h1></header>
       <div className="stack">
-        <div className="shilla-row">
-          {idx.players.map(p => <a key={p.id} href={`#/player/${p.id}`}><Avatar player={p} size={42} /><span>{p.name}</span></a>)}
-        </div>
-        <div className="row gap quick-links">
-          <a className="btn ghost small" href="#/players">الترتيب والإحصائيات</a>
-          <a className="btn ghost small" href="#/history">سجل الأقيام</a>
-          <a className="btn ghost small" href="#/levels">الليفلات</a>
-        </div>
-
         <Section title="اللوحة">
           {me ? (
             <form className="pad form compose" onSubmit={post}>

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { usePerks, PixelArt } from './perks'
+import { usePerks } from './perks'
+import { Sticker } from './stickers'
 import { useStore, go } from './store'
 import { catOf, weightLabel } from './categories'
 
@@ -52,18 +53,19 @@ export function Avatar({ player, size = 28, ring, frame: forced }) {
   const fr = forced !== undefined ? forced : (mine && active.frame)
   const frame = fr ? ` f-${fr}` : ''
   const tease = active.tease && player && active.tease.target === player.id
-    ? <span className="tease" style={{ '--s': `${size}px` }}><PixelArt id={active.tease.art} size={Math.max(12, Math.round(size * 0.46))} /></span> : null
+    ? <span className="tease" style={{ '--s': `${size}px` }}><Sticker id={active.tease.art} size={Math.max(14, Math.round(size * 0.5))} /></span> : null
+  const crown = fr === 'crown' ? <span className="av-crown" aria-hidden="true">👑</span> : null
   if (src) {
     return (
       <span className={`avatar photo${ring ? ' ring' : ''}${frame}`} style={{ '--c': color, '--s': `${size}px`, width: size, height: size }} aria-hidden="true">
         <span className="av-clip"><img src={src} alt="" loading="lazy" decoding="async" /></span>
         <span className="av-pop"><img src={src} alt="" loading="lazy" decoding="async" /></span>
-        {tease}
+        {crown}{tease}
       </span>
     )
   }
   const st = { '--c': color, '--s': `${size}px`, width: size, height: size, fontSize: Math.round(size * (initials(player, idx?.players).length > 1 ? 0.36 : 0.42)) }
-  return <span className={`avatar${ring ? ' ring' : ''}${frame}`} style={{ ...st, position: 'relative' }} aria-hidden="true">{initials(player, idx?.players)}{tease}</span>
+  return <span className={`avatar${ring ? ' ring' : ''}${frame}`} style={{ ...st, position: 'relative' }} aria-hidden="true">{initials(player, idx?.players)}{crown}{tease}</span>
 }
 export function PlayerTag({ player, size = 24, link = true }) {
   if (!player) return <span className="ptag muted">لاعب محذوف</span>
