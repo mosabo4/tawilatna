@@ -97,14 +97,22 @@ function Hat({ type }) {
 
 // ---------- شخصيات مرسومة جاهزة (صور) ----------
 // d = اتجاه الحركة في الصورة (l يسار، r يمين) عشان نقلبها صح في المسرح
+export const K_POSES = ['idle', 'bust', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown', 'f_happy', 'f_angry', 'f_shock', 'f_smug', 'f_cry']
+const K = { name: 'كرتون', poses: { idle: 'idle', punch: ['punch', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: 'fight' }, gallery: ['idle', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown'] }
 export const IMG_CHARS = {
-  'مصعب': { slug: 'musab', def: 'b', styles: {
+  'مصعب': { slug: 'musab', def: 'k', styles: {
+    k: K,
     a: { name: 'ثلاثي الأبعاد', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'side', laugh: 'cheer', cry: 'idle', dance: 'cheer', cheer: ['fist', 'r'] }, gallery: ['idle', 'side', 'cheer', 'throw', 'fist'] },
-    b: { name: 'كرتون', poses: { idle: 'cross', punch: ['hammer', 'r'], hit: 'think', laugh: 'trophy', cry: 'think', dance: 'trophy', cheer: 'trophy' }, gallery: ['idle', 'cross', 'hammer', 'trophy', 'think', 'relax'] },
+    b: { name: 'كرتون 1', poses: { idle: 'cross', punch: ['hammer', 'r'], hit: 'think', laugh: 'trophy', cry: 'think', dance: 'trophy', cheer: 'trophy' }, gallery: ['idle', 'cross', 'hammer', 'trophy', 'think', 'relax'] },
     c: { name: 'مجسّم', poses: { idle: 'idle', punch: ['point', 'l'], hit: 'front', laugh: 'sit', cry: 'front', dance: ['run', 'l'], cheer: 'sit' }, gallery: ['idle', 'front', 'point', 'run', 'sit'] },
     d: { name: 'تشيبي', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'shock', laugh: 'laugh', cry: 'shock', dance: 'cheer', cheer: 'cheer' }, gallery: ['idle', 'three', 'throw', 'laugh', 'shock', 'cheer'] },
     e: { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'front', laugh: 'cards', cry: 'front', dance: 'jump', cheer: 'jump' }, gallery: ['idle', 'front', 'throw', 'cards', 'jump'] },
   } },
+  'هاني': { slug: 'hani', def: 'k', styles: { k: K } },
+  'محمدي': { slug: 'mohammadi', def: 'k', styles: { k: K } },
+  'معتز': { slug: 'muataz', def: 'k', styles: { k: K } },
+  'فارس': { slug: 'fares', def: 'k', styles: { k: K } },
+  'اياد': { slug: 'eyad', def: 'k', styles: { k: K } },
 }
 export const imgSrc = (slug, style, pose) => `${import.meta.env.BASE_URL}chars/${slug}/${style}/${pose}.webp`
 
@@ -113,7 +121,7 @@ export function Character({ player, custom, pose = 'idle', size = 120, flip, var
   const ic = IMG_CHARS[player?.name?.trim()]
   const st = custom?.style ?? ic?.def
   if (ic && st && st !== 'svg' && ic.styles[st]) {
-    const p = ic.styles[st].poses[pose] || ic.styles[st].poses.idle
+    const p = ic.styles[st].poses[pose] || (pose === 'dice' && st === 'k' ? ['dice', 'r'] : ic.styles[st].poses.punch) || ic.styles[st].poses.idle
     const [file, dir] = Array.isArray(p) ? p : [p, null]
     const want = flip ? 'l' : 'r'
     const mirror = dir ? dir !== want : !!flip
@@ -176,7 +184,7 @@ export const ACTIONS = [
   { id: 'tease', label: 'يطقطق على', icon: '🤭', a: 'laugh', b: 'cry', fx: '😂' },
   { id: 'dance', label: 'يرقص مع', icon: '🕺', a: 'dance', b: 'dance', fx: '🎵' },
   { id: 'duel', label: 'يتحدى', icon: '⚔️', a: 'cheer', b: 'cheer', fx: '⚡' },
-  { id: 'dice', label: 'يرمي النرد على', icon: '🎲', a: 'punch', b: 'hit', fx: '🎲' },
+  { id: 'dice', label: 'يرمي النرد على', icon: '🎲', a: 'dice', b: 'hit', fx: '🎲' },
 ]
 
 export function Stage({ a, b, action = 'punch', customA, customB, compact }) {
