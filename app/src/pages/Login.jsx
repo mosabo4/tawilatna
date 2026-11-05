@@ -38,11 +38,11 @@ export default function Login() {
           <h1 className="brand big">طاولتنا</h1>
           <p>ألعابنا، أقيامنا، ومين يكسب مين.</p>
         </div>
-        {locked && <p className="locked-note">🔒 الموقع مقفل مؤقتاً، نرتّب أشياء وبنفتحه لكم قريب.</p>}
+
         <div className="glass login-card">
-          <h2 className="login-q">{locked ? 'دخول المسؤول' : 'مين أنت؟'}</h2>
+          <h2 className="login-q">مين أنت؟</h2>
           <div className="who-grid">
-            {idx.players.filter(p => !locked || p.is_admin).map(p => (
+            {idx.players.map(p => (
               <button key={p.id} className="who" onClick={() => setWho(p)}>
                 <Avatar player={p} size={52} />
                 <span>{p.name}</span>
@@ -52,6 +52,19 @@ export default function Login() {
         </div>
         {!locked && <button className="link-btn" onClick={() => setGuest(true)}>أتفرج بس بدون دخول</button>}
         {DEMO && <p className="demo-note">نسخة تجريبية: رمز الكل 1111</p>}
+      </div>
+    )
+  }
+
+  if (locked && !who.is_admin) {
+    return (
+      <div className="login">
+        <button className="link-btn back-who" onClick={() => setWho(null)}>مو أنا؟ ارجع</button>
+        <div className="maint">
+          <span className="maint-icon" aria-hidden="true">🛠️</span>
+          <h2>هلا {who.name}</h2>
+          <p>الموقع مغلق مؤقتاً للصيانة.<br />نجهّز لكم أشياء جديدة، وبنفتحه قريب.</p>
+        </div>
       </div>
     )
   }
