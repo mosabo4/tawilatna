@@ -23,7 +23,9 @@ function Award({ a }) {
       <div className="rc-aw-body">
         <b>{a.title}</b>
         <small>{a.desc}</small>
-        {a.empty ? <Pending /> : <div className="rc-aw-who"><Avs who={a.who} size={30} /><span><strong><Names who={a.who} /></strong><em>{a.text}</em></span></div>}
+        {a.empty ? <Pending /> : a.who.length > 3
+          ? <div className="rc-aw-who"><Avs who={a.who} size={26} /><span><strong>تعادل بين {a.who.length} من الشلة</strong><em>{a.text}</em></span></div>
+          : <div className="rc-aw-who"><Avs who={a.who} size={30} /><span><strong><Names who={a.who} /></strong><em>{a.text}</em></span></div>}
       </div>
     </div>
   )
@@ -107,6 +109,31 @@ export default function Recap({ month }) {
         <h2>جوائز الشهر {k > 0 ? <small>({k + 1})</small> : null}</h2>
         <div className="rc-awards">{part.map(a => <Award key={a.id} a={a} />)}</div>
         {k === 0 && <p className="rc-note">الجوائز تحتاج {MIN_PLAYS} أقيام على الأقل عشان ما تطلع بالحظ.</p>}
+      </div>
+    )),
+
+    <div key="know">
+      <h2>مين يعرف ألعاب أكثر؟</h2>
+      {r.knowledge.length ? (
+        <div className="rc-know">
+          {r.knowledge.map(k => (
+            <div key={k.player.id}>
+              <span className="rc-p"><Avatar player={k.player} size={30} />{k.player.name}</span>
+              <span className="rc-kbar"><span style={{ width: `${(k.known / r.knowledge[0].known) * 100}%`, '--c': k.player.color }} /></span>
+              <b>{k.known}</b>
+              <small>{k.learnedN ? `+${k.learnedN} هالشهر` : ''}</small>
+            </div>
+          ))}
+        </div>
+      ) : <Pending />}
+      <p className="rc-note">عدد الألعاب المختلفة اللي لعبها كل واحد من أول ما بدأنا نسجل. و«+» = ألعاب جديدة عليه هالشهر.</p>
+    </div>,
+
+    ...chunk(r.persona, 4).map((part, k) => (
+      <div key={'pe' + k}>
+        <h2>شخصيات الشلة {k > 0 ? <small>({k + 1})</small> : null}</h2>
+        <div className="rc-awards">{part.map(a => <Award key={a.id} a={a} />)}</div>
+        {k === 0 && <p className="rc-note">ألقاب غير الفوز: مين يتعلم، مين يعرف، ووش ذوق كل واحد.</p>}
       </div>
     )),
 

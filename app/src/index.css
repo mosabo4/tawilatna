@@ -753,3 +753,10 @@ textarea.input { resize: vertical; }
 .rc-missing li { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 14px; background: rgba(255, 196, 92, .1); font-size: 14px; }
 .rc-missing span { flex: 1; } .rc-missing b { color: #FFD892; font-size: 13px; }
 .rn-more { margin: 8px 2px 0; font-size: 12px; color: var(--muted); }
+.rc-know { display: flex; flex-direction: column; gap: 10px; }
+.rc-know > div { display: grid; grid-template-columns: minmax(110px, 180px) 1fr 44px 90px; align-items: center; gap: 12px; font-size: clamp(14px, 1.8vw, 18px); }
+.rc-know b { font-size: 1.3em; font-variant-numeric: tabular-nums; }
+.rc-know small { color: #7BE3A6; font-size: 13px; }
+.rc-kbar { height: 12px; border-radius: 99px; background: rgba(255, 255, 255, .08); overflow: hidden; }
+.rc-kbar > span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(270deg, var(--c), color-mix(in srgb, var(--c) 40%, transparent)); }
+@media (max-width: 560px) { .rc-know > div { grid-template-columns: 1fr 34px; } .rc-kbar { grid-column: 1 / -1; grid-row: 2; } .rc-know small { grid-column: 1 / -1; } }

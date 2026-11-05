@@ -128,7 +128,65 @@ export function buildRecap(idx, month) {
     return !last || (Date.now() - new Date(last + 'T00:00:00')) / 864e5 > 60
   })
 
+  // ---------- شخصيات الشلة (غير الفوز) ----------
+  const mine = (pid, list) => list.filter(p => p.results.some(r => r.player_id === pid))
+  const allUntil = idx.plays.filter(p => monthOf(p.played_on) <= month)
+  const prof = idx.players.map(pl => {
+    const ever = mine(pl.id, allUntil), now = mine(pl.id, plays)
+    const firstTime = new Map()
+    for (const p of [...ever].reverse()) if (!firstTime.has(p.game_id)) firstTime.set(p.game_id, p.played_on)
+    const learned = [...firstTime.entries()].filter(([, d]) => monthOf(d) === month).map(([id]) => G.get(id)).filter(Boolean)
+    const ws = now.map(p => G.get(p.game_id)?.weight).filter(w => w != null).map(Number)
+    const cats = new Map()
+    for (const p of now) { const c = G.get(p.game_id)?.category; if (c) cats.set(c, (cats.get(c) || 0) + 1) }
+    const topCat = [...cats.entries()].sort((x, y) => y[1] - x[1])[0]
+    const same = new Map()
+    for (const p of now) same.set(p.game_id, (same.get(p.game_id) || 0) + 1)
+    const fav = [...same.entries()].sort((x, y) => y[1] - x[1])[0]
+    const mates = new Set(now.flatMap(p => p.results.map(r => r.player_id)).filter(id => id !== pl.id))
+    const myR = idx.ratings.filter(r => r.player_id === pl.id)
+    const avgOthers = gid => { const o = idx.ratings.filter(r => r.game_id === gid && r.player_id !== pl.id).map(r => Number(r.score)); return o.length ? o.reduce((x, y) => x + y, 0) / o.length : null }
+    const diffs = myR.map(r => { const o = avgOthers(r.game_id); return o == null ? null : Math.abs(Number(r.score) - o) }).filter(x => x != null)
+    return {
+      player: pl, n: now.length,
+      known: firstTime.size, learned, learnedN: learned.length,
+      weight: ws.length >= 2 ? Math.round(ws.reduce((x, y) => x + y, 0) / ws.length * 100) / 100 : null,
+      cats: cats.size, topCat, topShare: now.length >= 3 && topCat ? Math.round(topCat[1] / now.length * 100) : 0,
+      fav, favN: fav?.[1] || 0,
+      mates: mates.size,
+      minutes: now.reduce((x, p) => x + (G.get(p.game_id)?.play_minutes || 0), 0),
+      owned: plays.filter(p => G.get(p.game_id)?.owner_id === pl.id).length,
+      ratedN: myR.length,
+      avgGiven: myR.length >= 3 ? Math.round(myR.reduce((x, r) => x + Number(r.score), 0) / myR.length * 10) / 10 : null,
+      taste: diffs.length >= 3 ? Math.round(diffs.reduce((x, y) => x + y, 0) / diffs.length * 10) / 10 : null,
+      comments: (idx.comments || []).filter(c => c.player_id === pl.id && monthOf(c.updated_at) === month).length,
+      picks: (idx.picks || []).filter(p => p.player_id === pl.id).length,
+    }
+  })
+  const catName = id => CATEGORIES.find(c => c.id === id)?.name || ''
+  const persona = []
+  const addP = (id, icon, title, desc, found, text) => persona.push({ id, icon, title, desc, ...(found ? { who: found.items.map(x => x.player), text: text(found) } : { empty: true }) })
+  const low = (arr, key) => { const v = arr.filter(x => key(x) != null); if (!v.length) return null; const m = Math.min(...v.map(key)); return { value: m, items: v.filter(x => key(x) === m) } }
+  addP('known', '📚', 'موسوعة الألعاب', 'أكثر واحد لعب ألعاب مختلفة من البداية لين هالشهر', best(prof, x => x.known, 1), f => `يعرف ${f.value} ${f.value === 1 ? 'لعبة' : 'ألعاب'}`)
+  addP('learned', '🎓', 'المتعلّم', 'أكثر واحد تعلّم ألعاب جديدة عليه هالشهر', best(prof, x => x.learnedN, 1), f => `تعلّم ${f.value}: ${f.items[0].learned.slice(0, 3).map(g => g.name).join('، ')}`)
+  addP('heavy', '🧠', 'عقل الاستراتيجية', 'أعلى متوسط صعوبة للألعاب اللي لعبها (حسب BGG)', best(prof.filter(x => x.weight != null), x => x.weight, 0), f => `متوسط الصعوبة ${f.value} من 5`)
+  addP('light', '🎈', 'ملك الجلسات الخفيفة', 'أقل متوسط صعوبة، يحب الضحك والسرعة', low(prof.filter(x => x.n >= 2), x => x.weight), f => `متوسط الصعوبة ${f.value} من 5`)
+  addP('fan', '💘', 'الوفي', 'أكثر واحد كرر نفس اللعبة', best(prof, x => x.favN, 3), f => `لعب ${G.get(f.items[0].fav[0])?.name} ${f.value} مرات`)
+  addP('special', '🎯', 'المتخصص', 'أغلب أقيامه من تصنيف واحد', best(prof, x => x.topShare, 60), f => `${f.value}% من أقيامه ${catName(f.items[0].topCat[0])}`)
+  addP('cats', '🌈', 'المتنوّع', 'لعب من أكثر عدد تصانيف', best(prof, x => x.cats, 2), f => `${f.value} تصانيف مختلفة`)
+  addP('social', '🫂', 'الاجتماعي', 'لعب مع أكثر عدد من الشلة', best(prof, x => x.mates, 2), f => `لعب مع ${f.value} من الشلة`)
+  addP('hours', '⏱️', 'ساكن الطاولة', 'أكثر وقت لعب هالشهر (تقريبي)', best(prof, x => x.minutes, 30), f => `حوالي ${Math.round(f.value / 6) / 10} ساعة`)
+  addP('owner', '🗄️', 'صاحب الدولاب', 'ألعابه هي اللي انلعبت أكثر', best(prof, x => x.owned, 1), f => `${f.value} أقيام من ألعابه`)
+  addP('critic', '🧐', 'الناقد القاسي', 'أقل متوسط تقييمات (3 تقييمات وفوق)', low(prof, x => x.avgGiven), f => `يعطي ${f.value} من 10 بالمتوسط`)
+  addP('generous', '😍', 'الكريم بالتقييم', 'أعلى متوسط تقييمات', best(prof.filter(x => x.avgGiven != null), x => x.avgGiven, 0), f => `يعطي ${f.value} من 10 بالمتوسط`)
+  addP('taste', '🎼', 'ذوقه ذوق الشلة', 'تقييماته أقرب شي لتقييمات الباقين', low(prof, x => x.taste), f => `يفرق عنهم ${f.value} درجة بس`)
+  addP('rebel', '🦄', 'عكس التيار', 'تقييماته أبعد شي عن الباقين', best(prof.filter(x => x.taste != null), x => x.taste, 0), f => `يفرق عنهم ${f.value} درجة`)
+  addP('comment', '💬', 'المعلّق', 'كتب أكثر تعليقات على الألعاب هالشهر', best(prof, x => x.comments, 1), f => `${f.value} تعليقات`)
+  addP('eager', '🙋', 'المتحمس', 'اختار أكثر ألعاب للجلسة الجاية', best(prof, x => x.picks, 1), f => `اختار ${f.value} ألعاب`)
+  const knowledge = prof.filter(x => x.known > 0).sort((a, b) => b.known - a.known)
+
   return {
+    persona, knowledge,
     month, prev, plays, ranked, prevPlays,
     numbers: { plays: plays.length, days: days.length, hours: Math.round(minutes / 6) / 10, games: gameIds.length, newGames, busiestDay, prevPlays: prevPlays.length },
     table: tableWithMove, hasPrev: prevTable.length > 0,
