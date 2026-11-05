@@ -98,7 +98,7 @@ function Hat({ type }) {
 // ---------- شخصيات مرسومة جاهزة (صور) ----------
 // d = اتجاه الحركة في الصورة (l يسار، r يمين) عشان نقلبها صح في المسرح
 export const IMG_CHARS = {
-  'مصعب': { slug: 'musab', def: 'd', styles: {
+  'مصعب': { slug: 'musab', def: 'b', styles: {
     a: { name: 'ثلاثي الأبعاد', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'side', laugh: 'cheer', cry: 'idle', dance: 'cheer', cheer: ['fist', 'r'] }, gallery: ['idle', 'side', 'cheer', 'throw', 'fist'] },
     b: { name: 'كرتون', poses: { idle: 'cross', punch: ['hammer', 'r'], hit: 'think', laugh: 'trophy', cry: 'think', dance: 'trophy', cheer: 'trophy' }, gallery: ['idle', 'cross', 'hammer', 'trophy', 'think', 'relax'] },
     c: { name: 'مجسّم', poses: { idle: 'idle', punch: ['point', 'l'], hit: 'front', laugh: 'sit', cry: 'front', dance: ['run', 'l'], cheer: 'sit' }, gallery: ['idle', 'front', 'point', 'run', 'sit'] },
