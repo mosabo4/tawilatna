@@ -98,21 +98,22 @@ function Hat({ type }) {
 // ---------- شخصيات مرسومة جاهزة (صور) ----------
 // d = اتجاه الحركة في الصورة (l يسار، r يمين) عشان نقلبها صح في المسرح
 export const K_POSES = ['idle', 'bust', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown', 'f_happy', 'f_angry', 'f_shock', 'f_smug', 'f_cry']
+const E = { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'r'], dice: ['throw', 'r'], hit: 'front', laugh: 'cards', cry: 'front', dance: 'jump', cheer: 'jump' }, gallery: ['idle', 'front', 'three', 'cards', 'jump', 'throw'] }
 const K = { name: 'كرتون', poses: { idle: 'idle', punch: ['punch', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: 'fight' }, gallery: ['idle', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown'] }
 export const IMG_CHARS = {
-  'مصعب': { slug: 'musab', def: 'k', styles: {
+  'مصعب': { slug: 'musab', def: 'e', styles: {
     k: K,
     a: { name: 'ثلاثي الأبعاد', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'side', laugh: 'cheer', cry: 'idle', dance: 'cheer', cheer: ['fist', 'r'] }, gallery: ['idle', 'side', 'cheer', 'throw', 'fist'] },
     b: { name: 'كرتون 1', poses: { idle: 'cross', punch: ['hammer', 'r'], hit: 'think', laugh: 'trophy', cry: 'think', dance: 'trophy', cheer: 'trophy' }, gallery: ['idle', 'cross', 'hammer', 'trophy', 'think', 'relax'] },
     c: { name: 'مجسّم', poses: { idle: 'idle', punch: ['point', 'l'], hit: 'front', laugh: 'sit', cry: 'front', dance: ['run', 'l'], cheer: 'sit' }, gallery: ['idle', 'front', 'point', 'run', 'sit'] },
     d: { name: 'تشيبي', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'shock', laugh: 'laugh', cry: 'shock', dance: 'cheer', cheer: 'cheer' }, gallery: ['idle', 'three', 'throw', 'laugh', 'shock', 'cheer'] },
-    e: { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'front', laugh: 'cards', cry: 'front', dance: 'jump', cheer: 'jump' }, gallery: ['idle', 'front', 'throw', 'cards', 'jump'] },
+    e: { ...E, gallery: ['idle', 'front', 'throw', 'cards', 'jump'] },
   } },
-  'هاني': { slug: 'hani', def: 'k', styles: { k: K } },
-  'محمدي': { slug: 'mohammadi', def: 'k', styles: { k: K } },
-  'معتز': { slug: 'muataz', def: 'k', styles: { k: K } },
-  'فارس': { slug: 'fares', def: 'k', styles: { k: K } },
-  'اياد': { slug: 'eyad', def: 'k', styles: { k: K } },
+  'هاني': { slug: 'hani', def: 'e', styles: { e: E, k: K } },
+  'محمدي': { slug: 'mohammadi', def: 'e', styles: { e: E, k: K } },
+  'معتز': { slug: 'muataz', def: 'e', styles: { e: E, k: K } },
+  'فارس': { slug: 'fares', def: 'e', styles: { e: E, k: K } },
+  'اياد': { slug: 'eyad', def: 'e', styles: { e: E, k: K } },
 }
 export const imgSrc = (slug, style, pose) => `${import.meta.env.BASE_URL}chars/${slug}/${style}/${pose}.webp`
 
