@@ -10,6 +10,7 @@ const sb = DEMO ? null : createClient(URL, KEY, { auth: { persistSession: false 
 export const ERRORS = {
   bad_pin: 'الرمز غير صحيح',
   locked: 'محاولات كثيرة خاطئة. جرّب بعد 10 دقائق',
+  closed: 'الدخول مقفل مؤقتاً، نرتّب الموقع وبنفتحه قريب. تقدر تتفرج بدون دخول',
   no_player: 'هذا اللاعب غير موجود',
   forbidden: 'هذا الإجراء للمسؤول أو لمن سجّله فقط',
   no_players: 'اختر لاعب واحد على الأقل',
@@ -41,12 +42,13 @@ async function sbLoad() {
   ])
   for (const r of [players, games, plays, results, ratings]) if (r.error) throw new ApiError('network')
   // الجداول الجديدة: لو التحديث ما انشغّل في القاعدة، نكمل بدونها
-  const [picks, comments, posts] = await Promise.all([
-    q('friday_picks'), q('game_comments'), q('posts').order('created_at', { ascending: false }).limit(200),
+  const [picks, comments, posts, settings] = await Promise.all([
+    q('friday_picks'), q('game_comments'), q('posts').order('created_at', { ascending: false }).limit(200), q('app_settings'),
   ])
   return {
     players: players.data, games: games.data, plays: plays.data, results: results.data, ratings: ratings.data,
     picks: picks.error ? [] : picks.data, comments: comments.error ? [] : comments.data, posts: posts.error ? [] : posts.data,
+    settings: (!settings.error && settings.data?.[0]) || {},
   }
 }
 
@@ -93,10 +95,11 @@ function dAuth(s, player, pin) {
   const p = s.players.find(x => x.id === player)
   if (!p) throw new ApiError('no_player')
   if (p.pin !== pin) throw new ApiError('bad_pin')
+  if (!p.is_admin && s.settings?.login_locked) throw new ApiError('closed')
   return p
 }
 const demo = {
-  load: async () => { const s = dGet(); return { picks: [], comments: [], posts: [], ...s, players: s.players.map(({ pin: _pin, ...p }) => p) } },
+  load: async () => { const s = dGet(); return { picks: [], comments: [], posts: [], settings: {}, ...s, players: s.players.map(({ pin: _pin, ...p }) => p) } },
   login: async (player, pin) => { dAuth(dGet(), player, pin); return { ok: true } },
   setRating: async (player, pin, game, score) => {
     const s = dGet(); dAuth(s, player, pin)
@@ -190,6 +193,11 @@ const demo = {
     }
     dSet(s); return { ok: true, id }
   },
+  setLoginLock: async (player, pin, locked) => {
+    const s = dGet(); const me = dAuth(s, player, pin)
+    if (!me.is_admin) throw new ApiError('forbidden')
+    s.settings = { ...(s.settings || {}), login_locked: locked }; dSet(s); return { ok: true, locked }
+  },
   reset: () => { try { localStorage.removeItem(DKEY) } catch { /* ignore */ } },
 }
 
@@ -206,6 +214,7 @@ const real = {
   addPost: (p, pin, body) => sbCall('add_post', { p_player: p, p_pin: pin, p_body: body }),
   deletePost: (p, pin, id) => sbCall('delete_post', { p_player: p, p_pin: pin, p_post: id }),
   savePlayer: (p, pin, d) => sbCall('save_player', { p_player: p, p_pin: pin, p_data: d }),
+  setLoginLock: (p, pin, locked) => sbCall('set_login_lock', { p_player: p, p_pin: pin, p_locked: locked }),
 }
 
 export const api = DEMO ? demo : real

@@ -1,62 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useStore, go } from '../store'
-import { leaderboard, playerStats, versus } from '../stats'
-import { Avatar, Donut, TopBar, Section, Empty, pct, fmtDate, fmtScore, ScoreBadge } from '../ui'
+import { playerStats, versus } from '../stats'
+import { Avatar, Donut, TopBar, Section, Empty, fmtDate, fmtScore, ScoreBadge } from '../ui'
 import { PlayCard } from './History'
-
-export default function Players() {
-  const { idx, me } = useStore()
-  const board = useMemo(() => leaderboard(idx), [idx])
-  const [a, setA] = useState(me?.id || idx.players[0]?.id || '')
-  const [b, setB] = useState(() => idx.players.find(p => p.id !== (me?.id || idx.players[0]?.id))?.id || '')
-  return (
-    <div className="page">
-      <header className="page-head"><h1>اللاعبين</h1></header>
-      <div className="stack">
-        <div className="player-list">
-          {board.map((s, i) => (
-            <a key={s.player.id} className="player-row" href={`#/player/${s.player.id}`}>
-              <span className="rank">{i + 1}</span>
-              <Avatar player={s.player} size={40} />
-              <span className="pr-name">{s.player.name}{s.player.id === me?.id && <small> (أنت)</small>}</span>
-              <span className="pr-stat"><b>{s.plays}</b><small>قيم</small></span>
-              <span className="pr-stat"><b>{s.wins}</b><small>فوز</small></span>
-              <span className="pr-stat main"><b>{s.points ?? '—'}</b><small>نقطة</small></span>
-            </a>
-          ))}
-        </div>
-
-        <Section title="كيف تنحسب النقاط؟" className="how">
-          <div className="pad-x pad-b how-body">
-            <p>كل قيم ياخذ فيه اللاعب نقاط حسب مركزه، مو بس الأول:</p>
-            <ul>
-              <li>الأول ياخذ <b>100</b> والأخير <b>0</b>، واللي بينهم بالتدريج. في قيم من 5: الأول 100، الثاني 75، الثالث 50، الرابع 25، الخامس 0.</li>
-              <li>التعادل يتقسم بالنص بين المتعادلين.</li>
-              <li>النقاط النهائية = معدّل كل أقيامك.</li>
-              <li>عشان اللي لعب قليل ما يتصدر بالحظ، ينضاف لكل واحد 4 أقيام «متوسطة» (50). مع الوقت يقل أثرها وتبان نقاطك الحقيقية.</li>
-            </ul>
-            <p className="muted small">مثال: اللي لعب 3 وفاز فيها كلها نقاطه {Math.round((3 + 2) / 7 * 100)}، واللي لعب 10 وكلها أول نقاطه {Math.round((10 + 2) / 14 * 100)}.</p>
-          </div>
-        </Section>
-
-        {idx.players.length > 1 && (
-          <Section title="مين يغلب مين؟">
-            <div className="vs-pick pad-x">
-              <select className="input" value={a} onChange={e => setA(e.target.value)} aria-label="اللاعب الأول">
-                {idx.players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-              <span className="vs-x">ضد</span>
-              <select className="input" value={b} onChange={e => setB(e.target.value)} aria-label="اللاعب الثاني">
-                {idx.players.filter(p => p.id !== a).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
-            </div>
-            <div className="pad-x pad-b"><button className="btn primary wide" disabled={!a || !b || a === b} onClick={() => go(`/vs/${a}/${b}`)}>قارن</button></div>
-          </Section>
-        )}
-      </div>
-    </div>
-  )
-}
 
 export function PlayerView({ id }) {
   const { idx, me, logout } = useStore()
@@ -69,14 +15,14 @@ export function PlayerView({ id }) {
 
   return (
     <div className="page">
-      <TopBar title={player.name} backTo="/players" right={me?.id === id && <button className="btn small ghost" onClick={() => go('/me')}>حسابي</button>} />
+      <TopBar title={player.name} backTo="/rank" right={me?.id === id && <button className="btn small ghost" onClick={() => go('/me')}>حسابي</button>} />
       <div className="stack">
         <div className="glass lead">
           <Donut value={(st.points ?? 0) / 100}><Avatar player={player} size={56} /></Donut>
           <div className="lead-info">
-            <small>{st.currentStreak >= 2 ? `على سلسلة ${st.currentStreak} فوز` : 'النقاط'}</small>
+            <small>{st.currentStreak >= 2 ? `على سلسلة ${st.currentStreak} فوز` : 'المستوى'}</small>
             <strong>{player.name}</strong>
-            <p>{st.plays ? `${st.points} نقطة · يفوز في ${pct(st.winRate)} من أقيامه` : 'ما لعب للحين'}</p>
+            <p>{st.plays ? `المستوى ${st.points ?? '—'} · فاز ${st.wins} من ${st.plays} قيم` : 'ما لعب للحين'}</p>
           </div>
         </div>
         <div className="row3">

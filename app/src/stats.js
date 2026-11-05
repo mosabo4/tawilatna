@@ -17,14 +17,35 @@ export function buildIndex(data) {
   return { ...data, playersById: players, gamesById: games, plays }
 }
 
-// النقاط: معدل المركز في كل الأقيام، مع 4 أقيام «متوسطة» وهمية تنضاف للكل،
-// عشان اللي لعب قليل ما يطير فوق بالحظ، وكل ما لعب أكثر تقرب نقاطه من مستواه الحقيقي
-export const PRIOR = 4
+// ---------- الترتيب ----------
+// كل قيم: نقطة عن كل لاعب خلّصت قدّامه، ونص نقطة لو تعادلتوا.
+// المستوى = (نقاطك + 5) ÷ (اللي لعبت ضدهم + 10)، يعني كأن الكل بدأ بـ 10 خصوم وهميين غلب نصهم،
+// عشان اللي لعب قليل ما يطير فوق بالحظ. الألعاب التعاونية ما تدخل.
+export const PRIOR = 10
+export const levelOf = (beat, faced) => (faced ? Math.round(((beat + PRIOR / 2) / (faced + PRIOR)) * 100) : null)
+export const counts = (play, game) => play.results.length > 1 && game?.category !== 'coop'
+
+export function standings(idx, filter = () => true) {
+  const m = new Map(idx.players.map(p => [p.id, { player: p, plays: 0, wins: 0, beat: 0, faced: 0 }]))
+  for (const p of idx.plays) {
+    const g = idx.gamesById.get(p.game_id)
+    if (!counts(p, g) || !filter(p, g)) continue
+    for (const r of p.results) {
+      const s = m.get(r.player_id); if (!s) continue
+      s.plays++; if (r.position === 1) s.wins++
+      for (const o of p.results) if (o !== r) { s.faced++; s.beat += o.position > r.position ? 1 : o.position === r.position ? 0.5 : 0 }
+    }
+  }
+  return [...m.values()]
+    .map(s => ({ ...s, points: levelOf(s.beat, s.faced), raw: s.faced ? s.beat / s.faced : null }))
+    .sort((a, b) => (b.plays > 0) - (a.plays > 0) || (b.points ?? 0) - (a.points ?? 0) || b.wins - a.wins || b.plays - a.plays)
+}
+
 const winnersOf = play => play.results.filter(r => r.position === 1).map(r => r.player_id)
 
 export function playerStats(idx, playerId) {
   const mine = idx.plays.filter(p => p.results.some(r => r.player_id === playerId))
-  let wins = 0, podiums = 0, rel = 0
+  let wins = 0, podiums = 0, rel = 0, beat = 0, faced = 0
   const perGame = new Map()
   for (const p of mine) {
     const r = p.results.find(x => x.player_id === playerId)
@@ -32,11 +53,11 @@ export function playerStats(idx, playerId) {
     const won = r.position === 1
     if (won) wins++
     if (r.position <= 3 && n > 1) podiums++
-    // كم نسبة اللاعبين اللي خلّص قدّامهم: الأول 1، الأخير 0، والتعادل نص
     if (n > 1) {
-      let beat = 0
-      for (const o of p.results) if (o !== r) beat += o.position > r.position ? 1 : o.position === r.position ? 0.5 : 0
-      rel += beat / (n - 1)
+      let b = 0
+      for (const o of p.results) if (o !== r) b += o.position > r.position ? 1 : o.position === r.position ? 0.5 : 0
+      rel += b / (n - 1)
+      if (counts(p, idx.gamesById.get(p.game_id))) { beat += b; faced += n - 1 }
     } else rel += 0.5
     const g = perGame.get(p.game_id) || { plays: 0, wins: 0 }
     g.plays++; if (won) g.wins++
@@ -58,7 +79,7 @@ export function playerStats(idx, playerId) {
     plays: mine.length, wins, podiums,
     winRate: mine.length ? wins / mine.length : 0,
     avgFinish: mine.length ? rel / mine.length : 0,
-    points: mine.length ? Math.round(((rel + PRIOR * 0.5) / (mine.length + PRIOR)) * 100) : null,
+    points: levelOf(beat, faced), beat, faced,
     currentStreak: current, bestStreak: best,
     games, mostPlayed, bestGame, favorite, ratedCount: myRatings.length,
     lastPlayed: mine[0]?.played_on || null,
@@ -66,11 +87,7 @@ export function playerStats(idx, playerId) {
   }
 }
 
-export function leaderboard(idx) {
-  return idx.players
-    .map(p => ({ player: p, ...playerStats(idx, p.id) }))
-    .sort((a, b) => (b.plays > 0) - (a.plays > 0) || (b.points ?? 0) - (a.points ?? 0) || b.wins - a.wins || b.plays - a.plays)
-}
+export const leaderboard = idx => standings(idx)
 
 export function gameStats(idx, gameId) {
   const plays = idx.plays.filter(p => p.game_id === gameId)

@@ -43,6 +43,22 @@ function PlayerEditor({ player, onDone }) {
   )
 }
 
+function LockToggle() {
+  const { data, act } = useStore()
+  const locked = !!data?.settings?.login_locked
+  const [busy, setBusy] = useState(false)
+  const flip = async () => {
+    setBusy(true)
+    try { await act((p, pin) => api.setLoginLock(p, pin, !locked), locked ? 'انفتح الدخول للكل' : 'انقفل الدخول، أنت بس تقدر تدخل') } catch { /* toast */ } finally { setBusy(false) }
+  }
+  return (
+    <div className="pad lock-row">
+      <div><b>{locked ? '🔒 الدخول مقفل' : '🔓 الدخول مفتوح'}</b><p className="hint">{locked ? 'أنت بس تقدر تدخل. الباقين يتفرجون بدون دخول.' : 'الكل يقدر يدخل برمزه.'}</p></div>
+      <button className={`btn small ${locked ? 'primary' : 'ghost'}`} disabled={busy} onClick={flip}>{locked ? 'افتح للكل' : 'اقفل'}</button>
+    </div>
+  )
+}
+
 export default function Me() {
   const { me, idx, logout } = useStore()
   const [editing, setEditing] = useState(null) // player id | 'new'
@@ -57,6 +73,8 @@ export default function Me() {
           <a className="more" href={`#/player/${me.id}`}>إحصائياتي</a>
         </div>
         <p className="hint pad-x">رمزك ثابت. لو نسيته، المسؤول يقدر يعطيك رمز جديد.</p>
+
+        {me.is_admin && <Section title="دخول الشلة"><LockToggle /></Section>}
 
         {me.is_admin && (
           <Section title="إدارة اللاعبين" action={editing !== 'new' && <button className="btn small ghost" onClick={() => setEditing('new')}>أضف لاعب</button>}>

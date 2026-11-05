@@ -34,6 +34,12 @@ export function StoreProvider({ children }) {
   const idx = useMemo(() => (data ? buildIndex(data) : null), [data])
   const me = idx && session ? idx.playersById.get(session.playerId) || null : null
 
+  // لو المسؤول قفل الدخول، نطلّع أي أحد غيره داخل من قبل
+  const locked = !!data?.settings?.login_locked
+  useEffect(() => {
+    if (locked && me && !me.is_admin) { writeSession(null); setSession(null) }
+  }, [locked, me])
+
   const notify = useCallback((text, kind = 'ok') => {
     setToast({ text, kind, id: Date.now() })
   }, [])
@@ -60,6 +66,7 @@ export function StoreProvider({ children }) {
       return res
     } catch (e) {
       if (e.code === 'bad_pin') { logout(); notify('انتهت الجلسة، ادخل برمزك مرة ثانية', 'err') }
+      else if (e.code === 'closed') { logout(); notify(e.message, 'err') }
       else notify(e.message, 'err')
       throw e
     }

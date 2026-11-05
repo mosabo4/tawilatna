@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { api } from '../api'
-import { gameStats, allGameStats, daysSince } from '../stats'
+import { gameStats, allGameStats, daysSince, standings } from '../stats'
+import { StandingRows } from './Ranking'
 import { CATEGORIES, catOf, weightLabel } from '../categories'
 import { Cover, Empty, ScoreBadge, TopBar, Section, PlayerTag, RatingInput, Field, Confirm, Weight, ago, fmtDate, fmtScore, playersText, timeText, range, IconUsers, IconClock } from '../ui'
 import { PlayCard } from './History'
@@ -162,6 +163,7 @@ export function GameView({ id }) {
   const { idx, me, act } = useStore()
   const game = idx.gamesById.get(id)
   const st = useMemo(() => (game ? gameStats(idx, id) : null), [idx, id, game])
+  const table = useMemo(() => standings(idx, p => p.game_id === id), [idx, id])
   const [saving, setSaving] = useState(false)
   if (!game) return <div className="page"><TopBar title="لعبة" backTo="/games" /><Empty title="هذي اللعبة غير موجودة" text="يمكن انحذفت." /></div>
 
@@ -217,17 +219,9 @@ export function GameView({ id }) {
           ) : <p className="muted pad">كن أول واحد يقيّمها.</p>}
         </Section>
 
-        {st.champions.length > 0 && (
-          <Section title="مين يكسب فيها">
-            <ul className="bars">
-              {st.champions.map(ch => (
-                <li key={ch.player.id}>
-                  <PlayerTag player={ch.player} size={22} />
-                  <span className="bar"><span style={{ width: `${(ch.wins / st.champions[0].wins) * 100}%` }} /></span>
-                  <b className="num">{ch.wins}<small> من {ch.plays}</small></b>
-                </li>
-              ))}
-            </ul>
+        {table.some(r => r.plays > 0) && (
+          <Section title="ترتيب هذي اللعبة" action={<a className="more" href="#/rank">كيف ينحسب؟</a>}>
+            <StandingRows rows={table} me={me} compact />
             {st.topScore && <p className="muted pad-x pad-b small">أعلى نقاط: <b>{st.topScore.score}</b> لـ {idx.playersById.get(st.topScore.player_id)?.name} في {fmtDate(st.topScore.played_on)}</p>}
           </Section>
         )}

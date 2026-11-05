@@ -4,7 +4,8 @@ import { Avatar } from '../ui'
 import { DEMO } from '../api'
 
 export default function Login() {
-  const { idx, login, setGuest } = useStore()
+  const { idx, data, login, setGuest } = useStore()
+  const locked = !!data?.settings?.login_locked
   const [who, setWho] = useState(null)
   const [pin, setPin] = useState('')
   const [err, setErr] = useState('')
@@ -37,6 +38,7 @@ export default function Login() {
           <h1 className="brand big">طاولتنا</h1>
           <p>ألعابنا، أقيامنا، ومين يكسب مين.</p>
         </div>
+        {locked && <p className="locked-note">🔒 الدخول مقفل مؤقتاً، نرتّب الموقع وبنفتحه قريب. تقدرون تتفرجون بدون دخول.</p>}
         <div className="glass login-card">
           <h2 className="login-q">مين أنت؟</h2>
           <div className="who-grid">

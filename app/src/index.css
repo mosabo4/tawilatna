@@ -357,10 +357,10 @@ textarea.input { resize: vertical; }
 /* ---------- التنقل ---------- */
 .bottom-nav {
   position: fixed; inset: auto 0 0 0; z-index: 10; height: calc(var(--nav-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
-  display: grid; grid-template-columns: repeat(5, 1fr); align-items: center; max-width: 640px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); align-items: center; max-width: 640px; margin: 0 auto;
   background: rgba(14, 16, 36, .84); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); border-top: 1px solid var(--line);
 }
-.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10.5px; color: var(--muted-2); padding: 6px 0; }
+.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10.5px; white-space: nowrap; color: var(--muted-2); padding: 6px 0; }
 .tab.on { color: #fff; }
 .tab-add { justify-self: center; width: 50px; height: 50px; border-radius: 50%; border: 0; background: var(--grad); color: #fff; display: grid; place-items: center; box-shadow: 0 8px 22px -6px rgba(120, 100, 255, .85); }
 .tab-add.login { font-size: 13px; font-weight: 600; }
@@ -624,3 +624,38 @@ textarea.input { resize: vertical; }
 .how-body ul { margin: 0 0 8px; padding-inline-start: 18px; display: flex; flex-direction: column; gap: 5px; font-size: 13.5px; color: var(--muted); line-height: 1.7; }
 .how-body b { color: var(--ink); }
 .rank-list .w { min-width: 30px; }
+
+/* ---------- قفل الدخول ---------- */
+.locked-note { margin: 0 0 4px; padding: 12px 14px; border-radius: 16px; background: rgba(255, 196, 92, .12); border: 1px solid rgba(255, 196, 92, .35); color: #FFD892; font-size: 13.5px; line-height: 1.7; text-align: center; }
+.lock-row { display: flex; align-items: center; gap: 12px; }
+.lock-row > div { flex: 1; }
+.lock-row p { margin: 2px 0 0; }
+
+/* ---------- صفحة الترتيب ---------- */
+.standings { list-style: none; margin: 0; padding: 4px 8px 8px; }
+.standings a { display: flex; align-items: center; gap: 10px; padding: 9px 8px; border-radius: 16px; color: inherit; text-decoration: none; }
+.standings li + li a { border-top: 1px solid var(--line); border-radius: 0; }
+.standings li.mine a { background: rgba(91, 124, 255, .12); border-radius: 16px; }
+.st-rank { width: 24px; height: 24px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 12.5px; font-weight: 600; color: var(--muted); background: var(--card); font-variant-numeric: tabular-nums; }
+.st-rank.r1 { background: linear-gradient(135deg, #FFD36E, #E9A23B); color: #3A2600; }
+.st-rank.r2 { background: linear-gradient(135deg, #E4E8F2, #A9B1C6); color: #22273A; }
+.st-rank.r3 { background: linear-gradient(135deg, #E6A777, #B06A3C); color: #2B1608; }
+.st-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.st-main b { font-size: 15px; font-weight: 600; }
+.st-main small { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 11.5px; color: var(--muted); }
+.st-level { display: flex; flex-direction: column; align-items: center; min-width: 52px; padding: 4px 6px; border-radius: 12px; background: var(--card); }
+.st-level b { font-size: 19px; font-weight: 700; line-height: 1.1; background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; font-variant-numeric: tabular-nums; }
+.st-level small { font-size: 10px; color: var(--muted-2); }
+.standings.compact .st-main b { font-size: 14px; }
+.standings.compact .st-level b { font-size: 16px; }
+.st-idle { margin: 0; padding: 0 16px 14px; font-size: 12px; color: var(--muted-2); }
+.how-body h3 { margin: 14px 0 4px; font-size: 14.5px; font-weight: 600; }
+.how-body h3:first-child { margin-top: 2px; }
+.how-body p { line-height: 1.8; color: var(--muted); font-size: 13.5px; }
+.how-ex { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+.how-ex > div { display: flex; flex-direction: column; gap: 2px; padding: 10px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); font-size: 12px; }
+.how-ex span { color: var(--muted); }
+.how-ex b { font-size: 16px; }
+.how-ex i { font-style: normal; color: var(--muted-2); text-decoration: line-through; }
+.how-ex em { font-style: normal; color: var(--accent-text); font-weight: 600; direction: ltr; text-align: right; unicode-bidi: plaintext; }
+.lead-more { display: inline-block; margin-top: 4px; font-size: 12px; color: var(--accent-text); }

@@ -31,12 +31,13 @@ export default function Home() {
   return (
     <div className="page stack">
       {leader ? (
-        <a className="glass lead" href={`#/player/${leader.player.id}`}>
+        <a className="glass lead" href="#/rank">
           <Donut value={leader.points / 100}><Avatar player={leader.player} size={56} /></Donut>
           <div className="lead-info">
             <small>المتصدر</small>
             <strong>{leader.player.name}</strong>
-            <p>{leader.points} نقطة · فاز {leader.wins} من {leader.plays} قيم</p>
+            <p>المستوى {leader.points} · فاز {leader.wins} من {leader.plays} قيم</p>
+            <span className="lead-more">الترتيب الكامل ←</span>
           </div>
         </a>
       ) : (
@@ -52,24 +53,6 @@ export default function Home() {
         <a href="#/games"><b>{idx.games.length}</b><span>لعبة</span></a>
         <a href="#/history"><b>{thisMonth}</b><span>هالشهر</span></a>
       </div>
-
-      <Section title="الترتيب بالنقاط" action={<a className="more" href="#/players">كيف تنحسب؟</a>}>
-        {board.some(b => b.plays) ? (
-          <ol className="rank-list">
-            {board.map((b, i) => (
-              <li key={b.player.id} className={b.player.id === me?.id ? 'mine' : ''}>
-                <a href={`#/player/${b.player.id}`}>
-                  <span className="rk">{i + 1}</span>
-                  <Avatar player={b.player} size={28} />
-                  <span className="nm">{b.player.name}</span>
-                  <span className="pc">{b.plays ? `${b.wins} فوز من ${b.plays}` : 'ما لعب'}</span>
-                  <span className="w">{b.points ?? '—'}</span>
-                </a>
-              </li>
-            ))}
-          </ol>
-        ) : <p className="muted pad">ما سجلتوا أي قيم للحين. أول ما تخلصون قيم، سجلوه من زر الزائد تحت.</p>}
-      </Section>
 
       {idx.plays.length > 0 && (
         <Section title="آخر الأقيام" action={<a className="more" href="#/history">السجل</a>}>
