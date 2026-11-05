@@ -833,3 +833,51 @@ textarea.input { resize: vertical; }
 .lv-titles span { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 12px; background: var(--card); font-size: 12.5px; }
 .lv-titles b { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--grad); font-size: 11px; flex: none; }
 .lv-titles small { margin-inline-start: auto; color: var(--muted-2); font-size: 10.5px; }
+
+/* ---------- جوائز الليفلات ---------- */
+.avatar.f-silver { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #CBD3E3, 0 0 12px rgba(203, 211, 227, .5); }
+.avatar.f-gold::after, .avatar.f-diamond::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; padding: 3px; z-index: 0; pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: ringSpin 3s linear infinite; }
+.avatar.f-gold::after { background: conic-gradient(#FFE59A, #E9A23B, #FFF6D0, #B8781F, #FFE59A); filter: drop-shadow(0 0 4px rgba(255, 200, 80, .7)); }
+.avatar.f-diamond::after { background: conic-gradient(#B9F3FF, #7FB8FF, #FFFFFF, #C9A7FF, #8EF0FF, #B9F3FF); filter: drop-shadow(0 0 6px rgba(160, 230, 255, .9)); animation-duration: 2s; }
+.avatar.photo .av-pop { z-index: 1; }
+@keyframes ringSpin { to { transform: rotate(360deg); } }
+.tease { position: absolute; z-index: 3; top: calc(var(--s) * -.12); inset-inline-start: calc(var(--s) * -.3); filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .5)); animation: teaseBob 1.6s ease-in-out infinite; line-height: 0; }
+@keyframes teaseBob { 50% { transform: translateY(-2px) rotate(-6deg); } }
+.pixel { image-rendering: pixelated; }
+.perks { display: flex; flex-direction: column; gap: 8px; padding: 4px 12px 10px; }
+.perk { display: flex; gap: 10px; padding: 12px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); }
+.perk.locked { opacity: .5; }
+.perk.locked .perk-body > :not(b) { pointer-events: none; }
+.perk-lvl { flex: none; min-width: 34px; height: 24px; padding: 0 6px; border-radius: 99px; display: grid; place-items: center; font-size: 11px; font-weight: 700; background: var(--grad); color: #fff; }
+.perk.locked .perk-lvl { background: var(--card-strong); color: var(--muted); }
+.perk-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+.perk-body > b { font-size: 14px; }
+.perk-body p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+.sw.none { display: grid; place-items: center; background: var(--card-strong); color: var(--muted); font-size: 14px; }
+.frames { display: flex; gap: 8px; flex-wrap: wrap; }
+.frames button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 10px 8px; min-width: 64px; border-radius: 14px; border: 1px solid var(--line); background: transparent; color: var(--ink); font-size: 12px; }
+.frames button.on { border-color: var(--accent-text); background: rgba(91, 124, 255, .15); }
+.frames button:disabled { opacity: .45; }
+.frames small { font-size: 10px; color: var(--muted-2); }
+.avatar-demo { padding-top: 6px; }
+.avatar-demo.f-silver .avatar { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #CBD3E3; }
+.tease-pick { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+.tease-pick .input { width: 100%; }
+.arts { display: flex; gap: 6px; flex-wrap: wrap; }
+.arts button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--muted); }
+.arts button.on { border-color: var(--accent-text); background: rgba(91, 124, 255, .15); color: var(--ink); }
+.arts small { font-size: 10px; }
+.tease-now { display: flex; align-items: center; gap: 10px; padding-top: 8px; }
+.tease-now p { flex: 1; }
+.test-switch { padding-bottom: 6px; }
+.test-tag { background: rgba(255, 196, 92, .2); color: #FFD892; }
+.post.pinned { background: rgba(255, 196, 92, .07); }
+.pin-tag { font-size: 11px; color: #FFD892; }
+.reacts { display: flex; gap: 4px; margin-top: 6px; align-items: center; }
+.reacts button { border: 1px solid var(--line); background: var(--card); border-radius: 99px; padding: 2px 8px; font-size: 14px; }
+.react-add { color: var(--muted); font-size: 12px !important; }
+.react-on { padding: 2px 8px; border-radius: 99px; background: rgba(91, 124, 255, .2); font-size: 14px; }
+.glass.lead.legend { background: linear-gradient(120deg, rgba(91, 124, 255, .35), rgba(195, 139, 255, .35), rgba(255, 143, 177, .3), rgba(91, 124, 255, .35)); background-size: 300% 100%; animation: legendBg 8s linear infinite; border-color: rgba(195, 139, 255, .6); }
+@keyframes legendBg { to { background-position: 300% 0; } }
+.legend-name { background: linear-gradient(90deg, #FFE59A, #FF8FB1, #9DB4FF); -webkit-background-clip: text; background-clip: text; color: transparent; }

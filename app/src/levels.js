@@ -4,7 +4,7 @@ import { counts } from './stats'
 export const XP_RULES = [
   { id: 'session', icon: '📅', label: 'حضور جلسة (كل يوم لعب)', xp: 30 },
   { id: 'play', icon: '🎲', label: 'كل قيم تلعبه', xp: 10 },
-  { id: 'newgame', icon: '🆕', label: 'لعبة تجربها لأول مرة', xp: 25 },
+  { id: 'newgame', icon: '🆕', label: 'لعبة تجربها لأول مرة', xp: 15 },
   { id: 'rate', icon: '⭐', label: 'تقييم لعبة', xp: 5 },
   { id: 'comment', icon: '💬', label: 'تعليق على لعبة', xp: 5 },
   { id: 'win', icon: '🏆', label: 'الفوز في قيم', xp: 5 },
@@ -14,8 +14,9 @@ export const XP_RULES = [
 ]
 const XP = Object.fromEntries(XP_RULES.map(r => [r.id, r.xp]))
 
-// XP المطلوب للوصول لليفل L (تراكمي): 100، 300، 600، 1000، 1500...
-export const xpFor = L => 50 * (L - 1) * L
+// XP المطلوب للوصول لليفل L (تراكمي): 150، 600، 1350، 2400، 3750...
+// جلسة عادية تعطي حوالي 100–150، يعني ليفل 5 يبي قرابة 20 جلسة، وليفل 10 أكثر من 100
+export const xpFor = L => 150 * (L - 1) ** 2
 export const levelFromXp = xp => { let L = 1; while (xpFor(L + 1) <= xp) L++; return L }
 
 export const TITLES = [
@@ -29,8 +30,9 @@ export const REWARDS = [
   { level: 2, icon: '🎨', name: 'لون حسابك', desc: 'تختار لون دائرتك بنفسك' },
   { level: 3, icon: '🏷️', name: 'لقب جنب اسمك', desc: 'تختار لقب من ألقاب الملخص اللي فزت فيها، ويطلع جنب اسمك' },
   { level: 4, icon: '🥈', name: 'إطار فضي', desc: 'إطار فضي حول صورتك في كل مكان' },
+  { level: 4, icon: '😂', name: 'ردود فعل', desc: 'تحط إيموجي على كتابات الشلة في اللوحة' },
   { level: 5, icon: '📌', name: 'تثبيت كتابة', desc: 'تثبّت كتابة وحدة فوق لوحة الشلة' },
-  { level: 6, icon: '😂', name: 'ردود فعل', desc: 'تحط إيموجي على أقيام الشلة وكتاباتهم' },
+  { level: 6, icon: '😭', name: 'الطقطقة', desc: 'تختار واحد من الشلة وتلزّق جنب صورته رسمة بكسل (يبكي، راية بيضاء، حلزون…) لمدة 3 أيام. مرة بالأسبوع' },
   { level: 7, icon: '🥇', name: 'إطار ذهبي متحرك', desc: 'إطار ذهبي يلمع حول صورتك' },
   { level: 8, icon: '⚔️', name: 'تحدي رسمي', desc: 'تتحدى لاعب في قيم واحد ضد واحد، وينحفظ في سجل التحديات' },
   { level: 9, icon: '🎯', name: 'اقتراح مميز', desc: 'مرة بالشهر تثبّت لعبة كاقتراح مميز للجلسة الجاية' },
@@ -40,21 +42,21 @@ export const REWARDS = [
 ]
 
 export const ACHIEVEMENTS = [
-  { id: 'first', icon: '🎲', name: 'البداية', desc: 'لعبت أول قيم', xp: 20, test: s => s.plays >= 1 },
-  { id: 'firstwin', icon: '🏆', name: 'أول انتصار', desc: 'فزت لأول مرة', xp: 20, test: s => s.wins >= 1 },
-  { id: 'g5', icon: '📗', name: 'فضولي', desc: 'جربت 5 ألعاب مختلفة', xp: 30, test: s => s.games >= 5, prog: s => [s.games, 5] },
-  { id: 'g10', icon: '📘', name: 'مستكشف', desc: 'جربت 10 ألعاب مختلفة', xp: 60, test: s => s.games >= 10, prog: s => [s.games, 10] },
-  { id: 'g20', icon: '📚', name: 'موسوعة', desc: 'جربت 20 لعبة مختلفة', xp: 100, test: s => s.games >= 20, prog: s => [s.games, 20] },
-  { id: 's5', icon: '📅', name: 'حاضر', desc: 'حضرت 5 جلسات', xp: 30, test: s => s.sessions >= 5, prog: s => [s.sessions, 5] },
-  { id: 's15', icon: '🗓️', name: 'ما يفوّت', desc: 'حضرت 15 جلسة', xp: 80, test: s => s.sessions >= 15, prog: s => [s.sessions, 15] },
-  { id: 's30', icon: '🏠', name: 'ساكن الطاولة', desc: 'حضرت 30 جلسة', xp: 150, test: s => s.sessions >= 30, prog: s => [s.sessions, 30] },
-  { id: 'streak3', icon: '🔥', name: 'على النار', desc: 'فزت 3 أقيام ورا بعض', xp: 50, test: s => s.bestWinStreak >= 3, prog: s => [s.bestWinStreak, 3] },
-  { id: 'cats4', icon: '🌈', name: 'متعدد المواهب', desc: 'لعبت من 4 تصانيف مختلفة', xp: 40, test: s => s.cats >= 4, prog: s => [s.cats, 4] },
-  { id: 'catwins', icon: '👑', name: 'ملك متنقل', desc: 'فزت في 3 تصانيف مختلفة', xp: 60, test: s => s.winCats >= 3, prog: s => [s.winCats, 3] },
-  { id: 'rate10', icon: '⭐', name: 'الناقد', desc: 'قيّمت 10 ألعاب', xp: 30, test: s => s.ratings >= 10, prog: s => [s.ratings, 10] },
-  { id: 'comm5', icon: '💬', name: 'صاحب رأي', desc: 'علّقت على 5 ألعاب', xp: 20, test: s => s.comments >= 5, prog: s => [s.comments, 5] },
-  { id: 'everyone', icon: '🫂', name: 'صديق الكل', desc: 'لعبت مع كل واحد في الشلة', xp: 40, test: s => s.matesAll, prog: s => [s.mates, s.matesNeeded] },
-  { id: 'big', icon: '🏟️', name: 'قيم كبير', desc: 'فزت في قيم فيه 5 لاعبين أو أكثر', xp: 40, test: s => s.bigWin },
+  { id: 'first', icon: '🎲', name: 'البداية', desc: 'لعبت أول قيم', xp: 10, test: s => s.plays >= 1 },
+  { id: 'firstwin', icon: '🏆', name: 'أول انتصار', desc: 'فزت لأول مرة', xp: 10, test: s => s.wins >= 1 },
+  { id: 'g5', icon: '📗', name: 'فضولي', desc: 'جربت 10 ألعاب مختلفة', xp: 40, test: s => s.games >= 10, prog: s => [s.games, 10] },
+  { id: 'g10', icon: '📘', name: 'مستكشف', desc: 'جربت 20 لعبة مختلفة', xp: 80, test: s => s.games >= 20, prog: s => [s.games, 20] },
+  { id: 'g20', icon: '📚', name: 'موسوعة', desc: 'جربت 35 لعبة مختلفة', xp: 150, test: s => s.games >= 35, prog: s => [s.games, 35] },
+  { id: 's5', icon: '📅', name: 'حاضر', desc: 'حضرت 10 جلسات', xp: 50, test: s => s.sessions >= 10, prog: s => [s.sessions, 10] },
+  { id: 's15', icon: '🗓️', name: 'ما يفوّت', desc: 'حضرت 25 جلسة', xp: 120, test: s => s.sessions >= 25, prog: s => [s.sessions, 25] },
+  { id: 's30', icon: '🏠', name: 'ساكن الطاولة', desc: 'حضرت 50 جلسة', xp: 250, test: s => s.sessions >= 50, prog: s => [s.sessions, 50] },
+  { id: 'streak3', icon: '🔥', name: 'على النار', desc: 'فزت 4 أقيام ورا بعض', xp: 80, test: s => s.bestWinStreak >= 4, prog: s => [s.bestWinStreak, 4] },
+  { id: 'cats4', icon: '🌈', name: 'متعدد المواهب', desc: 'لعبت من 5 تصانيف مختلفة', xp: 50, test: s => s.cats >= 5, prog: s => [s.cats, 5] },
+  { id: 'catwins', icon: '👑', name: 'ملك متنقل', desc: 'فزت في 4 تصانيف مختلفة', xp: 80, test: s => s.winCats >= 4, prog: s => [s.winCats, 4] },
+  { id: 'rate10', icon: '⭐', name: 'الناقد', desc: 'قيّمت 20 لعبة', xp: 40, test: s => s.ratings >= 20, prog: s => [s.ratings, 20] },
+  { id: 'comm5', icon: '💬', name: 'صاحب رأي', desc: 'علّقت على 10 ألعاب', xp: 30, test: s => s.comments >= 10, prog: s => [s.comments, 10] },
+  { id: 'everyone', icon: '🫂', name: 'صديق الكل', desc: 'لعبت مع كل واحد في الشلة', xp: 30, test: s => s.matesAll, prog: s => [s.mates, s.matesNeeded] },
+  { id: 'big', icon: '🏟️', name: 'قيم كبير', desc: 'فزت في قيم فيه 5 لاعبين أو أكثر', xp: 30, test: s => s.bigWin },
 ]
 
 export function computeLevels(idx) {

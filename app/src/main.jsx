@@ -1,4 +1,5 @@
 import { StrictMode } from 'react'
+import { PerksProvider } from './perks'
 import { createRoot } from 'react-dom/client'
 import { StoreProvider } from './store'
 import App from './App'
@@ -11,6 +12,6 @@ import './index.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <StoreProvider><App /></StoreProvider>
+    <StoreProvider><PerksProvider><App /></PerksProvider></StoreProvider>
   </StrictMode>,
 )

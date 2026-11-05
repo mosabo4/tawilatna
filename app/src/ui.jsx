@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { usePerks, PixelArt } from './perks'
 import { useStore, go } from './store'
 import { catOf, weightLabel } from './categories'
 
@@ -42,19 +43,27 @@ export function initials(player, all) {
 const PHOTOS = { 'مصعب': 'musab', 'هاني': 'hani', 'محمدي': 'mohammadi', 'معتز': 'muataz', 'فارس': 'fares', 'اياد': 'eyad', 'إياد': 'eyad' }
 export const photoOf = p => (p && PHOTOS[p.name.trim()] ? `${import.meta.env.BASE_URL}players/${PHOTOS[p.name.trim()]}.webp` : null)
 
-export function Avatar({ player, size = 28, ring }) {
-  const { idx } = useStore()
+export function Avatar({ player, size = 28, ring, frame: forced }) {
+  const { idx, me } = useStore()
+  const { active } = usePerks()
   const src = photoOf(player)
+  const mine = player && me && player.id === me.id
+  const color = (mine && active.color) || player?.color || '#5A6088'
+  const fr = forced !== undefined ? forced : (mine && active.frame)
+  const frame = fr ? ` f-${fr}` : ''
+  const tease = active.tease && player && active.tease.target === player.id
+    ? <span className="tease" style={{ '--s': `${size}px` }}><PixelArt id={active.tease.art} size={Math.max(12, Math.round(size * 0.46))} /></span> : null
   if (src) {
     return (
-      <span className={`avatar photo ${ring ? 'ring' : ''}`} style={{ '--c': player.color || '#5A6088', '--s': `${size}px`, width: size, height: size }} aria-hidden="true">
+      <span className={`avatar photo${ring ? ' ring' : ''}${frame}`} style={{ '--c': color, '--s': `${size}px`, width: size, height: size }} aria-hidden="true">
         <span className="av-clip"><img src={src} alt="" loading="lazy" decoding="async" /></span>
         <span className="av-pop"><img src={src} alt="" loading="lazy" decoding="async" /></span>
+        {tease}
       </span>
     )
   }
-  const st = { '--c': player?.color || '#5A6088', width: size, height: size, fontSize: Math.round(size * (initials(player, idx?.players).length > 1 ? 0.36 : 0.42)) }
-  return <span className={`avatar ${ring ? 'ring' : ''}`} style={st} aria-hidden="true">{initials(player, idx?.players)}</span>
+  const st = { '--c': color, '--s': `${size}px`, width: size, height: size, fontSize: Math.round(size * (initials(player, idx?.players).length > 1 ? 0.36 : 0.42)) }
+  return <span className={`avatar${ring ? ' ring' : ''}${frame}`} style={{ ...st, position: 'relative' }} aria-hidden="true">{initials(player, idx?.players)}{tease}</span>
 }
 export function PlayerTag({ player, size = 24, link = true }) {
   if (!player) return <span className="ptag muted">لاعب محذوف</span>

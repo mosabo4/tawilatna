@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { api } from '../api'
+import { usePerks } from '../perks'
 import { Avatar, Section, Empty, Cover, Confirm, playersText, fmtDate } from '../ui'
 
 // ---------- الجلسة الجاية ----------
@@ -173,7 +174,9 @@ export function Board() {
   const [busy, setBusy] = useState(false)
   const [del, setDel] = useState(null)
   useEffect(() => { const t = setInterval(reload, 30000); return () => clearInterval(t) }, [reload])
-  const posts = [...(idx.posts || [])].sort((a, b) => b.created_at.localeCompare(a.created_at))
+  const { active, perks, set } = usePerks()
+  const [reactFor, setReactFor] = useState(null)
+  const posts = [...(idx.posts || [])].sort((a, b) => (a.id === active.pin ? -1 : b.id === active.pin ? 1 : 0) || b.created_at.localeCompare(a.created_at))
   const post = async e => {
     e.preventDefault()
     setBusy(true)
@@ -209,11 +212,20 @@ export function Board() {
                 const who = idx.playersById.get(p.player_id)
                 const can = me && (me.id === p.player_id || me.is_admin)
                 return (
-                  <li key={p.id} className={`post ${me?.id === p.player_id ? 'mine' : ''}`}>
+                  <li key={p.id} className={`post ${me?.id === p.player_id ? 'mine' : ''} ${p.id === active.pin ? 'pinned' : ''}`}>
                     <Avatar player={who} size={34} />
                     <div className="post-body">
                       <div className="c-head"><b>{who?.name || '—'}</b><small>{when(p.created_at)}</small>{can && <button className="link-btn danger" onClick={() => setDel(p.id)}>احذف</button>}</div>
+                      {p.id === active.pin && <span className="pin-tag">📌 مثبّتة</span>}
                       <p>{p.body}</p>
+                      {active.reacts && (
+                        <div className="reacts">
+                          {perks.reacts?.[p.id] && <span className="react-on">{perks.reacts[p.id]}</span>}
+                          {reactFor === p.id
+                            ? ['😂', '🔥', '👏', '😭', '🤡', '💀'].map(e => <button key={e} onClick={() => { set({ reacts: { ...(perks.reacts || {}), [p.id]: perks.reacts?.[p.id] === e ? undefined : e } }); setReactFor(null) }}>{e}</button>)
+                            : <button className="react-add" onClick={() => setReactFor(p.id)}>+😀</button>}
+                        </div>
+                      )}
                     </div>
                   </li>
                 )

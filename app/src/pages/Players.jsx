@@ -4,12 +4,15 @@ import { playerStats, versus } from '../stats'
 import { Avatar, Donut, TopBar, Section, Empty, fmtDate, fmtScore, ScoreBadge } from '../ui'
 import { PlayCard } from './History'
 import { useLevels } from './Levels'
+import { usePerks } from '../perks'
 
 export function PlayerView({ id }) {
   const { idx, me, logout } = useStore()
   const player = idx.playersById.get(id)
   const st = useMemo(() => (player ? playerStats(idx, id) : null), [idx, id, player])
   const levels = useLevels()
+  const { active } = usePerks()
+  const mine = me?.id === id
   if (!player) return <div className="page"><TopBar title="لاعب" backTo="/players" /><Empty title="هذا اللاعب غير موجود" /></div>
   const ratings = idx.ratings.filter(r => r.player_id === id).sort((x, y) => y.score - x.score)
   const records = [...st.games].sort((x, y) => y.plays - x.plays)
@@ -20,11 +23,11 @@ export function PlayerView({ id }) {
     <div className="page">
       <TopBar title={player.name} backTo="/rank" right={me?.id === id && <button className="btn small ghost" onClick={() => go('/me')}>حسابي</button>} />
       <div className="stack">
-        <div className="glass lead">
+        <div className={`glass lead ${mine && active.legend ? 'legend' : ''}`}>
           <Donut value={(st.points ?? 0) / 100}><Avatar player={player} size={56} /></Donut>
           <div className="lead-info">
-            <small>المستوى</small>
-            <strong>{player.name}</strong>
+            <small>{mine && active.title ? `🏷️ ${active.title}` : 'المستوى'}</small>
+            <strong className={mine && active.legend ? 'legend-name' : ''}>{player.name}</strong>
             <p>{st.plays ? `المستوى ${st.points ?? '—'} · فاز ${st.wins} من ${st.plays} قيم` : 'ما لعب للحين'}</p>
           </div>
         </div>
