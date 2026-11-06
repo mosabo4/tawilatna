@@ -6,6 +6,7 @@ import { useFriday } from './Social'
 import { computeLevels } from '../levels'
 import { Stage } from '../characters'
 import { buildEvents, getSeen, timeAgo } from '../events'
+import { api } from '../api'
 import { getLive, livePlays } from '../live'
 
 export default function Home() {
@@ -14,7 +15,7 @@ export default function Home() {
   const top3 = board.filter(b => b.plays > 0).slice(0, 3)
   const { byGame, mine, picks } = useFriday()
   const live = getLive()
-  const events = useMemo(() => buildEvents(idx), [idx])
+  const events = useMemo(() => buildEvents(idx).filter(e => !e.post), [idx])
   const seen = getSeen()
 
   const unrated = useMemo(() => {
@@ -98,6 +99,8 @@ export default function Home() {
         </a>
       )}
 
+      <BoardPeek seen={seen} />
+
       {events.length > 0 && (
         <Section title="آخر الأحداث" action={<a className="more" href="#/alerts">الكل</a>}>
           <ul className="feed">
@@ -134,5 +137,48 @@ function Scenes() {
       <Stage key={cur.player_id} a={cur.a} b={cur.b} action={cur.action} />
       {n > 1 && <div className="scene-dots">{list.map((s, k) => <button key={s.player_id} className={k === i % n ? 'on' : ''} onClick={() => setI(k)} aria-label={s.a.name} />)}</div>}
     </div>
+  )
+}
+
+// آخر كتابات اللوحة + كتابة سريعة
+function BoardPeek({ seen }) {
+  const { idx, me, act } = useStore()
+  const [text, setText] = useState('')
+  const [busy, setBusy] = useState(false)
+  const posts = [...(idx.posts || [])].sort((a, b) => b.created_at.localeCompare(a.created_at)).slice(0, 3)
+  if (!posts.length && !me) return null
+  const send = async e => {
+    e.preventDefault(); if (!text.trim()) return
+    setBusy(true)
+    try { await act((p, pin) => api.addPost(p, pin, text.trim()), 'انكتبت'); setText('') } catch { /* toast */ } finally { setBusy(false) }
+  }
+  return (
+    <Section title="💬 لوحة الشلة" action={<a className="more" href="#/board">الكل</a>}>
+      {posts.length > 0 && (
+        <ul className="posts peek">
+          {posts.map(p => {
+            const who = idx.playersById.get(p.player_id)
+            const fresh = p.created_at > seen && p.player_id !== me?.id
+            return (
+              <li key={p.id} className={`post ${fresh ? 'fresh' : ''}`}>
+                <a href="#/board" className="peek-link">
+                  <Avatar player={who} size={32} />
+                  <div className="post-body">
+                    <div className="c-head"><b>{who?.name || '—'}</b><small>{timeAgo(p.created_at)}</small></div>
+                    <p>{p.body.length > 140 ? p.body.slice(0, 140) + '…' : p.body}</p>
+                  </div>
+                </a>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+      {me && (
+        <form className="quick-post" onSubmit={send}>
+          <input className="input" maxLength={1000} value={text} onChange={e => setText(e.target.value)} placeholder="اكتب شي للشلة…" />
+          <button className="btn primary small" disabled={busy || !text.trim()}>انشر</button>
+        </form>
+      )}
+    </Section>
   )
 }
