@@ -1220,3 +1220,4 @@ textarea.input { resize: vertical; }
 .shelf-sheet { position: fixed; z-index: 30; left: 12px; right: 12px; bottom: calc(var(--nav-h) + 12px + env(safe-area-inset-bottom)); max-width: 616px; margin: 0 auto; padding: 14px; border-radius: 20px; background: rgba(24, 27, 58, .97); border: 1px solid rgba(255, 196, 92, .4); box-shadow: 0 20px 40px rgba(0, 0, 0, .5); display: flex; flex-direction: column; gap: 10px; }
 .ss-name { flex: 1; unicode-bidi: plaintext; text-align: start; }
 .shelf-sheet .row .btn { flex: 1; }
+.w-num { font-variant-numeric: tabular-nums; font-weight: 600; margin-inline-start: 5px; direction: ltr; unicode-bidi: isolate; } .w-num small { font-size: .75em; color: var(--muted-2); font-weight: 400; } .weight { display: inline-flex; align-items: center; }

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { usePerks } from './perks'
 import { Sticker } from './stickers'
 import { useStore, go } from './store'
-import { catOf, weightLabel } from './categories'
+import { catOf } from './categories'
 
 // ---------- تنسيق ----------
 const dFmt = new Intl.DateTimeFormat('ar-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long' })
@@ -104,7 +104,7 @@ export function Weight({ value, compact }) {
   return (
     <span className={`weight ${compact ? 'compact' : ''}`} title={`الصعوبة ${Number(value).toFixed(1)} من 5`}>
       <span className="w-bars" aria-hidden="true">{[1, 2, 3, 4, 5].map(i => <i key={i} className={i <= filled ? 'on' : ''} />)}</span>
-      {!compact && <span>{weightLabel(value)}</span>}
+      <span className="w-num">{Number(value).toFixed(2).replace(/0$/, '')}<small>/5</small></span>
     </span>
   )
 }

@@ -255,7 +255,7 @@ export function GameView({ id }) {
         <div className="facts-grid">
           <div><span>اللاعبين</span><b>{playersText(game) || '—'}</b></div>
           <div><span>المدة</span><b>{timeText(game) ? timeText(game).replace(' د', ' دقيقة') : '—'}</b></div>
-          <div><span>الصعوبة</span><b>{game.weight != null ? <><Weight value={game.weight} compact /> {weightLabel(game.weight)}</> : '—'}</b></div>
+          <div><span>الصعوبة</span><b>{game.weight != null ? <><Weight value={game.weight} compact /> <small className="muted">{weightLabel(game.weight)}</small></> : '—'}</b></div>
           <div><span>سنة الإصدار</span><b>{game.year || '—'}</b></div>
           <div><span>طريقة الفوز</span><b>{SCORING[game.scoring || 'rank'].icon} {SCORING[game.scoring || 'rank'].name}</b></div>
           {realAvg && <div><span>مدتها عندنا</span><b>⏱️ {realAvg}</b></div>}
