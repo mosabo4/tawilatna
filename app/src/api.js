@@ -12,6 +12,7 @@ export const ERRORS = {
   locked: 'محاولات كثيرة خاطئة. جرّب بعد 10 دقائق',
   closed: 'الموقع مقفل مؤقتاً، نرتّب أشياء وبنفتحه قريب',
   no_player: 'هذا اللاعب غير موجود',
+  bad_input: 'قيمة غير صحيحة',
   forbidden: 'هذا الإجراء للمسؤول أو لمن سجّله فقط',
   no_players: 'اختر لاعب واحد على الأقل',
   no_name: 'اكتب اسم اللعبة',
@@ -43,10 +44,11 @@ async function sbLoad() {
   ])
   for (const r of [players, games, plays, results, ratings]) if (r.error) throw new ApiError('network')
   // الجداول الجديدة: لو التحديث ما انشغّل في القاعدة، نكمل بدونها
-  const [picks, comments, posts, settings, playExp, expRatings] = await Promise.all([
+  const [picks, comments, posts, settings, playExp, expRatings, charStyles] = await Promise.all([
     q('friday_picks'), q('game_comments'), q('posts').order('created_at', { ascending: false }).limit(200), q('app_settings'),
-    q('play_expansions'), q('expansion_ratings'),
+    q('play_expansions'), q('expansion_ratings'), q('players', 'id,char_style'),
   ])
+  if (!charStyles.error) { const m = new Map(charStyles.data.map(x => [x.id, x.char_style])); for (const p of players.data) p.char_style = m.get(p.id) || null }
   return {
     players: players.data, games: games.data, plays: plays.data, results: results.data, ratings: ratings.data,
     picks: picks.error ? [] : picks.data, comments: comments.error ? [] : comments.data, posts: posts.error ? [] : posts.data,
@@ -215,6 +217,10 @@ const demo = {
     const s = dGet(); dAuth(s, player, pin); const g = s.games.find(x => x.id === game); if (!g) throw new ApiError('not_found')
     g.base_game_id = base || null; dSet(s); return { ok: true }
   },
+  setCharStyle: async (player, pin, target, style) => {
+    const s = dGet(); const me = dAuth(s, player, pin); if (!me.is_admin) throw new ApiError('forbidden')
+    s.players.find(x => x.id === target).char_style = style; dSet(s); return { ok: true }
+  },
   moveGame: async (player, pin, game, category, order) => {
     const s = dGet(); const me = dAuth(s, player, pin); if (!me.is_admin) throw new ApiError('forbidden')
     const g = s.games.find(x => x.id === game); g.category = category || null; g.shelf_order = order; dSet(s); return { ok: true }
@@ -243,6 +249,7 @@ const real = {
   setLoginLock: (p, pin, locked) => sbCall('set_login_lock', { p_player: p, p_pin: pin, p_locked: locked }),
   setExpRating: (p, pin, exp, delta) => sbCall('set_exp_rating', { p_player: p, p_pin: pin, p_exp: exp, p_delta: delta }),
   setPlayExpansions: (p, pin, play, games) => sbCall('set_play_expansions', { p_player: p, p_pin: pin, p_play: play, p_games: games }),
+  setCharStyle: (p, pin, target, style) => sbCall('set_char_style', { p_player: p, p_pin: pin, p_target: target, p_style: style }),
   moveGame: (p, pin, game, category, order) => sbCall('move_game', { p_player: p, p_pin: pin, p_game: game, p_category: category, p_order: order }),
   setGameBase: (p, pin, game, base) => sbCall('set_game_base', { p_player: p, p_pin: pin, p_game: game, p_base: base }),
 }

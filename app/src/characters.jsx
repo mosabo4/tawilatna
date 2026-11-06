@@ -118,13 +118,14 @@ export const IMG_CHARS = {
   'فارس': { slug: 'fares', def: 'n', styles: { n: N, e: E, k: K } },
   'اياد': { slug: 'eyad', def: 'n', styles: { n: N, e: E, k: K } },
 }
+export const idleFile = sty => { const p = sty.poses.idle; return Array.isArray(p) ? p[0] : p }
 export const imgSrc = (slug, style, pose) => `${import.meta.env.BASE_URL}chars/${slug}/${style}/${pose}.webp`
 
 // pose: idle | punch | hit | dance | laugh | cry | cheer
 export function Character({ player, custom, pose = 'idle', size = 120, flip, variant = 'flat' }) {
   const [cardPick] = useState(() => Math.floor(Math.random() * 4))
   const ic = IMG_CHARS[player?.name?.trim()]
-  const st = custom?.style ?? ic?.def
+  const st = (ic && ic.styles[player?.char_style] ? player.char_style : null) ?? ic?.def
   if (ic && st && st !== 'svg' && ic.styles[st]) {
     const sty = ic.styles[st]
     const p = (pose === 'idle' && sty.cards ? sty.cards[cardPick % sty.cards.length] : null) || sty.poses[pose] || (pose === 'dice' && st === 'k' ? ['dice', 'r'] : ic.styles[st].poses.punch) || ic.styles[st].poses.idle

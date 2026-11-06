@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { api } from '../api'
 import { useStore } from '../store'
 import { Avatar, Section } from '../ui'
 import { usePerks, PALETTE, FRAMES, TITLE_STYLES, TitleBadge } from '../perks'
 import { STICKERS, Sticker } from '../stickers'
-import { Character, CUSTOM, OPTION_NAMES, ACTIONS, Stage, IMG_CHARS, imgSrc } from '../characters'
+import { Character, CUSTOM, OPTION_NAMES, ACTIONS, Stage, IMG_CHARS, imgSrc, idleFile } from '../characters'
 
 function Lock({ level, L, title, children }) {
   const open = L >= level
@@ -22,20 +23,13 @@ export function CharacterEditor() {
   const ch = perks.char || {}
   const setCh = (k, v) => set({ char: { ...ch, [k]: v } })
   const ic = IMG_CHARS[me.name.trim()]
-  const curStyle = ch.style ?? ic?.def
   if (ic) {
-    const s = ic.styles[curStyle]
+    const st = ic.styles[me.char_style] ? me.char_style : ic.def
+    const sty = ic.styles[st]
     return (
       <Section title="شخصيتك">
-        <div className="style-pick">
-          {Object.entries(ic.styles).map(([k, v]) => (
-            <button key={k} className={`sp ${curStyle === k ? 'on' : ''}`} onClick={() => setCh('style', k)}>
-              <img src={imgSrc(ic.slug, k, 'idle')} alt="" /><span>{v.name}</span>
-            </button>
-          ))}
-        </div>
-        {s && <div className="pose-strip">{s.gallery.map(g => <img key={g} src={imgSrc(ic.slug, curStyle, g)} alt="" />)}</div>}
-        <p className="hint pad-x pad-b">اختر أسلوب الرسم، ويتغيّر شكل شخصيتك في كل مكان: صفحة اللاعبين، والمسرح، وحسابك.</p>
+        <div className="pose-strip">{sty.gallery.map(g => <img key={g} src={imgSrc(ic.slug, st, g)} alt="" />)}</div>
+        <p className="hint pad-x pad-b">أسلوب رسم الشخصيات يحدده المسؤول للكل.</p>
       </Section>
     )
   }
@@ -171,6 +165,45 @@ export default function Closet() {
         <Lock level={15} L={L} title="🏛️ صانع الجوائز"><p>قريباً.</p></Lock>
       </div>
       <p className="hint pad-x pad-b">الجوائز حالياً تبان على جهازك بس. بعد ما نعتمدها نربطها بالقاعدة عشان يشوفها الكل.</p>
+    </Section>
+  )
+}
+
+// المسؤول يحدد أسلوب الرسم لكل لاعب
+export function StyleAdmin() {
+  const { idx, act } = useStore()
+  const [busy, setBusy] = useState(null)
+  const setStyle = async (pid, style) => {
+    setBusy(pid)
+    try { await act((p, pin) => api.setCharStyle(p, pin, pid, style), 'انحفظ الأسلوب') } catch { /* toast */ } finally { setBusy(null) }
+  }
+  const all = Object.keys(IMG_CHARS['هاني']?.styles || {})
+  const setAll = async style => {
+    setBusy('all')
+    try { await act(async (p, pin) => { for (const pl of idx.players) if (IMG_CHARS[pl.name.trim()]?.styles[style]) await api.setCharStyle(p, pin, pl.id, style) }, 'انحفظ للكل') } catch { /* toast */ } finally { setBusy(null) }
+  }
+  return (
+    <Section title="أسلوب الشخصيات">
+      <div className="pad-x row gap wrap-row">
+        <span className="muted small">للكل:</span>
+        {all.map(k => <button key={k} className="chip" disabled={!!busy} onClick={() => setAll(k)}>{IMG_CHARS['هاني'].styles[k].name}</button>)}
+      </div>
+      {idx.players.map(pl => {
+        const ic = IMG_CHARS[pl.name.trim()]; if (!ic) return null
+        const cur = ic.styles[pl.char_style] ? pl.char_style : ic.def
+        return (
+          <div key={pl.id} className="style-admin">
+            <b>{pl.name}</b>
+            <div className="style-pick">
+              {Object.entries(ic.styles).map(([k, v]) => (
+                <button key={k} className={`sp ${cur === k ? 'on' : ''}`} disabled={busy === pl.id} onClick={() => setStyle(pl.id, k)}>
+                  <img src={imgSrc(ic.slug, k, idleFile(v))} alt="" /><span>{v.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )
+      })}
     </Section>
   )
 }

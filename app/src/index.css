@@ -1221,3 +1221,4 @@ textarea.input { resize: vertical; }
 .ss-name { flex: 1; unicode-bidi: plaintext; text-align: start; }
 .shelf-sheet .row .btn { flex: 1; }
 .w-num { font-variant-numeric: tabular-nums; font-weight: 600; margin-inline-start: 5px; direction: ltr; unicode-bidi: isolate; } .w-num small { font-size: .75em; color: var(--muted-2); font-weight: 400; } .weight { display: inline-flex; align-items: center; }
+.style-admin { padding: 8px 4px 4px; border-top: 1px solid var(--line); } .style-admin > b { display: block; padding: 4px 12px; font-size: 14px; } .wrap-row { flex-wrap: wrap; align-items: center; padding-bottom: 10px; }

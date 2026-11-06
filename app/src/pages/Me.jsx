@@ -5,7 +5,7 @@ import { availableMonths, monthName } from '../recap'
 import { computeTitles } from '../titles'
 import { playerStats } from '../stats'
 import { Character } from '../characters'
-import Closet, { CharacterEditor } from './Closet'
+import Closet, { CharacterEditor, StyleAdmin } from './Closet'
 import { MyGames } from './Players'
 import { usePerks, TitleBadge } from '../perks'
 import { useLevels } from './Levels'
@@ -93,6 +93,7 @@ function Admin() {
     <>
       <Section title="ملخص الشهر 🎬"><RecapLauncher /></Section>
       <Section title="دخول الشلة"><LockToggle /></Section>
+      <StyleAdmin />
       <Section title="إدارة اللاعبين" action={editing !== 'new' && <button className="btn small ghost" onClick={() => setEditing('new')}>أضف لاعب</button>}>
         {editing === 'new' && <PlayerEditor onDone={() => setEditing(null)} />}
         <ul className="admin-players">
@@ -164,7 +165,7 @@ export default function Me({ sub }) {
           {link('📈', 'ليفلي والإنجازات', '#/levels', `ليفل ${lv.level}`)}
           {link('🏷️', 'ألقابي', '#/titles', `${titles.filter(t => t.done).length} من ${titles.length}`)}
           {link('🎁', 'خزانة الجوائز', '#/me/closet', 'ألوان، إطارات، طقطقة')}
-          {link('🧍', 'شخصيتي', '#/me/char', 'أسلوب الرسم')}
+          {link('🧍', 'شخصيتي', '#/me/char', 'وضعياتها')}
           {link('🎲', 'ألعابي وتقييماتي', '#/me/games', unrated ? `${unrated} بدون تقييم` : 'كلها مقيّمة', unrated ? 'warn' : '')}
           {me.is_admin && link('🛠️', 'أدوات المسؤول', '#/me/admin', 'الملخص، القفل، اللاعبين', 'admin')}
         </nav>

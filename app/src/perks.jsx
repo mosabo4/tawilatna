@@ -50,7 +50,7 @@ export function PerksProvider({ children }) {
   const frameOk = f => { const x = FRAMES.find(y => y.id === f); return !!x && L >= x.level }
   const ch = perks.char || {}
   const charCustom0 = me ? Object.fromEntries(Object.entries(CUSTOM).filter(([k]) => ch[k] && L >= CUSTOM[k].level && !(k === 'hat' && ch[k] === 'crown' && L < 10)).map(([k]) => [k, ch[k]])) : {}
-  const charCustom = { ...(charCustom0 || {}), ...(ch.style ? { style: ch.style } : {}) }
+  const charCustom = { ...(charCustom0 || {}) }
   const active = me ? {
     color: L >= 2 && perks.color,
     title: L >= 3 && perks.title && titleOk(perks.title) ? perks.title : null,
