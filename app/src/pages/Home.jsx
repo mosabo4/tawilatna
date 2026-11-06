@@ -11,7 +11,7 @@ import { getLive, livePlays } from '../live'
 export default function Home() {
   const { idx, me } = useStore()
   const board = useMemo(() => leaderboard(idx), [idx])
-  const leader = board.find(b => b.plays > 0)
+  const top3 = board.filter(b => b.plays > 0).slice(0, 3)
   const { byGame, mine, picks } = useFriday()
   const live = getLive()
   const events = useMemo(() => buildEvents(idx), [idx])
@@ -81,12 +81,20 @@ export default function Home() {
         </>
       )}
 
-      {leader && (
-        <a className="glass leader-mini" href="#/rank">
-          <Avatar player={leader.player} size={40} />
-          <span><small>المتصدر</small><b>{leader.player.name}</b></span>
-          <strong>{leader.points}%</strong>
-          <span className="more">الترتيب ←</span>
+      {top3.length > 0 && (
+        <a className="glass podium" href="#/rank">
+          <div className="pod-head"><b>المتصدرين</b><span className="more">الترتيب كامل ←</span></div>
+          <div className="pod-row">
+            {[top3[1], top3[0], top3[2]].map((b, k) => b && (
+              <div key={b.player.id} className={`pod p${[2, 1, 3][k]}`}>
+                <span className="medal">{['🥈', '🥇', '🥉'][k]}</span>
+                <Avatar player={b.player} size={[48, 62, 44][k]} />
+                <b>{b.player.name}</b>
+                <strong>{b.points}%</strong>
+                <i className="step" />
+              </div>
+            ))}
+          </div>
         </a>
       )}
 

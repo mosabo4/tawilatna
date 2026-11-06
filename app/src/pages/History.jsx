@@ -4,7 +4,7 @@ import { durationText } from '../scoring'
 import { useStore, go } from '../store'
 import { Avatar, Empty, Cover, fmtDate, fmtMonth, TopBar } from '../ui'
 
-export function PlayCard({ play, showGame = true }) {
+export function PlayCard({ play, showGame = true, focus }) {
   const { idx } = useStore()
   const game = idx.gamesById.get(play.game_id)
   const n = play.results.length
@@ -22,7 +22,7 @@ export function PlayCard({ play, showGame = true }) {
             const p = idx.playersById.get(r.player_id)
             const win = r.position === 1 && n > 1
             return (
-              <li key={r.player_id} className={win ? 'win' : ''}>
+              <li key={r.player_id} className={`${win ? 'win' : ''} ${focus && !focus.includes(r.player_id) ? 'dim' : ''}`}>
                 <Avatar player={p} size={18} />
                 <span className="nm">{r.position}. {p?.name || 'محذوف'}</span>
                 {r.score != null && <span className="sc">{r.score}</span>}
@@ -69,7 +69,7 @@ export default function History() {
       {groups.map(([k, plays]) => (
         <section key={k} className="glass section">
           <div className="section-head"><h2>{fmtMonth(k + '-01')}</h2><span className="muted small">{plays.length} قيم</span></div>
-          <div className="play-list">{plays.map(p => <PlayCard key={p.id} play={p} />)}</div>
+          <div className="play-list">{plays.map(p => <PlayCard key={p.id} play={p} focus={player ? [player] : undefined} />)}</div>
         </section>
       ))}
     </div>

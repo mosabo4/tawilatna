@@ -13,7 +13,7 @@ export function buildEvents(idx) {
   }
   for (const x of (idx.posts || []).slice(0, 40)) {
     const who = P.get(x.player_id); if (!who) continue
-    ev.push({ id: 'b' + x.id, at: x.created_at, who, by: x.player_id, icon: '💬', text: `${who.name} كتب في اللوحة`, sub: x.body.slice(0, 60), href: '#/board', post: true })
+    ev.push({ id: 'b' + x.id, at: x.created_at, who, by: x.player_id, icon: '💬', text: `${who.name} كتب في اللوحة: «${x.body.length > 50 ? x.body.slice(0, 50) + '…' : x.body}»`, sub: x.body.slice(0, 60), href: '#/board', post: true })
   }
   for (const c of (idx.comments || [])) {
     const who = P.get(c.player_id); const g = G.get(c.game_id); if (!who || !g) continue
