@@ -1222,3 +1222,7 @@ textarea.input { resize: vertical; }
 .shelf-sheet .row .btn { flex: 1; }
 .w-num { font-variant-numeric: tabular-nums; font-weight: 600; margin-inline-start: 5px; direction: ltr; unicode-bidi: isolate; } .w-num small { font-size: .75em; color: var(--muted-2); font-weight: 400; } .weight { display: inline-flex; align-items: center; }
 .style-admin { padding: 8px 4px 4px; border-top: 1px solid var(--line); } .style-admin > b { display: block; padding: 4px 12px; font-size: 14px; } .wrap-row { flex-wrap: wrap; align-items: center; padding-bottom: 10px; }
+
+.scene-dots { display: flex; justify-content: center; gap: 6px; padding-top: 4px; }
+.scene-dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: 9px; background: rgba(255,255,255,.25); transition: width .25s, background .25s; }
+.scene-dots button.on { width: 18px; background: var(--accent, #8b7bff); }

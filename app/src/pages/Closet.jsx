@@ -83,7 +83,10 @@ export default function Closet() {
   const myPosts = (idx.posts || []).filter(p => p.player_id === me.id)
   const tease = perks.tease && perks.tease.until > Date.now() ? perks.tease : null
   const weekLeft = perks.teaseAt && Date.now() - perks.teaseAt < 7 * 864e5 && !test
-  const scene = perks.scene || {}
+  const { act } = useStore()
+  const saved = (idx.scenes || []).find(x => x.player_id === me.id)
+  const scene = saved ? { target: saved.target, action: saved.action } : {}
+  const saveScene = async v => { const n = { ...scene, ...v }; try { await act((p, pin) => api.setScene(p, pin, n.target || null, n.action || 'punch'), n.target ? 'انحفظ المشهد، يشوفه الكل' : 'انشال المشهد') } catch { /* toast */ } }
   return (
     <Section title="خزانة جوائزك" action={test && <span className="tag test-tag">🧪 تجربة</span>}>
       {me.is_admin && (
@@ -148,11 +151,11 @@ export default function Closet() {
 
         <Lock level={7} L={L} title="🎭 مسرح الرئيسية">
           <div className="scene-pick">
-            <select className="input" value={scene.target || ''} onChange={e => set({ scene: { ...scene, target: e.target.value || null } })}>
+            <select className="input" value={scene.target || ''} onChange={e => saveScene({ target: e.target.value || null })}>
               <option value="">بدون مشهد</option>
               {idx.players.filter(p => p.id !== me.id).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
-            <div className="acts">{ACTIONS.map(a => <button key={a.id} className={`chip ${(scene.action || 'punch') === a.id ? 'on' : ''}`} onClick={() => set({ scene: { ...scene, action: a.id } })}>{a.icon} {a.label}</button>)}</div>
+            <div className="acts">{ACTIONS.map(a => <button key={a.id} className={`chip ${(scene.action || 'punch') === a.id ? 'on' : ''}`} disabled={!scene.target} onClick={() => saveScene({ action: a.id })}>{a.icon} {a.label}</button>)}</div>
             {scene.target && <div className="scene-prev"><Stage a={me} b={idx.playersById.get(scene.target)} action={scene.action || 'punch'} customA={active.char} compact /></div>}
           </div>
         </Lock>

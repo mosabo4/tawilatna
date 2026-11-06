@@ -2,6 +2,7 @@
 /* eslint-disable react/prop-types */
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useStore } from './store'
+import { api } from './api'
 import { computeLevels } from './levels'
 import { TITLE_DEFS, computeTitles } from './titles'
 import { CUSTOM } from './characters'
@@ -36,10 +37,17 @@ export function TitleBadge({ title, small }) {
 const Ctx = createContext({ active: {}, perks: {}, set: () => {}, level: 0, test: false })
 
 export function PerksProvider({ children }) {
-  const { idx, me } = useStore()
+  const { idx, me, act } = useStore()
   const [perks, setPerks] = useState(read)
   useEffect(() => { const on = () => setPerks(read()); window.addEventListener('storage', on); return () => window.removeEventListener('storage', on) }, [])
   const set = v => { const n = { ...read(), ...v }; write(n); setPerks(n) }
+  // نقل المشهد القديم المحفوظ في الجهاز إلى القاعدة (مرة وحدة)
+  useEffect(() => {
+    const p = read()
+    if (!me || !idx || !idx.scenes || !p.scene?.target || p.sceneSynced) return
+    if ((idx.scenes || []).some(x => x.player_id === me.id)) { set({ sceneSynced: true }); return }
+    act((pl, pin) => api.setScene(pl, pin, p.scene.target, p.scene.action || 'punch')).then(() => set({ sceneSynced: true })).catch(() => set({ sceneSynced: true }))
+  }, [me?.id]) // eslint-disable-line react-hooks/exhaustive-deps
   const levels = useMemo(() => (idx ? computeLevels(idx) : null), [idx])
   const lv = levels && me ? levels.get(me.id) : null
   const myTitles = useMemo(() => (idx && me && levels ? new Set(computeTitles(idx, levels).get(me.id).filter(t => t.done).map(t => t.name)) : new Set()), [idx, me, levels])

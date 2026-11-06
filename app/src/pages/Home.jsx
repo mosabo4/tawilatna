@@ -1,16 +1,15 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { leaderboard } from '../stats'
 import { Avatar, Section, Empty, Cover } from '../ui'
 import { useFriday } from './Social'
-import { usePerks } from '../perks'
+import { computeLevels } from '../levels'
 import { Stage } from '../characters'
 import { buildEvents, getSeen, timeAgo } from '../events'
 import { getLive, livePlays } from '../live'
 
 export default function Home() {
   const { idx, me } = useStore()
-  const { active } = usePerks()
   const board = useMemo(() => leaderboard(idx), [idx])
   const leader = board.find(b => b.plays > 0)
   const { byGame, mine, picks } = useFriday()
@@ -41,16 +40,11 @@ export default function Home() {
   if (me && unrated.length) needs.push({ icon: '⭐', title: unrated.length === 1 ? `قيّم ${unrated[0].name}` : `قيّم ${unrated.length} ألعاب`, sub: unrated.slice(0, 3).map(g => g.name).join('، '), href: `#/game/${unrated[0].id}`, btn: 'قيّم', hot: true })
   if (me && !mine.size) needs.push({ icon: '🎲', title: 'اختر ألعاب الجلسة', sub: 'وش ودك تلعب المرة الجاية؟', href: '#/friday', btn: 'اختر' })
   if (newPosts) needs.push({ icon: '💬', title: `${newPosts} كتابات جديدة`, sub: 'في لوحة الشلة', href: '#/board', btn: 'افتح' })
-  const scene = active.scene
   const tonight = live ? livePlays(idx, live).length : 0
 
   return (
     <div className="page stack home">
-      {scene && me && (
-        <div className="glass stage-card">
-          <Stage a={me} b={idx.playersById.get(scene.target)} action={scene.action} customA={active.char} />
-        </div>
-      )}
+      <Scenes />
 
       {live ? (
         <a className="live-card big" href="#/live">
@@ -110,6 +104,27 @@ export default function Home() {
           </ul>
         </Section>
       )}
+    </div>
+  )
+}
+
+// مشاهد الشلة: لو أكثر من واحد حاط مشهد، تتبدل كل 6 ثواني ويقدر يضغط على النقاط
+function Scenes() {
+  const { idx } = useStore()
+  const levels = useMemo(() => computeLevels(idx), [idx])
+  const list = useMemo(() => (idx.scenes || [])
+    .map(s => ({ ...s, a: idx.playersById.get(s.player_id), b: idx.playersById.get(s.target) }))
+    .filter(s => s.a && s.b && (s.a.is_admin || (levels.get(s.a.id)?.level || 0) >= 7))
+    .sort((x, y) => (y.updated_at || '').localeCompare(x.updated_at || '')), [idx, levels])
+  const [i, setI] = useState(0)
+  const n = list.length
+  useEffect(() => { if (n < 2) return; const t = setInterval(() => setI(v => (v + 1) % n), 6000); return () => clearInterval(t) }, [n, i])
+  if (!n) return null
+  const cur = list[i % n]
+  return (
+    <div className="glass stage-card">
+      <Stage key={cur.player_id} a={cur.a} b={cur.b} action={cur.action} />
+      {n > 1 && <div className="scene-dots">{list.map((s, k) => <button key={s.player_id} className={k === i % n ? 'on' : ''} onClick={() => setI(k)} aria-label={s.a.name} />)}</div>}
     </div>
   )
 }
