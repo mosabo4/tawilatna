@@ -99,7 +99,7 @@ function Hat({ type }) {
 // ---------- شخصيات مرسومة جاهزة (صور) ----------
 // d = اتجاه الحركة في الصورة (l يسار، r يمين) عشان نقلبها صح في المسرح
 export const K_POSES = ['idle', 'bust', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown', 'f_happy', 'f_angry', 'f_shock', 'f_smug', 'f_cry']
-const N = { name: 'الجديد', cards: ['card1', 'card2', 'card3', 'card4'], poses: { idle: 'card1', punch: ['punch', 'r'], dice: ['dice', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: ['fight', 'r'], jump: 'jump', flag: 'flag', crown: 'crown' }, gallery: ['card1', 'card2', 'card3', 'card4', 'fight', 'dance', 'jump', 'punch', 'hit', 'laugh', 'cry', 'dice', 'flag', 'crown'] }
+const N = { name: 'الجديد', cards: ['card1', 'card2', 'card3', 'card4'], poses: { idle: 'card1', punch: ['punch', 'r'], dice: ['dice', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: 'cheer', jump: 'jump', flag: 'flag', crown: 'crown' }, gallery: ['card1', 'card2', 'card3', 'card4', 'cheer', 'fight', 'dance', 'jump', 'punch', 'hit', 'laugh', 'cry', 'dice', 'flag', 'crown'] }
 const E = { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'r'], dice: ['throw', 'r'], hit: 'three', laugh: 'cards', cry: 'back', dance: 'jump', cheer: 'jump', jump: 'jump' }, gallery: ['idle', 'front', 'three', 'side', 'back', 'cross', 'cards', 'jump', 'throw'] }
 const K = { name: 'كرتون', poses: { idle: 'idle', punch: ['punch', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: 'fight' }, gallery: ['idle', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown'] }
 export const IMG_CHARS = {
