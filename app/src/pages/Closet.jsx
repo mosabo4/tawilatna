@@ -107,11 +107,12 @@ export default function Closet() {
         </Lock>
 
         <Lock level={3} L={L} title="🏷️ لقبك">
+          <a className="more" href="#/titles">كل الألقاب وكيف تفتحها ←</a>
           <div className="title-pick">
             <button className={`chip ${!perks.title ? 'on' : ''}`} onClick={() => set({ title: null })}>بدون</button>
             {Object.keys(TITLE_STYLES).map(t => (
               <button key={t} className={`tp ${perks.title === t ? 'on' : ''}`} disabled={!titleOk(t)} onClick={() => set({ title: t })}>
-                <TitleBadge title={t} />{!titleOk(t) && <small>{TITLE_STYLES[t].min ? `ليفل ${TITLE_STYLES[t].min}` : 'إنجاز'}</small>}
+                <TitleBadge title={t} />{!titleOk(t) && <small>🔒</small>}
               </button>
             ))}
           </div>

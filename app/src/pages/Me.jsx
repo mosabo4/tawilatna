@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { api, DEMO } from '../api'
 import { availableMonths, monthName } from '../recap'
+import { computeTitles } from '../titles'
+import { playerStats } from '../stats'
+import { Character } from '../characters'
 import Closet, { CharacterEditor } from './Closet'
 import { MyGames } from './Players'
 import { usePerks, TitleBadge } from '../perks'
-import { useLevels, LevelPill } from './Levels'
+import { useLevels } from './Levels'
 import { Avatar, TopBar, Section, Field, Empty } from '../ui'
 
 const PALETTE = ['#D93A3A', '#2F6FDB', '#E9B425', '#2E9E5B', '#8A4FD8', '#EE7A2B', '#1BA6A6', '#D6458F', '#6B7A2E', '#4B4F58']
@@ -82,57 +85,89 @@ function LockToggle() {
   )
 }
 
-export default function Me() {
-  const { me, idx, logout } = useStore()
+function Admin() {
+  const { idx, me } = useStore()
   const [editing, setEditing] = useState(null) // player id | 'new'
+  if (!me?.is_admin) return <Empty title="هذي للمسؤول بس" />
+  return (
+    <>
+      <Section title="ملخص الشهر 🎬"><RecapLauncher /></Section>
+      <Section title="دخول الشلة"><LockToggle /></Section>
+      <Section title="إدارة اللاعبين" action={editing !== 'new' && <button className="btn small ghost" onClick={() => setEditing('new')}>أضف لاعب</button>}>
+        {editing === 'new' && <PlayerEditor onDone={() => setEditing(null)} />}
+        <ul className="admin-players">
+          {idx.players.map(p => (
+            <li key={p.id}>
+              {editing === p.id ? <PlayerEditor player={p} onDone={() => setEditing(null)} /> : (
+                <div className="ap-row">
+                  <Avatar player={p} size={28} /><span>{p.name}</span>
+                  {p.is_admin && <span className="tag">مسؤول</span>}
+                  <button className="link-btn" onClick={() => setEditing(p.id)}>تعديل أو رمز جديد</button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+        <p className="hint pad-x pad-b">إذا أحد نسى رمزه، اضغط «تعديل» واكتب له رمز جديد.</p>
+      </Section>
+      {DEMO && (
+        <Section title="النسخة التجريبية">
+          <p className="pad-x muted">البيانات هنا وهمية ومحفوظة على جهازك بس.</p>
+          <div className="pad"><button className="btn ghost" onClick={() => { api.reset(); location.reload() }}>رجّع البيانات التجريبية</button></div>
+        </Section>
+      )}
+    </>
+  )
+}
+
+const SUBS = { char: ['شخصيتي', CharacterEditor], closet: ['خزانة الجوائز', Closet], games: ['ألعابي وتقييماتي', MyGames], admin: ['أدوات المسؤول', Admin] }
+
+export default function Me({ sub }) {
+  const { me, idx, logout } = useStore()
   const { active } = usePerks()
   const levels = useLevels()
-  if (!me) return <div className="page"><TopBar title="حسابي" /><Empty title="ما دخلت" /></div>
+  const titles = useMemo(() => (me ? computeTitles(idx, levels).get(me.id) : []), [idx, levels, me])
+  if (!me) return <div className="page"><TopBar title="أنا" /><Empty title="ما دخلت" text="ادخل باسمك عشان تشوف ليفلك وجوائزك." /></div>
+  if (sub && SUBS[sub]) {
+    const [title, C] = SUBS[sub]
+    return <div className="page"><TopBar title={title} backTo="/me" /><div className="stack"><C /></div></div>
+  }
+  const lv = levels.get(me.id)
+  const st = playerStats(idx, me.id)
+  const unrated = (() => {
+    const played = new Set(idx.plays.filter(p => p.results.some(r => r.player_id === me.id)).map(p => p.game_id))
+    const rated = new Set(idx.ratings.filter(r => r.player_id === me.id).map(r => r.game_id))
+    return [...played].filter(g => !rated.has(g)).length
+  })()
+  const link = (icon, label, href, note, cls = '') => <a className={`me-link ${cls}`} href={href}><span>{icon}</span><b>{label}</b><em>{note}</em><i aria-hidden="true">‹</i></a>
   return (
     <div className="page">
-      <TopBar title="حسابي" />
+      <header className="sec-head"><div className="sec-top"><h1>أنا</h1><a className="more" href={`#/player/${me.id}`}>صفحتي العامة</a></div></header>
       <div className="stack">
-        <div className="glass pad me-card">
-          <span className="lv-av"><Avatar player={me} size={52} />{levels.get(me.id) && <LevelPill level={levels.get(me.id).level} />}</span>
-          <div className="me-name"><b>{me.name}</b>{active.title ? <TitleBadge title={active.title} small /> : me.is_admin && <span className="tag">مسؤول</span>}</div>
-          <a className="more" href={`#/player/${me.id}`}>صفحتي</a>
+        <div className={`me-hero ${active.legend ? 'legend' : ''}`} style={{ '--c': active.color || me.color }}>
+          <span className="me-char"><Character player={me} custom={active.char} size={110} /></span>
+          <div className="me-info">
+            <b className={active.legend ? 'legend-name' : ''}>{me.name}</b>
+            {active.title ? <TitleBadge title={active.title} small /> : <small>{lv.title}</small>}
+            <span className="muted small">ليفل {lv.level} · {lv.xp} XP</span>
+            <span className="lv-bar"><span style={{ width: `${Math.max(3, lv.progress * 100)}%`, '--c': active.color || me.color }} /></span>
+            <small className="muted">باقي {lv.need - lv.into} XP على ليفل {lv.level + 1}</small>
+          </div>
         </div>
-
-        <CharacterEditor />
-        <Closet />
-        <MyGames />
-
-        {me.is_admin && <h2 className="group-title">⚙️ إعدادات المسؤول</h2>}
-
-        {me.is_admin && <Section title="ملخص الشهر 🎬"><RecapLauncher /></Section>}
-        {me.is_admin && <Section title="دخول الشلة"><LockToggle /></Section>}
-
-        {me.is_admin && (
-          <Section title="إدارة اللاعبين" action={editing !== 'new' && <button className="btn small ghost" onClick={() => setEditing('new')}>أضف لاعب</button>}>
-            {editing === 'new' && <PlayerEditor onDone={() => setEditing(null)} />}
-            <ul className="admin-players">
-              {idx.players.map(p => (
-                <li key={p.id}>
-                  {editing === p.id ? <PlayerEditor player={p} onDone={() => setEditing(null)} /> : (
-                    <div className="ap-row">
-                      <Avatar player={p} size={28} /><span>{p.name}</span>
-                      {p.is_admin && <span className="tag">مسؤول</span>}
-                      <button className="link-btn" onClick={() => setEditing(p.id)}>تعديل أو رمز جديد</button>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
-            <p className="hint pad-x pad-b">إذا أحد نسى رمزه، اضغط «تعديل» واكتب له رمز جديد.</p>
-          </Section>
-        )}
-
-        {DEMO && (
-          <Section title="النسخة التجريبية">
-            <p className="pad-x muted">البيانات هنا وهمية ومحفوظة على جهازك بس.</p>
-            <div className="pad"><button className="btn ghost" onClick={() => { api.reset(); location.reload() }}>رجّع البيانات التجريبية</button></div>
-          </Section>
-        )}
+        <div className="me-stats">
+          <div><b>{st.points ?? '—'}{st.points != null && <small>%</small>}</b><span>المستوى</span></div>
+          <div><b>{st.wins}<small>/{st.plays}</small></b><span>فوز من أقيام</span></div>
+          <div><b>{lv.stats.games}</b><span>لعبة تعرفها</span></div>
+          <div><b>{lv.stats.bestWinStreak}</b><span>أطول سلسلة فوز</span></div>
+        </div>
+        <nav className="me-links">
+          {link('📈', 'ليفلي والإنجازات', '#/levels', `ليفل ${lv.level}`)}
+          {link('🏷️', 'ألقابي', '#/titles', `${titles.filter(t => t.done).length} من ${titles.length}`)}
+          {link('🎁', 'خزانة الجوائز', '#/me/closet', 'ألوان، إطارات، طقطقة')}
+          {link('🧍', 'شخصيتي', '#/me/char', 'أسلوب الرسم')}
+          {link('🎲', 'ألعابي وتقييماتي', '#/me/games', unrated ? `${unrated} بدون تقييم` : 'كلها مقيّمة', unrated ? 'warn' : '')}
+          {me.is_admin && link('🛠️', 'أدوات المسؤول', '#/me/admin', 'الملخص، القفل، اللاعبين', 'admin')}
+        </nav>
         <p className="hint pad-x">رمزك ثابت. لو نسيته، المسؤول يقدر يعطيك رمز جديد.</p>
         <button className="btn danger-link" onClick={() => { logout(); go('/') }}>اطلع من الحساب</button>
       </div>

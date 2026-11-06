@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import { useStore } from './store'
 import { computeLevels } from './levels'
+import { TITLE_DEFS, computeTitles } from './titles'
 import { CUSTOM } from './characters'
 
 const KEY = 'tw-perks'
@@ -22,18 +23,7 @@ export const FRAMES = [
   { id: 'diamond', name: 'ماسي', level: 12 },
 ]
 
-// الألقاب المتاحة وتصميم شارة كل واحد
-export const TITLE_STYLES = {
-  'زائر الطاولة': { icon: '🚪', from: '#4B5578', to: '#2E3550', ring: '#8C96BC', min: 1 },
-  'من الشلة': { icon: '🤝', from: '#2F6FDB', to: '#5B3FD8', ring: '#9DB4FF', min: 3 },
-  'لاعب ثابت': { icon: '🛡️', from: '#1BA6A6', to: '#2E7D4F', ring: '#8FF0D6', min: 5 },
-  'خبير الدولاب': { icon: '🗝️', from: '#B8781F', to: '#7A3E12', ring: '#FFD36E', min: 8 },
-  'أسطورة الطاولة': { icon: '👑', from: '#C9A227', to: '#8A4FD8', ring: '#FFE59A', min: 10, shine: true },
-  'موسوعة': { icon: '📚', from: '#3D4FCF', to: '#1B2A7A', ring: '#AFC0FF', ach: 'g20' },
-  'على النار': { icon: '🔥', from: '#FF6A3D', to: '#B5172C', ring: '#FFC08A', ach: 'streak3' },
-  'ملك متنقل': { icon: '🌍', from: '#8A4FD8', to: '#D6458F', ring: '#F2B8FF', ach: 'catwins' },
-  'ساكن الطاولة': { icon: '🏠', from: '#2E9E5B', to: '#1F5E3A', ring: '#A6F0C2', ach: 's30' },
-}
+export const TITLE_STYLES = Object.fromEntries(TITLE_DEFS.map(t => [t.name, { icon: t.icon, from: t.from, to: t.to, ring: t.ring, shine: t.rarity === 'legend' }]))
 export function TitleBadge({ title, small }) {
   const st = TITLE_STYLES[title]; if (!st) return null
   return (
@@ -50,12 +40,13 @@ export function PerksProvider({ children }) {
   const [perks, setPerks] = useState(read)
   useEffect(() => { const on = () => setPerks(read()); window.addEventListener('storage', on); return () => window.removeEventListener('storage', on) }, [])
   const set = v => { const n = { ...read(), ...v }; write(n); setPerks(n) }
-  const lv = useMemo(() => (idx && me ? computeLevels(idx).get(me.id) : null), [idx, me])
+  const levels = useMemo(() => (idx ? computeLevels(idx) : null), [idx])
+  const lv = levels && me ? levels.get(me.id) : null
+  const myTitles = useMemo(() => (idx && me && levels ? new Set(computeTitles(idx, levels).get(me.id).filter(t => t.done).map(t => t.name)) : new Set()), [idx, me, levels])
   const real = lv?.level || 0
   const test = !!(perks.test && me?.is_admin)
   const L = test ? 99 : real
-  const doneAch = new Set(lv ? lv.achievements.filter(a => a.done).map(a => a.id) : [])
-  const titleOk = t => { const s = TITLE_STYLES[t]; return !!s && (test || (s.min ? real >= s.min : doneAch.has(s.ach))) }
+  const titleOk = t => !!TITLE_STYLES[t] && (test || myTitles.has(t))
   const frameOk = f => { const x = FRAMES.find(y => y.id === f); return !!x && L >= x.level }
   const ch = perks.char || {}
   const charCustom0 = me ? Object.fromEntries(Object.entries(CUSTOM).filter(([k]) => ch[k] && L >= CUSTOM[k].level && !(k === 'hat' && ch[k] === 'crown' && L < 10)).map(([k]) => [k, ch[k]])) : {}

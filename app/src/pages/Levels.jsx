@@ -37,7 +37,7 @@ export default function Levels() {
               {active.title ? <TitleBadge title={active.title} /> : <strong>{me.name}</strong>}
               <Bar value={mine.progress} color={active.color || me.color} />
               <span className="lv-me-xp">باقي {mine.need - mine.into} XP على ليفل {mine.level + 1}</span>
-              <a className="lv-closet" href="#/me">🎁 خزانة جوائزك وشخصيتك ←</a>
+              <a className="lv-closet" href="#/me/closet">🎁 خزانة جوائزك وشخصيتك ←</a>
             </div>
           </div>
         )}

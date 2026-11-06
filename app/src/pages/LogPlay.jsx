@@ -3,15 +3,16 @@ import { useStore, go } from '../store'
 import { api } from '../api'
 import { Avatar, TopBar, Cover, Confirm, today, Field, Empty, playersText } from '../ui'
 import { CATEGORIES, catOf } from '../categories'
+import { getLive } from '../live'
 
-export default function LogPlay({ id, presetGame }) {
+export default function LogPlay({ id, presetGame, live }) {
   const { idx, me, act } = useStore()
   const existing = id ? idx.plays.find(p => p.id === id) : null
   const [gameId, setGameId] = useState(existing?.game_id || presetGame || '')
   const [date, setDate] = useState(existing?.played_on || today())
   const [rows, setRows] = useState(() => existing
     ? existing.results.map(r => ({ player_id: r.player_id, position: r.position, score: r.score ?? '' }))
-    : [])
+    : live ? (getLive()?.players || []).map((pid, i) => ({ player_id: pid, position: i + 1, score: '' })) : [])
   const [useScores, setUseScores] = useState(() => !!existing?.results.some(r => r.score != null))
   const [notes, setNotes] = useState(existing?.notes || '')
   const [exps, setExps] = useState(existing?.expansions || [])
@@ -68,7 +69,7 @@ export default function LogPlay({ id, presetGame }) {
       if (chosen.length || existing?.expansions?.length) {
         try { await act((p, pin) => api.setPlayExpansions(p, pin, res.id, chosen)) } catch { /* toast */ }
       }
-      go(`/play/${res.id}`)
+      go(live ? '/live' : `/play/${res.id}`)
     } catch { /* toast shown */ } finally { setBusy(false) }
   }
   const del = async () => {
