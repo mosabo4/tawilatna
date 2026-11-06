@@ -1,5 +1,6 @@
 -- v8: أسلوب رسم الشخصيات يحدده المسؤول لكل لاعب
 alter table public.players add column if not exists char_style text;
+grant select (char_style) on public.players to anon, authenticated;
 
 create or replace function public.set_char_style(p_player uuid, p_pin text, p_target uuid, p_style text)
 returns jsonb language plpgsql security definer set search_path = public, extensions as $$
