@@ -100,7 +100,7 @@ function Hat({ type }) {
 // d = اتجاه الحركة في الصورة (l يسار، r يمين) عشان نقلبها صح في المسرح
 export const K_POSES = ['idle', 'bust', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown', 'f_happy', 'f_angry', 'f_shock', 'f_smug', 'f_cry']
 const N = { name: 'الجديد', cards: ['card1', 'card2', 'card3', 'card4'], poses: { idle: 'card1', punch: ['punch', 'r'], dice: ['dice', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: ['fight', 'r'], jump: 'jump', flag: 'flag', crown: 'crown' }, gallery: ['card1', 'card2', 'card3', 'card4', 'fight', 'dance', 'jump', 'punch', 'hit', 'laugh', 'cry', 'dice', 'flag', 'crown'] }
-const E = { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'r'], dice: ['throw', 'r'], hit: 'front', laugh: 'cards', cry: 'front', dance: 'jump', cheer: 'jump' }, gallery: ['idle', 'front', 'three', 'cards', 'jump', 'throw'] }
+const E = { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'r'], dice: ['throw', 'r'], hit: 'three', laugh: 'cards', cry: 'back', dance: 'jump', cheer: 'jump', jump: 'jump' }, gallery: ['idle', 'front', 'three', 'side', 'back', 'cross', 'cards', 'jump', 'throw'] }
 const K = { name: 'كرتون', poses: { idle: 'idle', punch: ['punch', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: 'fight' }, gallery: ['idle', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown'] }
 export const IMG_CHARS = {
   'مصعب': { slug: 'musab', def: 'n', styles: {
@@ -110,7 +110,7 @@ export const IMG_CHARS = {
     b: { name: 'كرتون 1', poses: { idle: 'cross', punch: ['hammer', 'r'], hit: 'think', laugh: 'trophy', cry: 'think', dance: 'trophy', cheer: 'trophy' }, gallery: ['idle', 'cross', 'hammer', 'trophy', 'think', 'relax'] },
     c: { name: 'مجسّم', poses: { idle: 'idle', punch: ['point', 'l'], hit: 'front', laugh: 'sit', cry: 'front', dance: ['run', 'l'], cheer: 'sit' }, gallery: ['idle', 'front', 'point', 'run', 'sit'] },
     d: { name: 'تشيبي', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'shock', laugh: 'laugh', cry: 'shock', dance: 'cheer', cheer: 'cheer' }, gallery: ['idle', 'three', 'throw', 'laugh', 'shock', 'cheer'] },
-    e: { ...E, gallery: ['idle', 'front', 'throw', 'cards', 'jump'] },
+    e: { ...E, poses: { ...E.poses, punch: ['throw', 'l'], dice: ['throw', 'l'] } },
   } },
   'هاني': { slug: 'hani', def: 'n', styles: { n: N, e: E, k: K } },
   'محمدي': { slug: 'mohammadi', def: 'n', styles: { n: N, e: E, k: K } },
