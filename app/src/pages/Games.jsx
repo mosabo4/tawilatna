@@ -4,6 +4,8 @@ import { api } from '../api'
 import { gameStats, allGameStats, daysSince, standings } from '../stats'
 import { StandingRows } from './Ranking'
 import { ExpansionsSection } from './Expansions'
+import { usePerks } from '../perks'
+import { SCORING } from '../scoring'
 import { CATEGORIES, catOf, weightLabel } from '../categories'
 import { Cover, Empty, ScoreBadge, TopBar, Section, PlayerTag, RatingInput, Field, Confirm, Weight, ago, fmtDate, fmtScore, playersText, timeText, range, IconUsers, IconClock } from '../ui'
 import { PlayCard } from './History'
@@ -42,8 +44,11 @@ function GameTile({ g }) {
 }
 
 export default function Games() {
-  const { idx, me } = useStore()
+  const { idx, me, act } = useStore()
   const [q, setQ] = useState('')
+  const [editShelf, setEditShelf] = useState(false)
+  const [picked, setPicked] = useState(null)
+  const [moving, setMoving] = useState(false)
   const [view, setView] = useState(() => read('tw-gview', 'shelf'))
   const [cat, setCat] = useState(() => read('tw-gcat', 'all'))
   const [sort, setSort] = useState(() => read('tw-gsort2', 'cat'))
@@ -69,7 +74,8 @@ export default function Games() {
     weight: (a, b) => (a.game.weight ?? 9) - (b.game.weight ?? 9),
     name: (a, b) => a.game.name.localeCompare(b.game.name),
   }[sort]
-  const sorted = useMemo(() => [...all].sort(by), [all, sort]) // eslint-disable-line react-hooks/exhaustive-deps
+  const byShelf = (a, b) => (a.game.shelf_order ?? 1e6) - (b.game.shelf_order ?? 1e6)
+  const sorted = useMemo(() => [...all].sort((a, b) => (sort === 'cat' ? byShelf(a, b) : 0) || by(a, b)), [all, sort]) // eslint-disable-line react-hooks/exhaustive-deps
   const shelves = useMemo(() => [...CATEGORIES, { id: 'other' }]
     .map(c => ({ c: c.id === 'other' ? catOf({}) : c, games: sorted.filter(g => catOf(g.game).id === c.id) }))
     .filter(x => x.games.length), [sorted])
@@ -137,8 +143,50 @@ export default function Games() {
 
       {idx.games.length > 0 && view === 'shelf' && (
         <>
+          {me?.is_admin && (
+            <div className={`shelf-edit-bar ${editShelf ? 'on' : ''}`}>
+              <span>{editShelf ? '✏️ وضع ترتيب الدولاب: اضغط على أي لعبة' : '🗄️ تبي ترتب الدولاب؟'}</span>
+              <button className={`btn small ${editShelf ? 'primary' : 'ghost'}`} onClick={() => { setEditShelf(!editShelf); setPicked(null) }}>{editShelf ? 'خلصت' : 'رتّب'}</button>
+            </div>
+          )}
           <CabinetHint total={all.length} lit={lit} players={players} />
-          <Cabinet groups={shelves} isDim={g => !matches(g)} />
+          <Cabinet groups={shelves} isDim={g => !matches(g)} onPick={editShelf ? g => setPicked(g) : null} pickedId={picked?.id} />
+          {editShelf && picked && (() => {
+            const shelf = shelves.find(x => x.games.some(g => g.game.id === picked.id))
+            const list = shelf ? shelf.games.map(g => g.game) : [picked]
+            const i = list.findIndex(g => g.id === picked.id)
+            const apply = async (cat, newList) => {
+              setMoving(true)
+              try {
+                await act(async (p, pin) => {
+                  for (let k = 0; k < newList.length; k++) {
+                    const g = newList[k]
+                    if (g.id === picked.id || g.shelf_order !== k || (g.category || '') !== (cat || '')) await api.moveGame(p, pin, g.id, g.id === picked.id ? cat : g.category, k)
+                  }
+                }, 'انحفظ ترتيب الدولاب')
+              } catch { /* toast */ } finally { setMoving(false) }
+            }
+            const swap = d => { const n = [...list]; const j = i + d; if (j < 0 || j >= n.length) return; [n[i], n[j]] = [n[j], n[i]]; apply(picked.category, n) }
+            const toShelf = cat => {
+              const target = shelves.find(x => x.c.id === cat)
+              const n = [...(target ? target.games.map(g => g.game) : []).filter(g => g.id !== picked.id), picked]
+              setPicked({ ...picked, category: cat }); apply(cat, n)
+            }
+            return (
+              <div className="shelf-sheet">
+                <div className="row gap center"><Cover game={picked} className="xs" /><b className="ss-name">{picked.name}</b><button className="link-btn" onClick={() => setPicked(null)}>✕</button></div>
+                <div className="row gap">
+                  <button className="btn ghost small" disabled={moving || i <= 0} onClick={() => swap(-1)}>→ قدّمها</button>
+                  <button className="btn ghost small" disabled={moving || i >= list.length - 1} onClick={() => swap(1)}>أخّرها ←</button>
+                </div>
+                <label className="mini-select"><span>انقلها لرف</span>
+                  <select value={picked.category || ''} disabled={moving} onChange={e => toShelf(e.target.value)}>
+                    {CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                  </select>
+                </label>
+              </div>
+            )
+          })()}
           <p className="cab-foot">طول العلبة على حسب صعوبة اللعبة، والرقم الصغير عدد مرات ما لعبناها.</p>
         </>
       )}
@@ -162,6 +210,7 @@ export default function Games() {
 
 export function GameView({ id }) {
   const { idx, me, act } = useStore()
+  const { level } = usePerks()
   const game = idx.gamesById.get(id)
   const st = useMemo(() => (game ? gameStats(idx, id) : null), [idx, id, game])
   const table = useMemo(() => standings(idx, p => p.game_id === id), [idx, id])
@@ -188,6 +237,10 @@ export function GameView({ id }) {
     try { await act((p, pin) => api.setRating(p, pin, id, v)) } catch { /* toast */ } finally { setSaving(false) }
   }
   const ratingsSorted = [...st.ratings].sort((a, b) => b.score - a.score)
+  const durs = st.plays.filter(p => p.started_at && p.ended_at).map(p => (new Date(p.ended_at) - new Date(p.started_at)) / 60000).filter(m => m > 0)
+  const realAvg = durs.length ? (m => (m >= 60 ? `${Math.floor(m / 60)}س ${m % 60}د` : `${m} د`))(Math.round(durs.reduce((x, y) => x + y, 0) / durs.length)) + (durs.length > 1 ? ` (${durs.length} أقيام)` : '') : null
+  const otherEleven = me ? idx.ratings.find(r => r.player_id === me.id && Number(r.score) === 11 && r.game_id !== id && (idx.gamesById.get(r.game_id)?.category || '') === (game.category || '')) : null
+  const elevenInfo = level < 6 ? { ok: false, why: '🔒 تنفتح في ليفل 6' } : otherEleven ? { ok: false, why: `عطيتها لـ ${idx.gamesById.get(otherEleven.game_id)?.name}` } : { ok: true }
 
   return (
     <div className="page has-action">
@@ -204,13 +257,15 @@ export function GameView({ id }) {
           <div><span>المدة</span><b>{timeText(game) ? timeText(game).replace(' د', ' دقيقة') : '—'}</b></div>
           <div><span>الصعوبة</span><b>{game.weight != null ? <><Weight value={game.weight} compact /> {weightLabel(game.weight)}</> : '—'}</b></div>
           <div><span>سنة الإصدار</span><b>{game.year || '—'}</b></div>
+          <div><span>طريقة الفوز</span><b>{SCORING[game.scoring || 'rank'].icon} {SCORING[game.scoring || 'rank'].name}</b></div>
+          {realAvg && <div><span>مدتها عندنا</span><b>⏱️ {realAvg}</b></div>}
         </div>
         <FridayButton gameId={game.id} />
         {game.bgg_id && <a className="bgg-link" href={`https://boardgamegeek.com/boardgame/${game.bgg_id}`} target="_blank" rel="noreferrer">صفحتها في BoardGameGeek ↗</a>}
 
         {me && (
           <Section title={mine != null ? `تقييمك: ${fmtScore(mine)}` : 'قيّمها'} action={mine != null && <button className="link-btn" disabled={saving} onClick={() => rate(null)}>امسح تقييمي</button>}>
-            <div className="pad-x"><RatingInput value={mine} onChange={rate} disabled={saving} /></div>
+            <div className="pad-x"><RatingInput value={mine} onChange={rate} disabled={saving} eleven={elevenInfo} /></div>
           </Section>
         )}
 

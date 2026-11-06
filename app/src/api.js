@@ -21,6 +21,7 @@ export const ERRORS = {
   not_found: 'العنصر غير موجود، يمكن انحذف',
   dup_game: 'هذي اللعبة موجودة من قبل',
   bad_week: 'التاريخ لازم يكون يوم جمعة',
+  eleven_used: 'عطيت 11 للعبة ثانية في نفس التصنيف. شيلها منها أول',
   too_long: 'النص طويل، اختصره شوي',
   empty: 'اكتب شي أول',
   network: 'ما قدرنا نوصل للخادم. تأكد من الإنترنت وحاول مرة ثانية',
@@ -106,6 +107,10 @@ const demo = {
   setRating: async (player, pin, game, score) => {
     const s = dGet(); dAuth(s, player, pin)
     s.ratings = s.ratings.filter(r => !(r.game_id === game && r.player_id === player))
+    if (score === 11) {
+      const cat = s.games.find(g => g.id === game)?.category || ''
+      if (s.ratings.some(r => r.player_id === player && r.score === 11 && r.game_id !== game && (s.games.find(g => g.id === r.game_id)?.category || '') === cat)) throw new ApiError('eleven_used')
+    }
     if (score != null) s.ratings.push({ game_id: game, player_id: player, score: Math.round(score * 2) / 2, updated_at: new Date().toISOString() })
     dSet(s); return { ok: true }
   },
@@ -114,11 +119,11 @@ const demo = {
     if (!play.results?.length) throw new ApiError('no_players')
     let id = play.id
     if (!id) {
-      id = uid(); s.plays.unshift({ id, game_id: play.game_id, played_on: play.played_on, notes: play.notes || null, created_by: player, created_at: new Date().toISOString() })
+      id = uid(); s.plays.unshift({ id, game_id: play.game_id, played_on: play.played_on, notes: play.notes || null, created_by: player, created_at: new Date().toISOString(), setup_by: play.setup_by || [], cleanup_by: play.cleanup_by || [], started_at: play.started_at || null, ended_at: play.ended_at || null })
     } else {
       const p = s.plays.find(x => x.id === id); if (!p) throw new ApiError('not_found')
       if (p.created_by !== player && !me.is_admin) throw new ApiError('forbidden')
-      Object.assign(p, { game_id: play.game_id, played_on: play.played_on, notes: play.notes || null })
+      Object.assign(p, { game_id: play.game_id, played_on: play.played_on, notes: play.notes || null, setup_by: play.setup_by || [], cleanup_by: play.cleanup_by || [], started_at: play.started_at || null, ended_at: play.ended_at || null })
       s.results = s.results.filter(r => r.play_id !== id)
     }
     play.results.forEach(r => s.results.push({ play_id: id, player_id: r.player_id, position: r.position, score: r.score ?? null }))
@@ -210,6 +215,10 @@ const demo = {
     const s = dGet(); dAuth(s, player, pin); const g = s.games.find(x => x.id === game); if (!g) throw new ApiError('not_found')
     g.base_game_id = base || null; dSet(s); return { ok: true }
   },
+  moveGame: async (player, pin, game, category, order) => {
+    const s = dGet(); const me = dAuth(s, player, pin); if (!me.is_admin) throw new ApiError('forbidden')
+    const g = s.games.find(x => x.id === game); g.category = category || null; g.shelf_order = order; dSet(s); return { ok: true }
+  },
   setLoginLock: async (player, pin, locked) => {
     const s = dGet(); const me = dAuth(s, player, pin)
     if (!me.is_admin) throw new ApiError('forbidden')
@@ -234,6 +243,7 @@ const real = {
   setLoginLock: (p, pin, locked) => sbCall('set_login_lock', { p_player: p, p_pin: pin, p_locked: locked }),
   setExpRating: (p, pin, exp, delta) => sbCall('set_exp_rating', { p_player: p, p_pin: pin, p_exp: exp, p_delta: delta }),
   setPlayExpansions: (p, pin, play, games) => sbCall('set_play_expansions', { p_player: p, p_pin: pin, p_play: play, p_games: games }),
+  moveGame: (p, pin, game, category, order) => sbCall('move_game', { p_player: p, p_pin: pin, p_game: game, p_category: category, p_order: order }),
   setGameBase: (p, pin, game, base) => sbCall('set_game_base', { p_player: p, p_pin: pin, p_game: game, p_base: base }),
 }
 

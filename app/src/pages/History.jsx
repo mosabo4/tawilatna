@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ExpTags } from './Expansions'
+import { durationText } from '../scoring'
 import { useStore, go } from '../store'
 import { Avatar, Empty, Cover, fmtDate, fmtMonth, TopBar } from '../ui'
 
@@ -105,6 +106,13 @@ export function PlayView({ id }) {
             })}
           </ol>
           {play.notes && <p className="pc-note big">{play.notes}</p>}
+          {(durationText(play) || play.setup_by?.length > 0 || play.cleanup_by?.length > 0) && (
+            <div className="play-extra">
+              {durationText(play) && <span>⏱️ {durationText(play)}</span>}
+              {play.setup_by?.length > 0 && <span>🧱 جهّزها: {play.setup_by.map(x => idx.playersById.get(x)?.name).filter(Boolean).join('، ')}</span>}
+              {play.cleanup_by?.length > 0 && <span>🧹 رتّبها: {play.cleanup_by.map(x => idx.playersById.get(x)?.name).filter(Boolean).join('، ')}</span>}
+            </div>
+          )}
         </div>
       </div>
     </div>

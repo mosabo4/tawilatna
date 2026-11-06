@@ -110,7 +110,7 @@ export function Weight({ value, compact }) {
 }
 
 // ---------- مدخل التقييم ----------
-export function RatingInput({ value, onChange, disabled }) {
+export function RatingInput({ value, onChange, disabled, eleven }) {
   const v = value ?? 0
   return (
     <div className="rating-input">
@@ -123,6 +123,11 @@ export function RatingInput({ value, onChange, disabled }) {
           </button>
         ))}
       </div>
+      {eleven && (
+        <button type="button" className={`rs-eleven ${v === 11 ? 'on' : ''}`} disabled={disabled || !eleven.ok} onClick={() => onChange(v === 11 ? 10 : 11)}>
+          <b>🔥 11</b><span>{v === 11 ? 'هذي مفضلتك في التصنيف' : eleven.ok ? 'خلّها مفضلتك في هالتصنيف' : eleven.why}</span>
+        </button>
+      )}
       <p className="hint">اضغط الرقم مرة ثانية عشان تنقص نص درجة.</p>
     </div>
   )

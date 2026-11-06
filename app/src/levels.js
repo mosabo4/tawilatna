@@ -11,6 +11,8 @@ export const XP_RULES = [
   { id: 'picks', icon: '🙋', label: 'تختار ألعاب للجلسة الجاية (مرة لكل جلسة)', xp: 5 },
   { id: 'post', icon: '📝', label: 'كتابة في اللوحة (3 باليوم بالكثير)', xp: 2 },
   { id: 'streak', icon: '🔥', label: 'كل 3 جلسات ورا بعض', xp: 50 },
+  { id: 'setup', icon: '🧱', label: 'تجهيز لعبة ثقيلة', xp: 20 },
+  { id: 'cleanup', icon: '🧹', label: 'ترتيب لعبة ثقيلة بعد القيم', xp: 15 },
 ]
 const XP = Object.fromEntries(XP_RULES.map(r => [r.id, r.xp]))
 
@@ -34,6 +36,7 @@ export const REWARDS = [
   { level: 5, icon: '📌', name: 'تثبيت كتابة', desc: 'كتابة وحدة لك فوق اللوحة' },
   { level: 5, icon: '🎩', name: 'قبعات للشخصية', desc: 'كاوبوي، برنيطة، كاب، شماغ' },
   { level: 5, icon: '💡', name: 'إطار نيون', desc: 'إطار يتوهج ويتنفس' },
+  { level: 6, icon: '🔥', name: 'تقييم 11 من 10', desc: 'تعطي لعبة وحدة من كل تصنيف 11 من 10، كأنها المفضلة عندك فيه' },
   { level: 6, icon: '😭', name: 'الطقطقة', desc: 'تلزّق ملصق على صورة واحد من الشلة 3 أيام، مرة بالأسبوع' },
   { level: 6, icon: '🔥', name: 'إطار نار', desc: 'إطار يولّع' },
   { level: 7, icon: '🎭', name: 'مسرح الرئيسية', desc: 'تحط مشهد متحرك في الرئيسية: شخصيتك تضرب أو تطقطق أو ترقص مع واحد من الشلة' },
@@ -90,6 +93,8 @@ export function computeLevels(idx) {
     // جلسات ورا بعض = أيام لعب الشلة المتتالية اللي حضرها
     let srun = 0, streaks = 0
     for (const d of sessionDays) { if (myDays.has(d)) { srun++; if (srun % 3 === 0) streaks++ } else srun = 0 }
+    const setups = idx.plays.filter(p => (p.setup_by || []).includes(pl.id)).length
+    const cleanups = idx.plays.filter(p => (p.cleanup_by || []).includes(pl.id)).length
     const ratings = idx.ratings.filter(r => r.player_id === pl.id).length
     const comments = (idx.comments || []).filter(c => c.player_id === pl.id).length
     const pickWeeks = new Set((idx.picks || []).filter(p => p.player_id === pl.id).map(p => p.week)).size
@@ -100,11 +105,11 @@ export function computeLevels(idx) {
 
     const s = {
       plays: mine.length, wins, games: seen.size, sessions: myDays.size, cats: cats.size, winCats: winCats.size,
-      bestWinStreak, bigWin, ratings, comments, mates: mates.size, matesNeeded: others, matesAll: others > 0 && mates.size >= others,
+      bestWinStreak, bigWin, ratings, comments, setups, cleanups, mates: mates.size, matesNeeded: others, matesAll: others > 0 && mates.size >= others,
     }
     const parts = {
       session: s.sessions * XP.session, play: s.plays * XP.play, newgame: s.games * XP.newgame, rate: ratings * XP.rate,
-      comment: comments * XP.comment, win: wins * XP.win, picks: pickWeeks * XP.picks, post: posts * XP.post, streak: streaks * XP.streak,
+      comment: comments * XP.comment, win: wins * XP.win, picks: pickWeeks * XP.picks, post: posts * XP.post, streak: streaks * XP.streak, setup: setups * XP.setup, cleanup: cleanups * XP.cleanup,
     }
     const achievements = ACHIEVEMENTS.map(a => ({ ...a, done: !!a.test(s), progress: a.prog ? a.prog(s) : null }))
     const achXp = achievements.filter(a => a.done).reduce((t, a) => t + a.xp, 0)

@@ -4,17 +4,18 @@ import { Cover, range } from '../ui'
 import { launch, shelfMemory } from '../table'
 
 // علبة واقفة على الرف: طولها حسب صعوبة اللعبة (الثقيلة علبتها أكبر)
-function Box({ g, dim }) {
+function Box({ g, dim, onPick, picked }) {
   const w = g.game.weight ?? 2
   const h = Math.round(88 + Math.min(4, Math.max(1, w)) * 12)
   const open = e => {
     e.preventDefault()
+    if (onPick) { onPick(g.game); return }
     shelfMemory.y = window.scrollY
     launch(g.game.id, e.currentTarget.querySelector('.box-face'))
     go(`/game/${g.game.id}`)
   }
   return (
-    <a href={`#/game/${g.game.id}`} className={`box ${dim ? 'dim' : ''}`} onClick={open} style={{ '--h': `${h}px` }}
+    <a href={`#/game/${g.game.id}`} className={`box ${dim ? 'dim' : ''} ${picked ? 'picked' : ''} ${onPick ? 'editing' : ''}`} onClick={open} style={{ '--h': `${h}px` }}
       aria-label={`${g.game.name}${g.game.min_players ? `، ${g.game.min_players} إلى ${g.game.max_players} لاعبين` : ''}`}>
       <span className="box-3d">
         <span className="box-face"><Cover game={g.game} /></span>
@@ -27,7 +28,7 @@ function Box({ g, dim }) {
   )
 }
 
-function Shelf({ c, games, isDim, index }) {
+function Shelf({ c, games, isDim, index, onPick, pickedId }) {
   const ref = useRef()
   useEffect(() => {
     const el = ref.current
@@ -43,13 +44,13 @@ function Shelf({ c, games, isDim, index }) {
       <div className="shelf-sign"><span className="plate"><i className="dot" />{c.name}<small>{lit === games.length ? games.length : `${lit} من ${games.length}`}</small></span><span className="sign-hint">{c.hint}</span></div>
       <div className="plank" aria-hidden="true" />
       <div className="shelf-row" ref={ref}>
-        {games.map(g => <Box key={g.game.id} g={g} dim={isDim(g)} />)}
+        {games.map(g => <Box key={g.game.id} g={g} dim={isDim(g)} onPick={onPick} picked={pickedId === g.game.id} />)}
       </div>
     </section>
   )
 }
 
-export default function Cabinet({ groups, isDim }) {
+export default function Cabinet({ groups, isDim, onPick, pickedId }) {
   useEffect(() => {
     if (shelfMemory.y) requestAnimationFrame(() => window.scrollTo(0, shelfMemory.y))
     const on = () => { if (location.hash.startsWith('#/games')) shelfMemory.y = window.scrollY }
@@ -59,7 +60,7 @@ export default function Cabinet({ groups, isDim }) {
   return (
     <div className="cabinet">
       <div className="cabinet-inner">
-        {groups.map(({ c, games }, i) => <Shelf key={c.id} c={c} games={games} isDim={isDim} index={i} />)}
+        {groups.map(({ c, games }, i) => <Shelf key={c.id} c={c} games={games} isDim={isDim} index={i} onPick={onPick} pickedId={pickedId} />)}
       </div>
     </div>
   )

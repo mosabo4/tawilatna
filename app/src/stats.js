@@ -1,3 +1,4 @@
+import { scoringOf } from './scoring'
 // كل الحسابات تتم على الجهاز من البيانات الكاملة (العدد صغير)
 
 // الإضافات المعروفة (احتياط لين يشتغل تحديث القاعدة)
@@ -5,12 +6,13 @@ const EXP_FALLBACK = {
   'Catan: 5–6 Player Extension': 'Catan', 'Catan: Cities & Knights': 'Catan',
   'Clank! Adventuring Party': 'Clank!: A Deck-Building Adventure', 'Coup: Reformation': 'Coup',
 }
+const CAT_FIX = { 'The Vale of Eternity': 'family', '7 Wonders': 'family' }
 export function buildIndex(data) {
   const players = new Map(data.players.map(p => [p.id, p]))
   const byName = new Map(data.games.map(g => [g.name, g]))
   const allGames = data.games.map(g => {
     const base = g.base_game_id !== undefined && g.base_game_id !== null ? g.base_game_id : (EXP_FALLBACK[g.name] ? byName.get(EXP_FALLBACK[g.name])?.id || null : null)
-    return { ...g, base_game_id: base }
+    return { ...g, base_game_id: base, scoring: scoringOf(g), category: (g.shelf_order === undefined && CAT_FIX[g.name]) || g.category }
   })
   const games = new Map(allGames.map(g => [g.id, g]))
   const expansionsOf = new Map()
@@ -43,7 +45,7 @@ export function buildIndex(data) {
 // كل قيم: نقطة عن كل لاعب خلّصت قدّامه، ونص نقطة لو تعادلتوا.
 // المستوى = نقاطك ÷ كل اللي لعبت ضدهم (نسبة مئوية). الألعاب التعاونية ما تدخل.
 export const levelOf = (beat, faced) => (faced ? Math.round((beat / faced) * 100) : null)
-export const counts = (play, game) => play.results.length > 1 && game?.category !== 'coop'
+export const counts = (play, game) => play.results.length > 1 && game?.category !== 'coop' && game?.scoring !== 'coop'
 
 export function standings(idx, filter = () => true) {
   const m = new Map(idx.players.map(p => [p.id, { player: p, plays: 0, wins: 0, beat: 0, faced: 0 }]))
