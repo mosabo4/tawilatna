@@ -1661,3 +1661,16 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .gd-board { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-width: 640px; }
 .gd-board li { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-radius: 16px; background: rgba(255,255,255,.05); font-size: clamp(15px, 2vw, 20px); }
 .gd-board b { flex: 1; } .gd-rk { width: 24px; text-align: center; color: #FFC45C; font-weight: 800; } .gd-lv { font-size: .8em; color: rgba(255,255,255,.7); } .gd-board em { font-style: normal; font-size: .8em; color: #7BE3A6; direction: ltr; }
+.todo-poses { list-style: none; margin: 0; padding: 0 14px 10px; display: grid; gap: 6px; }
+.todo-poses li { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; }
+.todo-poses small { display: block; color: var(--muted); font-size: 11.5px; }
+.role-list { display: grid; gap: 8px; padding: 4px 12px 12px; }
+.role { display: flex; gap: 10px; padding: 8px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+.role.borrow { border-color: rgba(255, 190, 70, .45); } .role.none { border-color: rgba(255, 90, 90, .45); }
+.role-imgs { display: flex; gap: 4px; flex: none; max-width: 46%; overflow-x: auto; align-items: flex-end; }
+.role-imgs img { height: 110px; width: auto; object-fit: contain; } .role-imgs img.alt { opacity: .55; height: 90px; }
+.role-empty { width: 70px; height: 110px; display: grid; place-items: center; font-size: 26px; opacity: .6; }
+.role-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.role-body b { font-size: 13px; } .role-body b em { font-style: normal; font-size: 11px; color: var(--muted); margin-inline-start: 4px; }
+.role-body ul { margin: 0; padding: 0 14px 0 0; font-size: 11.5px; line-height: 1.6; } .role-body small { font-size: 11px; color: var(--muted-2); }
+.role-imgs img { max-width: 120px; }

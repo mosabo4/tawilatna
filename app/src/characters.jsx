@@ -100,27 +100,8 @@ function Hat({ type }) {
 // ---------- شخصيات مرسومة جاهزة (صور) ----------
 // d = اتجاه الحركة في الصورة (l يسار، r يمين) عشان نقلبها صح في المسرح
 export const K_POSES = ['idle', 'bust', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown', 'f_happy', 'f_angry', 'f_shock', 'f_smug', 'f_cry']
-const N = { name: 'الجديد', cards: ['card1', 'card2', 'card3', 'card4'], poses: { idle: 'card1', punch: ['punch', 'r'], dice: ['dice', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: 'cheer', jump: 'jump', flag: 'flag', crown: 'crown' }, gallery: ['card1', 'card2', 'card3', 'card4', 'cheer', 'fight', 'dance', 'jump', 'punch', 'hit', 'laugh', 'cry', 'dice', 'flag', 'crown'] }
 const E = { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'r'], dice: ['throw', 'r'], hit: 'three', laugh: 'cards', cry: 'back', dance: 'jump', cheer: 'jump', jump: 'jump' }, gallery: ['idle', 'front', 'three', 'side', 'back', 'cross', 'cards', 'jump', 'throw'] }
-const K = { name: 'كرتون', poses: { idle: 'idle', punch: ['punch', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: 'fight' }, gallery: ['idle', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown'] }
-const V = { name: 'سينمائي', cards: ['idle', 'idle2'], poses: { idle: 'idle', punch: ['punch', 'l'], dice: ['throw', 'l'], hit: ['hit', 'l'], laugh: ['laugh', 'l'], cry: 'sad', dance: 'dance', cheer: 'cheer', jump: 'cheer', flag: 'wave', crown: 'crown', baby: 'baby', cards: 'cards', wave: 'wave', sleepy: 'sleepy' }, gallery: ['idle', 'idle2', 'wave', 'cheer', 'sad', 'dance', 'crown', 'throw', 'punch', 'hit', 'laugh', 'cards', 'sleepy', 'baby', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6'] }
-export const IMG_CHARS = {
-  'مصعب': { slug: 'musab', def: 'n', styles: {
-    n: N,
-    k: K,
-    a: { name: 'ثلاثي الأبعاد', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'side', laugh: 'cheer', cry: 'idle', dance: 'cheer', cheer: ['fist', 'r'] }, gallery: ['idle', 'side', 'cheer', 'throw', 'fist'] },
-    b: { name: 'كرتون 1', poses: { idle: 'cross', punch: ['hammer', 'r'], hit: 'think', laugh: 'trophy', cry: 'think', dance: 'trophy', cheer: 'trophy' }, gallery: ['idle', 'cross', 'hammer', 'trophy', 'think', 'relax'] },
-    c: { name: 'مجسّم', poses: { idle: 'idle', punch: ['point', 'l'], hit: 'front', laugh: 'sit', cry: 'front', dance: ['run', 'l'], cheer: 'sit' }, gallery: ['idle', 'front', 'point', 'run', 'sit'] },
-    d: { name: 'تشيبي', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'shock', laugh: 'laugh', cry: 'shock', dance: 'cheer', cheer: 'cheer' }, gallery: ['idle', 'three', 'throw', 'laugh', 'shock', 'cheer'] },
-    e: { ...E, poses: { ...E.poses, punch: ['throw', 'l'], dice: ['throw', 'l'] } },
-    v: V,
-  } },
-  'هاني': { slug: 'hani', def: 'n', styles: { n: N, e: E, k: K } },
-  'محمدي': { slug: 'mohammadi', def: 'n', styles: { n: N, e: E, k: K, v: V } },
-  'معتز': { slug: 'muataz', def: 'n', styles: { n: N, e: E, k: K } },
-  'فارس': { slug: 'fares', def: 'n', styles: { n: N, e: E, k: K } },
-  'اياد': { slug: 'eyad', def: 'n', styles: { n: N, e: E, k: K, v: V } },
-}
+export const IMG_CHARS = Object.fromEntries([['مصعب', 'musab'], ['هاني', 'hani'], ['محمدي', 'mohammadi'], ['معتز', 'muataz'], ['فارس', 'fares'], ['اياد', 'eyad']].map(([n, slug]) => [n, { slug, def: 'e', styles: { e: slug === 'musab' ? { ...E, poses: { ...E.poses, punch: ['throw', 'l'], dice: ['throw', 'l'] } } : E } }]))
 export const idleFile = sty => { const p = sty.poses.idle; return Array.isArray(p) ? p[0] : p }
 export const imgSrc = (slug, style, pose) => `${import.meta.env.BASE_URL}chars/${slug}/${style}/${pose}.webp`
 

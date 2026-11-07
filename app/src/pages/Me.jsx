@@ -4,7 +4,7 @@ import { api, DEMO } from '../api'
 import { availableMonths, monthName } from '../recap'
 import { playerStats } from '../stats'
 import { Character } from '../characters'
-import { CharacterEditor, StyleAdmin } from './Closet'
+import { CharacterEditor } from './Closet'
 import Progress from './Progress'
 import { MyGames } from './Players'
 import { usePerks, TitleBadge } from '../perks'
@@ -95,7 +95,6 @@ function Admin() {
       <Section title="ملخص الشهر 🎬"><RecapLauncher /></Section>
       <Section title="شرح الموقع 📖"><div className="pad form"><p className="hint" style={{ margin: 0 }}>عرض يشرح للشلة نظام الموقع: النقاط، الليفلات، الجوائز، الإنجازات، الألقاب، وتحدي اليوم.</p><button className="btn primary" onClick={() => { document.documentElement.requestFullscreen?.().catch(() => {}); go('/guide') }}>▶ اعرض الشرح</button></div></Section>
       <Section title="دخول الشلة"><LockToggle /></Section>
-      <StyleAdmin />
       <Section title="إدارة اللاعبين" action={editing !== 'new' && <button className="btn small ghost" onClick={() => setEditing('new')}>أضف لاعب</button>}>
         {editing === 'new' && <PlayerEditor onDone={() => setEditing(null)} />}
         <ul className="admin-players">
