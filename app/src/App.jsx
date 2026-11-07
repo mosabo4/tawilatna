@@ -13,6 +13,7 @@ import Recap from './pages/Recap'
 import Styles from './pages/Styles'
 import Live from './pages/Live'
 import Progress from './pages/Progress'
+import Guide from './pages/Guide'
 import { Search, Alerts } from './pages/Search'
 import { unread } from './events'
 import { DEMO } from './api'
@@ -122,6 +123,7 @@ export default function App() {
   if (!me && (!guest || locked)) return <><Login /><Toast /></>
 
   if (r[0] === 'styles') return <Styles />
+  if (r[0] === 'guide') return <><Guide /><Toast /></>
   if (r[0] === 'recap') return <><Recap month={r[1] || new Date().toISOString().slice(0, 7)} key={r[1]} /><Toast /></>
 
   const top = r[0] === undefined
