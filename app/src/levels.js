@@ -124,3 +124,62 @@ export function computeLevels(idx) {
   }
   return out
 }
+
+// نسخة من البيانات قبل وقت معيّن (عشان نحسب كم XP انجمع بعده)
+const tsOf = p => p.created_at || `${p.played_on}T12:00:00`
+export function idxBefore(idx, iso) {
+  return {
+    ...idx,
+    plays: idx.plays.filter(p => tsOf(p) < iso),
+    ratings: idx.ratings.filter(r => !r.updated_at || r.updated_at < iso),
+    comments: (idx.comments || []).filter(c => !c.updated_at || c.updated_at < iso),
+    posts: (idx.posts || []).filter(p => p.created_at < iso),
+    picks: (idx.picks || []).filter(p => !p.created_at || p.created_at < iso),
+  }
+}
+
+// كم XP أخذ كل لاعب من وقت معيّن، ومن وين
+export function xpSince(idx, iso) {
+  const now = computeLevels(idx), before = computeLevels(idxBefore(idx, iso))
+  const out = new Map()
+  for (const [id, a] of now) {
+    const b = before.get(id)
+    const parts = XP_RULES.map(r => ({ ...r, got: a.parts[r.id] - (b?.parts[r.id] || 0) })).filter(r => r.got > 0)
+    const ach = a.achievements.filter(x => x.done && !b?.achievements.find(y => y.id === x.id)?.done)
+    out.set(id, { player: a.player, total: a.xp - (b?.xp || 0), parts, ach, from: b?.level || 1, to: a.level })
+  }
+  return out
+}
+
+// سجل الأشياء اللي عطت اللاعب XP (الأحدث أول)
+export function xpLog(idx, pid) {
+  const G = idx.gamesById
+  const ev = []
+  const chrono = [...idx.plays].filter(p => p.results.some(r => r.player_id === pid)).sort((a, b) => tsOf(a).localeCompare(tsOf(b)))
+  const seenGames = new Set(), seenDays = new Set()
+  for (const p of chrono) {
+    const at = tsOf(p), g = G.get(p.game_id), name = g?.name || 'لعبة'
+    if (!seenDays.has(p.played_on)) { seenDays.add(p.played_on); ev.push({ at, type: 'session', xp: XP.session, text: 'حضر جلسة' }) }
+    ev.push({ at, type: 'play', xp: XP.play, text: `لعب ${name}` })
+    if (!seenGames.has(p.game_id)) { seenGames.add(p.game_id); ev.push({ at, type: 'newgame', xp: XP.newgame, text: `جرّب ${name} لأول مرة` }) }
+    const r = p.results.find(x => x.player_id === pid)
+    if (counts(p, g) && r.position === 1) ev.push({ at, type: 'win', xp: XP.win, text: `فاز في ${name}` })
+  }
+  for (const p of idx.plays) {
+    if ((p.setup_by || []).includes(pid)) ev.push({ at: tsOf(p), type: 'setup', xp: XP.setup, text: `جهّز ${G.get(p.game_id)?.name || 'لعبة'}` })
+    if ((p.cleanup_by || []).includes(pid)) ev.push({ at: tsOf(p), type: 'cleanup', xp: XP.cleanup, text: `رتّب ${G.get(p.game_id)?.name || 'لعبة'}` })
+  }
+  for (const r of idx.ratings.filter(x => x.player_id === pid)) ev.push({ at: r.updated_at || '', type: 'rate', xp: XP.rate, text: `قيّم ${G.get(r.game_id)?.name || 'لعبة'}` })
+  for (const c of (idx.comments || []).filter(x => x.player_id === pid)) ev.push({ at: c.updated_at || '', type: 'comment', xp: XP.comment, text: `علّق على ${G.get(c.game_id)?.name || 'لعبة'}` })
+  const weeks = new Set()
+  for (const p of [...(idx.picks || [])].filter(x => x.player_id === pid).sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''))) {
+    if (weeks.has(p.week)) continue; weeks.add(p.week); ev.push({ at: p.created_at || '', type: 'picks', xp: XP.picks, text: 'اختار ألعاب للجلسة' })
+  }
+  const perDay = new Map()
+  for (const p of [...(idx.posts || [])].filter(x => x.player_id === pid).sort((a, b) => a.created_at.localeCompare(b.created_at))) {
+    const d = p.created_at.slice(0, 10); const n = (perDay.get(d) || 0) + 1; perDay.set(d, n)
+    if (n <= 3) ev.push({ at: p.created_at, type: 'post', xp: XP.post, text: 'كتب في اللوحة' })
+  }
+  const icon = Object.fromEntries(XP_RULES.map(r => [r.id, r.icon]))
+  return ev.filter(e => e.at).map(e => ({ ...e, icon: icon[e.type] })).sort((a, b) => b.at.localeCompare(a.at))
+}

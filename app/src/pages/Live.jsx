@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { standings } from '../stats'
+import { xpSince } from '../levels'
 import { getLive, setLive, livePlays, todayStr } from '../live'
-import { Avatar, TopBar, Section, Cover } from '../ui'
+import { TopBar, Section, Cover } from '../ui'
 import { StandingRows } from './Ranking'
 import { Character } from '../characters'
 
@@ -33,6 +34,24 @@ export default function Live() {
             </> : <p>ما انسجل أي قيم في هالجلسة.</p>}
             <div className="row3 live-nums"><div><b>{done.plays.length}</b><span>قيم</span></div><div><b>{done.players.length}</b><span>حاضر</span></div><div><b>{dur(done.end - new Date(done.start))}</b><span>مدة</span></div></div>
           </div>
+          {done.xp && (
+            <Section title="⚡ XP الليلة">
+              <ul className="xp-night">
+                {done.players.map(id => done.xp.get(id)).filter(Boolean).sort((a, b) => b.total - a.total).map(x => (
+                  <li key={x.player.id}>
+                    <span className="xn-chr"><Character player={x.player} pose={x.to > x.from ? 'cheer' : 'idle'} size={46} /></span>
+                    <div className="xn-body">
+                      <div className="xn-top"><b>{x.player.name}</b>{x.to > x.from && <em className="xn-up">⬆ ليفل {x.to}!</em>}<strong>+{x.total}<small> XP</small></strong></div>
+                      <div className="xn-parts">
+                        {x.parts.map(p => <span key={p.id}>{p.icon} +{p.got}</span>)}
+                        {x.ach.map(a => <span key={a.id} className="ach">{a.icon} {a.name} +{a.xp}</span>)}
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
           {top && <Section title="ترتيب الليلة"><StandingRows rows={done.table} me={me} /></Section>}
           <button className="btn primary wide" onClick={() => go('/')}>تم</button>
         </div>
@@ -50,7 +69,7 @@ export default function Live() {
             <div className="live-who">
               {idx.players.map(p => (
                 <button key={p.id} className={pick.includes(p.id) ? 'on' : ''} onClick={() => toggle(p.id)} aria-pressed={pick.includes(p.id)}>
-                  <Avatar player={p} size={48} /><span>{p.name}</span>
+                  <span className="lw-chr"><Character player={p} pose={pick.includes(p.id) ? 'cheer' : 'idle'} size={62} /></span><span>{p.name}</span>
                 </button>
               ))}
             </div>
@@ -71,7 +90,7 @@ export default function Live() {
         <div className="live-card">
           <div className="row gap center"><span className="pulse" /><b>شغّالة من {dur(now - new Date(live.start))}</b></div>
           <div className="live-people">
-            {people.map(p => <button key={p.id} title="شيله" onClick={() => save({ ...live, players: live.players.filter(x => x !== p.id) })}><Avatar player={p} size={34} /></button>)}
+            {people.map(p => <button key={p.id} className="lp-chr" title="شيله" onClick={() => save({ ...live, players: live.players.filter(x => x !== p.id) })}><Character player={p} size={44} /><small>{p.name}</small></button>)}
             {others.length > 0 && (
               <select className="live-add" value="" onChange={e => e.target.value && save({ ...live, players: [...live.players, e.target.value] })} aria-label="أضف حاضر">
                 <option value="">+ أضف</option>
@@ -95,7 +114,7 @@ export default function Live() {
 
         {plays.length > 0 && <Section title="ترتيب الليلة"><StandingRows rows={table} me={me} /></Section>}
 
-        <button className="btn ghost wide" onClick={() => { setDone({ ...live, plays, table, end: Date.now() }); save(null) }}>🏁 خلّص الجلسة وشوف الملخص</button>
+        <button className="btn ghost wide" onClick={() => { setDone({ ...live, plays, table, end: Date.now(), xp: xpSince(idx, live.start) }); save(null) }}>🏁 خلّص الجلسة وشوف الملخص</button>
       </div>
       <div className="action-bar"><button className="btn primary wide" onClick={() => go('/log?live=1')}>+ سجّل قيم بالحضور</button></div>
     </div>

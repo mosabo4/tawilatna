@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { playerStats, versus } from '../stats'
 import { Avatar, Donut, TopBar, Section, Empty, Cover, fmtDate, fmtScore, ScoreBadge } from '../ui'
@@ -6,6 +6,8 @@ import { PlayCard } from './History'
 import { useLevels, LevelPill } from './Levels'
 import { usePerks, TitleBadge } from '../perks'
 import { Character } from '../characters'
+import { xpLog, XP_RULES } from '../levels'
+import { timeAgo } from '../events'
 
 export function PlayerView({ id }) {
   const { idx, me, logout } = useStore()
@@ -19,6 +21,7 @@ export function PlayerView({ id }) {
   const records = [...st.games].sort((x, y) => y.plays - x.plays)
   const others = idx.players.filter(p => p.id !== id)
   const lv = levels.get(id)
+  const xlog = xpLog(idx, id)
 
   return (
     <div className="page">
@@ -33,7 +36,7 @@ export function PlayerView({ id }) {
           </div>
         </div>
         {lv && (
-          <a className="glass lv-home" href="#/levels">
+          <a className="glass lv-home" href={mine ? "#/progress/rewards" : "#/progress/crew"}>
             <span className="lv-main">
               <span className="lv-top"><b>ليفل {lv.level} · {lv.title}</b><small>{lv.xp} XP</small></span>
               <span className="lv-bar"><span style={{ width: `${Math.max(3, lv.progress * 100)}%`, '--c': player.color }} /></span>
@@ -46,6 +49,7 @@ export function PlayerView({ id }) {
           <div><b>{st.plays}</b><span>قيم</span></div>
           <div><b>{st.points ?? '—'}</b><span>المستوى</span></div>
         </div>
+        {lv && <XpBreakdown lv={lv} log={xlog} />}
       </div>
 
       <div className="stack">
@@ -194,6 +198,30 @@ export function MyGames() {
           </a>
         ))}
       </div>
+    </Section>
+  )
+}
+
+// من وين جاه الـXP + آخر الأشياء اللي عطته
+function XpBreakdown({ lv, log }) {
+  const [more, setMore] = useState(false)
+  const rows = [...XP_RULES.map(r => ({ icon: r.icon, label: r.label.replace(/ \(.*\)$/, ''), xp: lv.parts[r.id] || 0 })), { icon: '🏅', label: 'الإنجازات', xp: lv.achXp }].filter(r => r.xp > 0).sort((a, b) => b.xp - a.xp)
+  const max = rows[0]?.xp || 1
+  const shown = log.slice(0, more ? 30 : 8)
+  return (
+    <Section title={`⚡ من وين جاه الـXP`} action={<span className="muted small">{lv.xp} XP</span>}>
+      <ul className="xp-src">
+        {rows.map(r => (
+          <li key={r.label}><span className="xs-ic">{r.icon}</span><span className="xs-main"><span className="xs-top"><b>{r.label}</b><em>{r.xp}</em></span><span className="xs-bar"><i style={{ width: `${Math.max(3, (r.xp / max) * 100)}%` }} /></span></span></li>
+        ))}
+      </ul>
+      {log.length > 0 && <>
+        <h3 className="xs-h">آخر XP</h3>
+        <ul className="xp-log">
+          {shown.map((e, i) => <li key={i}><span>{e.icon}</span><span className="xl-t">{e.text}<small>{timeAgo(e.at)}</small></span><b>+{e.xp}</b></li>)}
+        </ul>
+        {log.length > 8 && <button className="link-btn pad-x pad-b" onClick={() => setMore(m => !m)}>{more ? 'أقل' : 'شوف أكثر'}</button>}
+      </>}
     </Section>
   )
 }

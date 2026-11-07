@@ -4,7 +4,7 @@ import { leaderboard } from '../stats'
 import { Avatar, Section, Empty, Cover } from '../ui'
 import { useFriday } from './Social'
 import { computeLevels } from '../levels'
-import { Stage } from '../characters'
+import { Stage, Character } from '../characters'
 import { buildEvents, getSeen, timeAgo } from '../events'
 import { api } from '../api'
 import { getLive, livePlays } from '../live'
@@ -50,7 +50,7 @@ export default function Home() {
       {live ? (
         <a className="live-card big" href="#/live">
           <div className="row gap center"><span className="pulse" /><b>الجلسة شغّالة</b></div>
-          <div className="live-people">{live.players.map(id => idx.playersById.get(id)).filter(Boolean).map(p => <Avatar key={p.id} player={p} size={30} />)}</div>
+          <div className="live-people chars">{live.players.map(id => idx.playersById.get(id)).filter(Boolean).map(p => <Character key={p.id} player={p} size={40} />)}</div>
           <span className="muted small">{tonight} قيم الليلة · اضغط تكمل</span>
         </a>
       ) : (
