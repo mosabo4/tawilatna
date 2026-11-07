@@ -1553,3 +1553,5 @@ a.pw:active { transform: scale(.99); }
 .bgp { width: 100%; height: 44px; border-radius: 9px; display: grid; place-items: center; background: rgba(255,255,255,.06); }
 .awards { padding: 12px 14px; } .awards ul { list-style: none; margin: 8px 0 0; padding: 0; }
 .awards li { display: flex; flex-direction: column; padding: 6px 0; border-top: 1px solid var(--line); } .awards li small { font-size: 11.5px; color: var(--muted); }
+.board-side { padding: 12px 14px; text-align: center; font-size: 14px; border-color: rgba(255,196,92,.4); background: rgba(255,196,92,.08); }
+.board-side b { color: #FFC45C; }

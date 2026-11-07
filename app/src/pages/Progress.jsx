@@ -74,7 +74,6 @@ function Main() {
   const powers = [
     { id: 'scene', icon: '🎭', name: 'مشهد الرئيسية', val: scene.target ? `${ACTIONS.find(a => a.id === (scene.action || 'punch'))?.label} ${nameOf(scene.target)}` : 'بدون' },
     { id: 'pin', icon: '📌', name: 'تثبيت كتابة', val: active.pin ? 'مثبّتة' : 'بدون' },
-    { id: 'shelf', icon: '🗄️', name: 'رف باسمك', val: myShelf ? myShelf.data?.name : 'سمّ رف' },
     { id: 'award', icon: '🛠️', name: 'صانع الجوائز', val: 'اخترع جائزة' },
   ].filter(p => can(p.id))
 
@@ -99,7 +98,7 @@ function Main() {
       {BGS.map(b => <button key={b.id} className={perks.bg === b.id ? 'on' : ''} onClick={() => set({ bg: b.id })}><span className="bgp" style={{ background: b.css }} />{b.name}</button>)}
     </div>,
     gold: <label className="switch"><input type="checkbox" checked={!!perks.gold} onChange={e => set({ gold: e.target.checked })} /><span>بطاقتك تصير كرت لاعب ذهبي في كل مكان</span></label>,
-    celebrate: <label className="switch"><input type="checkbox" checked={!!perks.celebrate} onChange={e => set({ celebrate: e.target.checked })} /><span>كونفيتي باسمك في صفحة كل قيم تفوزه</span></label>,
+    celebrate: <label className="switch"><input type="checkbox" checked={!!perks.celebrate} onChange={e => set({ celebrate: e.target.checked })} /><span>ورق ملوّن يتطاير مع اسمك في صفحة كل قيم تفوزه</span></label>,
     customTitle: <div className="form">
       <input className="input" maxLength={22} defaultValue={perks.customTitle || ''} onChange={e => setTxt(t => ({ ...t, ct: e.target.value }))} placeholder="مثلاً: سفّاح الكاتان" />
       <div className="row gap"><button className="btn primary small" onClick={() => { set({ customTitle: (txt.ct ?? perks.customTitle ?? '').trim() || null }); setSheet(null) }}>احفظ</button><button className="btn ghost small" onClick={() => { set({ customTitle: null }); setSheet(null) }}>شيله</button></div>
@@ -162,9 +161,8 @@ function Main() {
                     return <a key={c.player.id} href={`#/player/${c.player.id}`} className={`lc-av ${c.player.id === me.id ? 'me' : ''}`} style={{ right: `${pct}%` }} title={`${c.player.name} · ${c.xp} XP`}><Avatar player={c.player} size={c.player.id === me.id ? 34 : 28} /></a>
                   })}
                 </div>
-                {here.length > 0 && <small className="lc-who">{here.map(c => c.player.name).join('، ')}</small>}
                 <ul className="lc-items">
-                  {g.items.length ? g.items.map(r => <li key={r.id}><span>{r.icon}</span><span><b>{r.name}</b><small>{r.desc}</small></span></li>) : <li className="muted"><span>🎲</span><span><b>البداية</b><small>أول ما تنضم للطاولة</small></span></li>}
+                  {g.items.map(r => <li key={r.id}><span>{r.icon}</span><span><b>{r.name}</b><small>{r.desc}</small></span></li>)}
                 </ul>
               </div>
             )

@@ -7,6 +7,7 @@ import { TopBar, Section, Cover } from '../ui'
 import { StandingRows } from './Ranking'
 import { Character } from '../characters'
 import { usePerks } from '../perks'
+import { boardSide, cooldownLeft } from '../actions'
 
 const dur = ms => { const m = Math.max(0, Math.floor(ms / 60000)); return m < 60 ? `${m} دقيقة` : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} ساعة` }
 
@@ -113,6 +114,7 @@ export default function Live() {
           ) : <p className="muted pad">ما سجلتوا شي للحين. اضغط الزر تحت بعد أول قيم.</p>}
         </Section>
 
+        <BoardSide />
         <Forecast live={live} people={people} />
 
         {plays.length > 0 && <Section title="ترتيب الليلة"><StandingRows rows={table} me={me} /></Section>}
@@ -130,13 +132,12 @@ function Forecast({ live, people }) {
   const { can, doAction, fx } = usePerks()
   const [game, setGame] = useState('')
   const [who, setWho] = useState('')
-  const [amt, setAmt] = useState(30)
   const [busy, setBusy] = useState(false)
-  if (!me || (!can('predict') && !can('bet'))) return null
+  if (!me || !can('predict')) return null
   const run = async (...a) => { setBusy(true); try { await doAction(...a) } catch { /* toast */ } finally { setBusy(false) } }
-  const tonight = [...(fx?.predictions || []), ...(fx?.bets || [])].filter(a => a.created_at >= live.start).sort((a, b) => b.created_at.localeCompare(a.created_at))
+  const tonight = [...(fx?.predictions || [])].filter(a => a.created_at >= live.start).sort((a, b) => b.created_at.localeCompare(a.created_at))
   const games = [...idx.games].sort((a, b) => a.name.localeCompare(b.name))
-  const status = a => a.ok == null ? <em className="fc-wait">⏳ ينتظر القيم</em> : a.ok ? <em className="fc-ok">✓ {a.kind === 'bet' ? `+${a.amount}` : '+15'} XP</em> : <em className="fc-no">✗ {a.kind === 'bet' ? `-${a.amount} XP` : 'غلط'}</em>
+  const status = a => a.ok == null ? <em className="fc-wait">⏳ ينتظر القيم</em> : a.ok ? <em className="fc-ok">✓ +15 XP</em> : <em className="fc-no">✗ غلط</em>
   return (
     <Section title="🔮 قبل القيم الجاي">
       <div className="pad-x pad-b form fc">
@@ -153,19 +154,12 @@ function Forecast({ live, people }) {
             <button className="btn primary small" disabled={busy || !game || !who} onClick={() => run('predict', { target: who, game }, '🔮 انحفظ توقعك')}>توقّع</button>
           </div>
         )}
-        {can('bet') && (
-          <div className="fc-row">
-            <span className="fc-amt">💰 أراهن على فوزي بـ <b>{amt}</b> XP</span>
-            <input type="range" min="10" max="100" step="10" value={amt} onChange={e => setAmt(+e.target.value)} />
-            <button className="btn ghost small" disabled={busy || !game} onClick={() => run('bet', { game, data: { amount: amt } }, '💰 انحفظ الرهان')}>راهن</button>
-          </div>
-        )}
         {tonight.length > 0 && (
           <ul className="fc-list">
             {tonight.map(a => (
               <li key={a.id}>
-                <span>{a.kind === 'bet' ? '💰' : '🔮'}</span>
-                <span className="fc-t"><b>{idx.playersById.get(a.player_id)?.name}</b> {a.kind === 'bet' ? `راهن بـ${a.amount} على فوزه في` : `يتوقع ${idx.playersById.get(a.target)?.name} يفوز في`} {idx.gamesById.get(a.game_id)?.name}</span>
+                <span>🔮</span>
+                <span className="fc-t"><b>{idx.playersById.get(a.player_id)?.name}</b> يتوقع {idx.playersById.get(a.target)?.name} يفوز في {idx.gamesById.get(a.game_id)?.name}</span>
                 {status(a)}
               </li>
             ))}
@@ -175,4 +169,15 @@ function Forecast({ live, people }) {
       </div>
     </Section>
   )
+}
+
+// البورد على جهتك (ليفل 7): جلسة وحدة بالشهر
+function BoardSide() {
+  const { idx, me } = useStore()
+  const { can, doAction } = usePerks()
+  const cur = boardSide(idx)
+  if (cur) return <div className="glass board-side">🎯 البورد على اتجاه <b>{idx.playersById.get(cur.player_id)?.name}</b> طول الجلسة</div>
+  if (!me || !can('board')) return null
+  const left = cooldownLeft(idx, me.id, 'board', 30)
+  return <button className="btn ghost wide" disabled={left > 0} onClick={() => doAction('board', {}, '🎯 البورد على جهتك الليلة').catch(() => {})}>🎯 خلّ البورد على جهتي الليلة{left ? ` (بعد ${left} يوم)` : ''}</button>
 }

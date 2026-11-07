@@ -9,6 +9,7 @@ import { buildEvents, getSeen, timeAgo } from '../events'
 import { api } from '../api'
 import { getLive, livePlays } from '../live'
 import { usePerks } from '../perks'
+import { boardSide } from '../actions'
 
 export default function Home() {
   const { idx, me } = useStore()
@@ -58,6 +59,7 @@ export default function Home() {
     <div className="page stack home">
       <Scenes />
 
+      {live && boardSide(idx) && <div className="glass board-side">🎯 البورد على اتجاه <b>{idx.playersById.get(boardSide(idx).player_id)?.name}</b> الليلة</div>}
       {live ? (
         <a className="live-card big" href="#/live">
           <div className="row gap center"><span className="pulse" /><b>الجلسة شغّالة</b></div>

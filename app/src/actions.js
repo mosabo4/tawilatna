@@ -17,20 +17,14 @@ const pos = (p, pid) => p.results.find(r => r.player_id === pid)?.position
 export function resolveActions(idx) {
   const acts = idx.actions || []
   const xp = new Map() // pid -> {predict, bet, thanks}
-  const add = (pid, k, v) => { if (!xp.has(pid)) xp.set(pid, { predict: 0, bet: 0, thanks: 0 }); xp.get(pid)[k] += v }
-  const predictions = [], bets = [], challenges = [], rematches = []
+  const add = (pid, k, v) => { if (!xp.has(pid)) xp.set(pid, { predict: 0, thanks: 0, thankGive: 0 }); xp.get(pid)[k] += v }
+  const predictions = [], challenges = [], rematches = []
   for (const a of acts) {
     if (a.kind === 'predict') {
       const p = after(idx, a.created_at, 2, x => x.game_id === a.game_id)
       const ok = p ? pos(p, a.target) === 1 : null
       if (ok) add(a.player_id, 'predict', 15)
       predictions.push({ ...a, play: p, ok })
-    } else if (a.kind === 'bet') {
-      const amt = Math.max(10, Math.min(100, Number(a.data?.amount) || 0))
-      const p = after(idx, a.created_at, 2, x => x.game_id === a.game_id && x.results.some(r => r.player_id === a.player_id))
-      const ok = p ? pos(p, a.player_id) === 1 : null
-      if (p) add(a.player_id, 'bet', ok ? amt : -amt)
-      bets.push({ ...a, amount: amt, play: p, ok })
     } else if (a.kind === 'challenge') {
       const p = after(idx, a.created_at, 14, x => (!a.game_id || x.game_id === a.game_id) && x.results.some(r => r.player_id === a.player_id) && x.results.some(r => r.player_id === a.target))
       const winner = p ? (pos(p, a.player_id) < pos(p, a.target) ? a.player_id : pos(p, a.target) < pos(p, a.player_id) ? a.target : null) : undefined
@@ -40,9 +34,9 @@ export function resolveActions(idx) {
       const w = orig?.results.find(r => r.position === 1)?.player_id
       const p = orig ? after(idx, a.created_at, 30, x => x.game_id === orig.game_id && x.results.some(r => r.player_id === a.player_id) && x.results.some(r => r.player_id === w)) : null
       rematches.push({ ...a, orig, rival: w, play: p, done: !!p })
-    } else if (a.kind === 'thanks' && a.target) add(a.target, 'thanks', 5)
+    } else if (a.kind === 'thanks' && a.target) { add(a.target, 'thanks', 10); add(a.player_id, 'thankGive', 3) }
   }
-  return { xp, predictions, bets, challenges, rematches }
+  return { xp, predictions, challenges, rematches }
 }
 
 // المفعول الحالي على كل لاعب (ملصقات، بيبي، لقب مغيّر)
@@ -67,3 +61,6 @@ export const cooldownLeft = (idx, pid, kind, days) => {
   const left = days * DAY - (Date.now() - new Date(a.created_at).getTime())
   return left > 0 ? Math.ceil(left / DAY) : 0
 }
+
+// البورد على جهة لاعب (ليفل 7): يشتغل 12 ساعة من وقت ما يفعّله
+export const boardSide = (idx, now = Date.now()) => (idx.actions || []).find(a => a.kind === 'board' && now - new Date(a.created_at).getTime() < 12 * 3600e3) || null
