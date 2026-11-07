@@ -1620,3 +1620,4 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .ax-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 2px; }
 .ax-xp { font-style: normal; font-size: 11.5px; color: #FFC45C; }
 .ax-who { display: flex; align-items: center; gap: 6px; } .ax-who small { font-size: 10.5px; color: var(--muted-2); white-space: nowrap; }
+.ax-tag { margin-inline-start: auto; font-style: normal; font-size: 10.5px; padding: 2px 7px; border-radius: 8px; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); white-space: nowrap; }

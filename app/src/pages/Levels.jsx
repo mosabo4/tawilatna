@@ -72,8 +72,9 @@ export function AchList() {
                   <b>{hide ? '؟؟؟' : a.name}</b>
                   {a.group === 'tier' && <span className="ax-tiers">{Array.from({ length: a.tiers }, (_, i) => <i key={i} className={i < a.tier ? 'on' : ''} style={{ '--c': TIER[i].color }} />)}</span>}
                   {a.group === 'season' && a.times > 0 && <em className="ax-times">×{a.times}</em>}
+                  {a.group === 'tier' && <em className="ax-tag" style={{ '--c': TIER[Math.min(a.tier, a.tiers - 1)].color }}>{a.maxed ? `${TIER[a.tiers - 1].icon} مكتمل` : `${TIER[a.tier].icon} ${TIER[a.tier].name}`}</em>}
                 </div>
-                <small>{hide ? 'إنجاز سري، ينكشف لما أحد يفتحه' : a.group === 'tier' && !a.maxed ? `الدرجة الجاية (${TIER[a.tier].name}): ${a.desc}` : a.desc}</small>
+                <small>{hide ? 'إنجاز سري، ينكشف لما أحد يفتحه' : a.desc}</small>
                 {mine && !a.maxed && a.progress && !hide && <span className="pw-bar"><span className="trk"><i style={{ width: `${Math.min(100, (a.progress[0] / a.progress[1]) * 100)}%` }} /></span><em>{Math.min(a.progress[0], a.progress[1])}/{a.progress[1]}</em></span>}
                 <span className="ax-foot">
                   <em className="ax-xp">{a.maxed ? `✓ ${a.xp} XP` : `+${a.nextXp} XP`}{a.group === 'tier' && a.xp > 0 && !a.maxed ? ` · أخذت ${a.xp}` : ''}</em>

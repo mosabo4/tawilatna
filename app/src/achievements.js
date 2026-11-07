@@ -9,7 +9,7 @@ export const TIER = [
 ]
 const TIER_XP = [20, 60, 150, 400]
 export const GROUPS = [
-  { id: 'tier', name: 'درجات' }, { id: 'hard', name: 'صعبة' }, { id: 'crew', name: 'الشلة' }, { id: 'secret', name: 'سرية' }, { id: 'season', name: 'موسمية' },
+  { id: 'tier', name: 'المسيرة' }, { id: 'hard', name: 'صعبة' }, { id: 'crew', name: 'الشلة' }, { id: 'secret', name: 'سرية' }, { id: 'season', name: 'موسمية' },
 ]
 const tsOf = p => p.created_at || `${p.played_on}T12:00:00`
 const isLast = (p, pid) => { const r = p.results.find(x => x.player_id === pid); return p.results.length > 1 && r && r.position === Math.max(...p.results.map(x => x.position)) && p.results.some(x => x.position < r.position) }
@@ -61,48 +61,50 @@ export function achContext(idx, rx) {
   return { chrono, kings, days, leaderDays, scoringTypes, compCats, monthChamps, rx, totalGames: idx.games.length }
 }
 
-const tiered = (id, icon, name, unit, steps, value) => ({ id, icon, name, group: 'tier', unit, steps, value })
+const tiered = (id, icon, name, text, steps, value) => ({ id, icon, name, group: 'tier', text, steps, value })
+// عدد + معدود بالعربي (3-10 جمع، 11+ مفرد)
+const cnt = (n, one, many) => `${n} ${n >= 3 && n <= 10 ? many : one}`
 const once = (id, icon, name, desc, xp, group, test, prog) => ({ id, icon, name, desc, xp, group, test, prog })
 
 function defs(ctx) {
   const all = ctx.totalGames
   const cats = ctx.compCats.length
   return [
-    tiered('explore', '📚', 'المستكشف', 'لعبة جربتها', [15, 30, 45, Math.max(46, all)], s => s.games),
-    tiered('attend', '📅', 'الحضور', 'جلسة', [15, 40, 80, 150], s => s.sessions),
-    tiered('wins', '🏆', 'الفوز', 'فوز', [10, 50, 150, 300], s => s.wins),
-    tiered('streak', '🔥', 'على النار', 'فوز ورا بعض', [3, 5, 7, 10], s => s.bestWinStreak),
-    tiered('critic', '⭐', 'الناقد', 'تقييم', [15, 30, 45, Math.max(46, all)], s => s.ratings),
-    tiered('talk', '💬', 'صاحب رأي', 'تعليق', [10, 25, 50], s => s.comments),
-    tiered('cats', '🌈', 'متعدد المواهب', 'تصنيف فزت فيه', [3, Math.min(5, cats), cats].filter((x, i, a) => a.indexOf(x) === i), s => s.winCats),
-    tiered('setup', '🧱', 'المجهّز', 'لعبة ثقيلة جهزتها', [5, 15, 40], s => s.setups),
-    tiered('oracle', '🔮', 'المحنك', 'توقع صحيح', [5, 15, 30], s => s.predOk),
-    tiered('duelist', '⚔️', 'المتحدي', 'تحدي رسمي فزته', [3, 10, 25], s => s.chalWon),
-    tiered('daily', '🎯', 'المواظب', 'يوم ورا بعض في تحدي اليوم', [7, 30, 100], s => s.dailyStreak),
+    tiered('explore', '📚', 'المستكشف', (n, last) => (last && n >= all ? 'جرّب كل ألعاب الدولاب' : `جرّب ${cnt(n, 'لعبة', 'ألعاب')} مختلفة`), [15, 30, 45, Math.max(46, all)], s => s.games),
+    tiered('attend', '📅', 'الحضور', n => `احضر ${cnt(n, 'جلسة', 'جلسات')}`, [15, 40, 80, 150], s => s.sessions),
+    tiered('wins', '🏆', 'الفوز', n => `فز ${cnt(n, 'مرة', 'مرات')}`, [10, 50, 150, 300], s => s.wins),
+    tiered('streak', '🔥', 'على النار', n => `فز ${cnt(n, 'مرة', 'مرات')} متتابعة`, [3, 5, 7, 10], s => s.bestWinStreak),
+    tiered('critic', '⭐', 'الناقد', (n, last) => (last && n >= all ? 'قيّم كل ألعاب الدولاب' : `قيّم ${cnt(n, 'لعبة', 'ألعاب')}`), [15, 30, 45, Math.max(46, all)], s => s.ratings),
+    tiered('talk', '💬', 'صاحب رأي', n => `علّق على ${cnt(n, 'لعبة', 'ألعاب')}`, [10, 25, 50], s => s.comments),
+    tiered('cats', '🌈', 'متعدد المواهب', (n, last) => (last ? 'فز في كل التصانيف' : `فز في ${cnt(n, 'تصنيف', 'تصانيف')} مختلفة`), [3, Math.min(5, cats), cats].filter((x, i, a) => a.indexOf(x) === i), s => s.winCats),
+    tiered('setup', '🧱', 'المجهّز', n => `جهّز ${cnt(n, 'لعبة ثقيلة', 'ألعاب ثقيلة')}`, [5, 15, 40], s => s.setups),
+    tiered('oracle', '🔮', 'المحنك', n => `توقّع الفايز صح ${cnt(n, 'مرة', 'مرات')}`, [5, 15, 30], s => s.predOk),
+    tiered('duelist', '⚔️', 'المتحدي', n => `فز في ${cnt(n, 'تحدي رسمي', 'تحديات رسمية')}`, [3, 10, 25], s => s.chalWon),
+    tiered('daily', '🎯', 'المواظب', n => `خلّص تحدي اليوم ${cnt(n, 'يوم', 'أيام')} متتابعة`, [7, 30, 100], s => s.dailyStreak),
 
-    once('comeback', '🔄', 'الرجعة', 'تفوز بعد ما كنت الأخير في 3 أقيام ورا بعض', 150, 'hard', s => s.comeback),
-    once('kingslayer', '🗡️', 'قاتل الملك', 'تفوز على ملك اللعبة في لعبته 3 مرات', 200, 'hard', s => s.kingslay >= 3, s => [s.kingslay, 3]),
-    once('prodigy', '🎓', 'الموهبة', 'تفوز في أول مرة تلعب 3 ألعاب مختلفة', 200, 'hard', s => s.firstWins >= 3, s => [s.firstWins, 3]),
-    once('hurricane', '🌪️', 'الإعصار', 'تفوز بكل أقيام جلسة فيها 4 أقيام أو أكثر', 300, 'hard', s => s.hurricane),
-    once('marathon', '🏃', 'الماراثون', 'تحضر كل أقيام جلسة فيها 8 أقيام أو أكثر', 150, 'hard', s => s.marathon, s => [s.maxDayPlays, 8]),
-    once('heavy', '🧠', 'وحش الثقيلة', 'تفوز 10 مرات في ألعاب صعوبتها 3.5 أو أكثر', 300, 'hard', s => s.heavyWins >= 10, s => [s.heavyWins, 10]),
-    once('wall', '🧱', 'الجدار', 'ما تجي الأخير في 25 قيم ورا بعض', 250, 'hard', s => s.bestNotLast >= 25, s => [s.bestNotLast, 25]),
-    once('emperor', '👑', 'الإمبراطور', 'تكون ملك 5 ألعاب في نفس الوقت', 400, 'hard', s => s.kingOf >= 5, s => [s.kingOf, 5]),
-    once('reign', '🥇', 'المتصدر الدائم', 'تبقى الأول في الترتيب 30 يوم ورا بعض', 400, 'hard', s => s.leadDays >= 30, s => [s.leadDays, 30]),
-    once('sniper', '🎯', 'القنّاص', 'تفوز على كل واحد في الشلة في تحدي رسمي', 400, 'hard', s => s.sniper, s => [s.chalBeaten, s.others]),
-    once('goat', '🐐', 'الأسطورة الحية', 'في لعبة وحدة: تفوز 3 مرات على كل واحد في الشلة', 500, 'hard', s => s.goat),
-    once('perfect', '💯', 'المثالي', 'تفوز 10 أقيام من أصل 12 ورا بعض', 500, 'hard', s => s.perfect, s => [s.best12, 10]),
-    once('chameleon', '🎭', 'الحرباية', `تفوز بكل طرق الفوز (${ctx.scoringTypes.length})`, 300, 'hard', s => s.scorings >= ctx.scoringTypes.length, s => [s.scorings, ctx.scoringTypes.length]),
-    once('patient', '⏱️', 'الصبور', 'تفوز في قيم طوله ساعتين ونص أو أكثر', 200, 'hard', s => s.longWin),
-    once('nomad', '🧳', 'الرحّال', 'تلعب 20 لعبة مختلفة في شهر واحد', 300, 'hard', s => s.monthGames >= 20, s => [s.monthGames, 20]),
+    once('comeback', '🔄', 'الرجعة', 'فز بعد ما تجي الأخير في 3 أقيام متتابعة', 150, 'hard', s => s.comeback),
+    once('kingslayer', '🗡️', 'قاتل الملك', 'اغلب ملك اللعبة في لعبته 3 مرات', 200, 'hard', s => s.kingslay >= 3, s => [s.kingslay, 3]),
+    once('prodigy', '🎓', 'الموهبة', 'فز من أول مرة تلعبها في 3 ألعاب مختلفة', 200, 'hard', s => s.firstWins >= 3, s => [s.firstWins, 3]),
+    once('hurricane', '🌪️', 'الإعصار', 'فز بكل أقيام الجلسة (4 أقيام على الأقل)', 300, 'hard', s => s.hurricane),
+    once('marathon', '🏃', 'الماراثون', 'العب كل أقيام جلسة فيها 8 أقيام أو أكثر', 150, 'hard', s => s.marathon, s => [s.maxDayPlays, 8]),
+    once('heavy', '🧠', 'وحش الثقيلة', 'فز 10 مرات في ألعاب صعوبتها 3.5 أو أكثر', 300, 'hard', s => s.heavyWins >= 10, s => [s.heavyWins, 10]),
+    once('wall', '🧱', 'الجدار', 'لا تجي الأخير في 25 قيم متتابع', 250, 'hard', s => s.bestNotLast >= 25, s => [s.bestNotLast, 25]),
+    once('emperor', '👑', 'الإمبراطور', 'كن ملك 5 ألعاب في نفس الوقت', 400, 'hard', s => s.kingOf >= 5, s => [s.kingOf, 5]),
+    once('reign', '🥇', 'المتصدر الدائم', 'ابقَ الأول في الترتيب 30 يوم متواصل', 400, 'hard', s => s.leadDays >= 30, s => [s.leadDays, 30]),
+    once('sniper', '🎯', 'القنّاص', 'اغلب كل واحد في الشلة في تحدي رسمي', 400, 'hard', s => s.sniper, s => [s.chalBeaten, s.others]),
+    once('goat', '🐐', 'الأسطورة الحية', 'في لعبة وحدة، اغلب كل واحد في الشلة 3 مرات', 500, 'hard', s => s.goat),
+    once('perfect', '💯', 'المثالي', 'فز في 10 أقيام من أصل 12 متتابعة', 500, 'hard', s => s.perfect, s => [s.best12, 10]),
+    once('chameleon', '🎭', 'الحرباية', `فز بكل طرق الفوز الموجودة (${ctx.scoringTypes.length} طرق)`, 300, 'hard', s => s.scorings >= ctx.scoringTypes.length, s => [s.scorings, ctx.scoringTypes.length]),
+    once('patient', '⏱️', 'الصبور', 'فز في قيم استمر ساعتين ونص أو أكثر', 200, 'hard', s => s.longWin),
+    once('nomad', '🧳', 'الرحّال', 'العب 20 لعبة مختلفة في شهر واحد', 300, 'hard', s => s.monthGames >= 20, s => [s.monthGames, 20]),
 
-    once('family', '🫂', 'العائلة', 'تحضر 10 جلسات حضرتها الشلة كاملة', 200, 'crew', s => s.fullDays >= 10, s => [s.fullDays, 10]),
-    once('generous', '🎁', 'الكريم', 'تهدي XP 10 مرات', 100, 'crew', s => s.gifts >= 10, s => [s.gifts, 10]),
-    once('historian', '📜', 'المؤرخ', 'تكتب 15 مذكرة', 150, 'crew', s => s.stories >= 15, s => [s.stories, 15]),
-    once('beloved', '🙏', 'محبوب الشلة', 'تاخذ 25 شكر على التجهيز', 200, 'crew', s => s.thanked >= 25, s => [s.thanked, 25]),
-    once('luckyme', '🍀', 'المحظوظ رغماً عنه', '5 من انتصاراتك انحط عليها «بالحظ»', 100, 'crew', s => s.luckyMarked >= 5, s => [s.luckyMarked, 5]),
-    once('mentor', '🤝', 'العرّاب الناجح', 'تلميذك يوصل ليفل 10', 300, 'crew', s => s.mentorOk),
-    once('taste', '👨‍🍳', 'صاحب الذوق', '10 ألعاب اخترتها للجلسة انلعبت فعلاً', 150, 'crew', s => s.tasteHits >= 10, s => [s.tasteHits, 10]),
+    once('family', '🫂', 'العائلة', 'احضر 10 جلسات حضرتها الشلة كاملة', 200, 'crew', s => s.fullDays >= 10, s => [s.fullDays, 10]),
+    once('generous', '🎁', 'الكريم', 'أهدِ XP لأحد من الشلة 10 مرات', 100, 'crew', s => s.gifts >= 10, s => [s.gifts, 10]),
+    once('historian', '📜', 'المؤرخ', 'اكتب 15 مذكرة لأقيام', 150, 'crew', s => s.stories >= 15, s => [s.stories, 15]),
+    once('beloved', '🙏', 'محبوب الشلة', 'خذ 25 شكر على التجهيز', 200, 'crew', s => s.thanked >= 25, s => [s.thanked, 25]),
+    once('luckyme', '🍀', 'المحظوظ رغماً عنه', 'ينحط «بالحظ» على 5 من انتصاراتك', 100, 'crew', s => s.luckyMarked >= 5, s => [s.luckyMarked, 5]),
+    once('mentor', '🤝', 'العرّاب الناجح', 'كن عرّاب لاعب يوصل ليفل 10', 300, 'crew', s => s.mentorOk),
+    once('taste', '👨‍🍳', 'صاحب الذوق', 'اختر للجلسة 10 ألعاب تنلعب فعلاً', 150, 'crew', s => s.tasteHits >= 10, s => [s.tasteHits, 10]),
 
     once('zero', '💀', 'الكارثة', 'صفر نقاط في قيم', 60, 'secret', s => s.zero),
     once('owl', '🦉', 'البومة', 'قيم يخلص بعد الساعة 4 الفجر', 80, 'secret', s => s.owl),
@@ -113,8 +115,8 @@ function defs(ctx) {
     once('ebaby', '👶', 'البيبي الأبدي', 'يسوّونك بيبي 5 مرات', 60, 'secret', s => s.babied >= 5),
     once('grave', '🪦', 'المقبرة', 'تخسر 10 تحديات رسمية', 80, 'secret', s => s.chalLost >= 10),
 
-    { id: 'champ', icon: '🏅', name: 'بطل الشهر', desc: 'أكثر واحد فاز في الشهر (كل شهر من جديد)', group: 'season', each: 150, times: s => s.champMonths },
-    { id: 'always', icon: '📆', name: 'الحاضر الدائم', desc: 'تحضر كل جلسات الشهر (شهر فيه 3 جلسات أو أكثر)', group: 'season', each: 100, times: s => s.fullMonths },
+    { id: 'champ', icon: '🏅', name: 'بطل الشهر', desc: 'كن أكثر واحد فاز في الشهر (يتجدد كل شهر)', group: 'season', each: 150, times: s => s.champMonths },
+    { id: 'always', icon: '📆', name: 'الحاضر الدائم', desc: 'احضر كل جلسات الشهر (3 جلسات على الأقل)', group: 'season', each: 100, times: s => s.fullMonths },
   ]
 }
 
@@ -214,7 +216,7 @@ export function evalAchievements(ctx, s) {
       const target = maxed ? d.steps.at(-1) : d.steps[tier]
       const tierIdx = n => (d.steps.length === 3 ? n : n)
       return {
-        ...d, desc: maxed ? `خلّصت كل الدرجات (${v} ${d.unit})` : `${target} ${d.unit}`, tier, tiers: d.steps.length, tierInfo: tier ? TIER[tierIdx(tier - 1)] : null,
+        ...d, desc: d.text(target, tier === d.steps.length - 1 || maxed), unit: '', tier, tiers: d.steps.length, tierInfo: tier ? TIER[tierIdx(tier - 1)] : null,
         done: tier > 0, maxed, xp, nextXp: maxed ? 0 : TIER_XP[tier], progress: [Math.min(v, target), target], value: v,
         keys: Array.from({ length: tier }, (_, i) => `${d.id}:${i}`),
       }

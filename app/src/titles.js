@@ -82,7 +82,7 @@ export function unlockHistory(idx, pid) {
     }
     for (const a of lv.achievements) for (const k of a.keys || []) if (!prev.ach.has(k)) {
       const t = a.group === 'tier' ? ` ${['🥉 برونزي', '🥈 فضي', '🥇 ذهبي', '💎 ماسي'][+k.split(':')[1]]}` : a.group === 'season' ? ' (مرة جديدة)' : ''
-      out.push({ at: d, kind: 'ach', icon: a.icon, name: a.name + t, desc: a.group === 'tier' ? `وصلت ${a.steps[+k.split(':')[1]]} ${a.unit}` : a.desc })
+      out.push({ at: d, kind: 'ach', icon: a.icon, name: a.name + t, desc: a.group === 'tier' ? a.text(a.steps[+k.split(':')[1]], +k.split(':')[1] === a.steps.length - 1) : a.desc })
     }
     for (const t of ts) if (titles.has(t.id) && !prev.titles.has(t.id) && t.id !== 'visitor') out.push({ at: d, kind: 'title', icon: t.icon, name: t.name, desc: t.desc })
     prev = { level: lv.level, ach: new Set([...prev.ach, ...ach]), titles: new Set([...prev.titles, ...titles]) }
