@@ -101,7 +101,8 @@ function Hat({ type }) {
 // d = اتجاه الحركة في الصورة (l يسار، r يمين) عشان نقلبها صح في المسرح
 export const K_POSES = ['idle', 'bust', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown', 'f_happy', 'f_angry', 'f_shock', 'f_smug', 'f_cry']
 const E = { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'r'], dice: ['throw', 'r'], hit: 'three', laugh: 'cards', cry: 'back', dance: 'jump', cheer: 'jump', jump: 'jump' }, gallery: ['idle', 'front', 'three', 'side', 'back', 'cross', 'cards', 'jump', 'throw'] }
-export const IMG_CHARS = Object.fromEntries([['مصعب', 'musab'], ['هاني', 'hani'], ['محمدي', 'mohammadi'], ['معتز', 'muataz'], ['فارس', 'fares'], ['اياد', 'eyad']].map(([n, slug]) => [n, { slug, def: 'e', styles: { e: slug === 'musab' ? { ...E, poses: { ...E.poses, punch: ['throw', 'l'], dice: ['throw', 'l'] } } : E } }]))
+const MUSAB = { ...E, own: ['punch', 'hit', 'laugh', 'cry', 'dance', 'cheer', 'flag', 'crown', 'baby'], poses: { ...E.poses, punch: ['punch', 'l'], dice: ['throw', 'l'], hit: ['hit', 'l'], laugh: ['laugh', 'l'], cry: 'cry', dance: 'dance', cheer: 'cheer', flag: 'flag', crown: 'crown', baby: 'baby' }, gallery: [...E.gallery, 'punch', 'hit', 'laugh', 'cry', 'dance', 'cheer', 'flag', 'crown', 'baby'] }
+export const IMG_CHARS = Object.fromEntries([['مصعب', 'musab'], ['هاني', 'hani'], ['محمدي', 'mohammadi'], ['معتز', 'muataz'], ['فارس', 'fares'], ['اياد', 'eyad']].map(([n, slug]) => [n, { slug, def: 'e', styles: { e: slug === 'musab' ? MUSAB : E } }]))
 export const idleFile = sty => { const p = sty.poses.idle; return Array.isArray(p) ? p[0] : p }
 export const imgSrc = (slug, style, pose) => `${import.meta.env.BASE_URL}chars/${slug}/${style}/${pose}.webp`
 

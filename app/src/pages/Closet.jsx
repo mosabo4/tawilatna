@@ -90,7 +90,7 @@ function rolesFor(sty) {
     const raw = r.pose ? sty.poses[r.pose] : null
     const file = r.files ? r.files[0] : Array.isArray(raw) ? raw[0] : raw || null
     const files = r.files || (file ? [file] : [])
-    const status = r.ready ? 'ready' : file ? 'borrow' : 'none'
+    const status = r.ready || sty.own?.includes(r.pose) ? 'ready' : file ? 'borrow' : 'none'
     return { ...r, files: [...files, ...(r.extra || [])], mainCount: files.length, file, status }
   })
 }
