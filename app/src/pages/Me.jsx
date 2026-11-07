@@ -10,6 +10,7 @@ import { MyGames } from './Players'
 import { usePerks, TitleBadge } from '../perks'
 import { unlockHistory } from '../titles'
 import { useLevels } from './Levels'
+import { LimitsList } from './Limits'
 import { Avatar, TopBar, Section, Field, Empty } from '../ui'
 
 const PALETTE = ['#D93A3A', '#2F6FDB', '#E9B425', '#2E9E5B', '#8A4FD8', '#EE7A2B', '#1BA6A6', '#D6458F', '#6B7A2E', '#4B4F58']
@@ -122,7 +123,7 @@ function Admin() {
   )
 }
 
-const SUBS = { char: ['شخصيتي', CharacterEditor], games: ['ألعابي وتقييماتي', MyGames], admin: ['أدوات المسؤول', Admin] }
+const SUBS = { char: ['شخصيتي', CharacterEditor], games: ['ألعابي وتقييماتي', MyGames], limits: ['جوائزي المحدودة', LimitsList], admin: ['أدوات المسؤول', Admin] }
 
 export default function Me({ sub }) {
   const { me, idx, logout } = useStore()
@@ -160,6 +161,7 @@ export default function Me({ sub }) {
         <nav className="me-links slim">
           {link('🧍', 'شخصيتي', '#/me/char', 'وضعياتها')}
           {link('🎲', 'ألعابي وتقييماتي', '#/me/games', unrated ? `${unrated} بدون تقييم` : 'كلها مقيّمة', unrated ? 'warn' : '')}
+          {link('⏳', 'جوائزي المحدودة', '#/me/limits', 'مرة بالأسبوع وبالشهر')}
           {link('🌐', 'صفحتي العامة', `#/player/${me.id}`, 'كيف يشوفني الباقين')}
         </nav>
         {me.is_admin && <nav className="me-links">{link('🛠️', 'أدوات المسؤول', '#/me/admin', 'الملخص، القفل، اللاعبين، الشخصيات', 'admin')}</nav>}

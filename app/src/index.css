@@ -1674,3 +1674,11 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .role-body b { font-size: 13px; } .role-body b em { font-style: normal; font-size: 11px; color: var(--muted); margin-inline-start: 4px; }
 .role-body ul { margin: 0; padding: 0 14px 0 0; font-size: 11.5px; line-height: 1.6; } .role-body small { font-size: 11px; color: var(--muted-2); }
 .role-imgs img { max-width: 120px; }
+.lim-sec { padding: 4px 12px 8px; } .lim-sec h3 { margin: 10px 2px 8px; font-size: 15px; }
+.lim-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.lim { display: flex; flex-direction: column; gap: 6px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
+.lim-top { display: flex; align-items: center; gap: 8px; } .lim-top b { font-size: 14px; } .lim-ic { font-size: 22px; }
+.lim p { margin: 0; font-size: 12px; line-height: 1.55; color: var(--muted); flex: 1; }
+.lim-st { display: flex; flex-direction: column; gap: 2px; font-size: 12.5px; font-weight: 700; } .lim-st small { font-weight: 400; color: var(--muted-2); font-size: 11px; }
+.lim.ready { border-color: rgba(70, 210, 130, .55); background: rgba(70, 210, 130, .08); } .lim .ok { color: #5fe3a0; }
+.lim.wait .wt { color: #ffcf6b; } .lim.lock { opacity: .6; } .lim.lock .lk { color: var(--muted); }
