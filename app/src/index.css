@@ -1441,7 +1441,7 @@ a.pw:active { transform: scale(.99); }
 .me-card { position: relative; display: flex; flex-direction: column; align-items: stretch; width: 100%; border-radius: 26px; overflow: hidden; color: inherit; text-decoration: none; background: linear-gradient(150deg, color-mix(in srgb, var(--c) 28%, #2a2b5c) 0%, #2a2b5c 55%, #1b1f45 100%); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 20px 40px -20px #000; }
 .me-card::before { content: ''; position: absolute; right: -60px; top: -60px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--c) 60%, transparent), transparent 70%); pointer-events: none; }
 .me-card.legend { background: linear-gradient(120deg, rgba(91,124,255,.35), rgba(195,139,255,.35), rgba(255,143,177,.3), rgba(91,124,255,.35)); background-size: 300% 100%; animation: legendBg 8s linear infinite; }
-.mc-body { position: relative; display: grid; grid-template-columns: 116px minmax(0, 1fr) 112px; align-items: end; min-height: 196px; }
+.me-card .mc-body { width: 100%; align-self: stretch; position: relative; display: grid; grid-template-columns: 116px minmax(0, 1fr) 112px; align-items: end; min-height: 196px; }
 .mc-chr { align-self: end; justify-self: center; display: flex; align-items: flex-end; height: 196px; }
 .mc-chr .chr-img { height: 196px !important; width: auto; max-width: 140px; object-fit: contain; object-position: bottom; }
 .mc-mid { align-self: center; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 16px 4px; min-width: 0; }
