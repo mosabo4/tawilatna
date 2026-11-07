@@ -23,6 +23,7 @@ function Box({ g, dim, onPick, picked }) {
         <span className="box-top" />
       </span>
       <span className="box-label"><span className="box-name">{g.game.name}</span></span>
+      {g.king && <span className="box-king" title={`ملك اللعبة: ${g.king}`}>👑</span>}
       {g.plays.length > 0 && <span className="box-plays" title={`${g.plays.length} قيم`}>{g.plays.length}</span>}
     </a>
   )

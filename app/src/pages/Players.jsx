@@ -8,7 +8,7 @@ import { PlayCard } from './History'
 import { useLevels, LevelPill } from './Levels'
 import { usePerks, TitleBadge } from '../perks'
 import { Character } from '../characters'
-import { xpLog, XP_RULES } from '../levels'
+import { xpLog, XP_RULES, levelOfReward } from '../levels'
 import { timeAgo } from '../events'
 
 export function PlayerView({ id }) {
@@ -34,7 +34,7 @@ export function PlayerView({ id }) {
           <Donut value={(st.points ?? 0) / 100}><Avatar player={player} size={56} /></Donut>
           <div className="lead-info">
             {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <small>المستوى</small>}
-            <strong>{player.name}</strong>
+            <strong className={lk.nameFx ? 'name-fx' : ''}>{player.name}</strong>
             <p>{st.plays ? `المستوى ${st.points ?? '—'} · فاز ${st.wins} من ${st.plays} قيم` : 'ما لعب للحين'}</p>
           </div>
         </div>
@@ -49,6 +49,9 @@ export function PlayerView({ id }) {
         )}
         {!mine && me && <PlayerPowers target={player} />}
         <Challenges pid={id} />
+        {!mine && me && <Weakness pid={id} />}
+        {(levels.get(id)?.level || 0) >= levelOfReward('legendPage') && <LegendWins pid={id} />}
+        <YearMedals pid={id} />
         <div className="row3">
           <div><b>{st.wins}</b><span>فوز</span></div>
           <div><b>{st.plays}</b><span>قيم</span></div>
@@ -168,7 +171,7 @@ export default function PlayersList() {
             return (
               <a key={p.id} className={`glass crew-card ${lk.gold ? 'gold-card' : ''} ${p.id === me?.id ? 'is-me' : ''}`} href={`#/player/${p.id}`} style={{ '--c': lk.color || p.color, ...(lk.bg ? { background: lk.bg.css } : {}) }}>
                 <span className="crew-char"><Character player={p} size={92} /></span>
-                <b>{p.name}</b>
+                <b className={lk.nameFx ? 'name-fx' : ''}>{p.name}</b>
                 {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <small>{lv?.title}</small>}
                 {lv && <span className="crew-lv"><LevelPill level={lv.level} /> ليفل</span>}
               </a>
@@ -234,7 +237,7 @@ function XpBreakdown({ lv, log }) {
 // أشياء تسويها مع لاعب ثاني من صفحته (حسب ليفلك)
 function PlayerPowers({ target }) {
   const { idx, me } = useStore()
-  const { can, doAction } = usePerks()
+  const { can, doAction, levels } = usePerks()
   const [open, setOpen] = useState(null)
   const [busy, setBusy] = useState(false)
   const [txt, setTxt] = useState('')
@@ -249,7 +252,10 @@ function PlayerPowers({ target }) {
     { id: 'tease', icon: '😭', label: 'ملصق', left: cd('tease', 7) },
     { id: 'baby', icon: '👶', label: 'بيبي', left: cd('baby', 7) },
     { id: 'retitle', icon: '🏷️', label: 'غيّر لقبه', left: cd('retitle', 7) },
-  ].filter(x => can(x.id) && !(immune && ['tease', 'baby', 'retitle'].includes(x.id)))
+    { id: 'caption', icon: '💬', label: 'تعليق إجباري', left: cd('caption', 7) },
+    { id: 'nick', icon: '🎭', label: 'اسم مستعار', left: cd('nick', 7) },
+    { id: 'godfather', icon: '🤝', label: 'كن عرّابه', left: cd('godfather', 30) },
+  ].filter(x => can(x.id) && !(immune && ['tease', 'baby', 'retitle', 'caption', 'nick'].includes(x.id)) && (x.id !== 'godfather' || (levels?.get(target.id)?.level || 1) <= (levels?.get(me.id)?.level || 1) - 2))
   if (!items.length) return null
   return (
     <div className="glass ppow">
@@ -261,6 +267,18 @@ function PlayerPowers({ target }) {
         <select className="input" value={game} onChange={e => setGame(e.target.value)}><option value="">أي لعبة</option>{[...idx.games].sort((a, b) => a.name.localeCompare(b.name)).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select>
         <button className="btn primary small" disabled={busy} onClick={() => run('challenge', { target: target.id, game: game || null }, `⚔️ تحدّيت ${target.name}`)}>أرسل التحدي</button>
         <p className="hint">أول قيم يجمعكم خلال أسبوعين ينحسب.</p>
+      </div>}
+      {open === 'caption' && <div className="ppow-body">
+        <input className="input" maxLength={50} value={txt} onChange={e => setTxt(e.target.value)} placeholder="جملة تطلع تحت اسمه في الترتيب يوم كامل" />
+        <button className="btn primary small" disabled={busy || !txt.trim()} onClick={() => run('caption', { target: target.id, data: { text: txt.trim() } }, '💬 انكتبت تحت اسمه')}>ثبّت</button>
+      </div>}
+      {open === 'nick' && <div className="ppow-body">
+        <input className="input" maxLength={16} value={txt} onChange={e => setTxt(e.target.value)} placeholder="اسمه الجديد لمدة ساعتين" />
+        <button className="btn primary small" disabled={busy || !txt.trim()} onClick={() => run('nick', { target: target.id, data: { name: txt.trim() } }, '🎭 تغيّر اسمه ساعتين')}>غيّر</button>
+      </div>}
+      {open === 'godfather' && <div className="ppow-body">
+        <p>الجلسة الجاية اللي تحضرونها مع بعض: {target.name} ياخذ نص الـXP اللي تكسبه من أقيامك، وأنت تاخذ +20.</p>
+        <button className="btn primary small" disabled={busy} onClick={() => run('godfather', { target: target.id }, `🤝 صرت عرّاب ${target.name}`)}>تمام</button>
       </div>}
       {open === 'gift' && <div className="ppow-body">
         <p>{target.name} ياخذ 50 XP هدية منك، وأنت ما تخسر شي.</p>
@@ -300,6 +318,71 @@ function Challenges({ pid }) {
           </li>
         ))}
       </ul>
+    </Section>
+  )
+}
+
+// نقطة ضعف الخصم (ليفل 10)
+function Weakness({ pid }) {
+  const { idx } = useStore()
+  const { can } = usePerks()
+  if (!can('weakness')) return null
+  const by = new Map()
+  for (const p of idx.plays) {
+    const g = idx.gamesById.get(p.game_id); const r = p.results.find(x => x.player_id === pid)
+    if (!r || p.results.length < 2) continue
+    const s = by.get(p.game_id) || { g, n: 0, w: 0 }; s.n++; if (r.position === 1) s.w++; by.set(p.game_id, s)
+  }
+  const w = [...by.values()].filter(x => x.n >= 2).sort((a, b) => a.w / a.n - b.w / b.n || b.n - a.n)[0]
+  if (!w) return null
+  return <div className="glass weak">🎯 <span>نقطة ضعفه: <b>{w.g?.name}</b> · فاز {w.w} من {w.n}</span></div>
+}
+
+// صفحة الأسطورة (ليفل 18): أعظم الانتصارات
+function LegendWins({ pid }) {
+  const { idx } = useStore()
+  const { levels } = usePerks()
+  const wins = idx.plays.filter(p => p.results.length > 1 && p.results.some(r => r.player_id === pid && r.position === 1)).map(p => {
+    const g = idx.gamesById.get(p.game_id)
+    const rivals = p.results.filter(r => r.player_id !== pid)
+    const lvSum = rivals.reduce((t, r) => t + (levels?.get(r.player_id)?.level || 1), 0)
+    return { p, g, score: rivals.length * 10 + (g?.weight || 1.5) * 8 + lvSum * 2 }
+  }).sort((a, b) => b.score - a.score).slice(0, 5)
+  if (!wins.length) return null
+  return (
+    <Section title="🏛️ أعظم الانتصارات">
+      <ol className="legend-wins">{wins.map(w => <li key={w.p.id}><a href={`#/play/${w.p.id}`}><Cover game={w.g} className="xs" /><span><b>{w.g?.name}</b><small>فاز على {w.p.results.length - 1} · {fmtDate(w.p.played_on)}</small></span></a></li>)}</ol>
+    </Section>
+  )
+}
+
+// أوسمة السنة: تتوزع آخر السنة
+export function yearAwards(idx, year) {
+  const ps = idx.plays.filter(p => p.played_on.startsWith(String(year)) && p.results.length > 1)
+  if (!ps.length) return []
+  const m = new Map(idx.players.map(p => [p.id, { wins: 0, plays: 0, days: new Set(), games: new Set() }]))
+  for (const p of ps) for (const r of p.results) { const s = m.get(r.player_id); if (!s) continue; s.plays++; if (r.position === 1) s.wins++; s.days.add(p.played_on); s.games.add(p.game_id) }
+  const top = f => [...m.entries()].sort((a, b) => f(b[1]) - f(a[1]))[0]
+  return [
+    { icon: '🏆', name: 'بطل السنة', who: top(s => s.wins)[0], v: `${top(s => s.wins)[1].wins} فوز` },
+    { icon: '📅', name: 'ما يغيب', who: top(s => s.days.size)[0], v: `${top(s => s.days.size)[1].days.size} جلسة` },
+    { icon: '📚', name: 'المستكشف', who: top(s => s.games.size)[0], v: `${top(s => s.games.size)[1].games.size} لعبة` },
+    { icon: '🎲', name: 'مدمن اللعب', who: top(s => s.plays)[0], v: `${top(s => s.plays)[1].plays} قيم` },
+  ]
+}
+function YearMedals({ pid }) {
+  const { idx } = useStore()
+  const now = new Date(), y = now.getFullYear()
+  const years = [...new Set(idx.plays.map(p => +p.played_on.slice(0, 4)))].filter(x => x < y)
+  const mine = years.flatMap(yr => yearAwards(idx, yr).filter(a => a.who === pid).map(a => ({ ...a, yr })))
+  const cur = yearAwards(idx, y).filter(a => a.who === pid)
+  if (!mine.length && !cur.length) return null
+  return (
+    <Section title="🎖️ أوسمة السنة">
+      <div className="medals">
+        {mine.map(a => <span key={a.yr + a.name} className="medal-b"><i>{a.icon}</i><b>{a.name} {a.yr}</b><small>{a.v}</small></span>)}
+        {cur.map(a => <span key={'c' + a.name} className="medal-b soon"><i>{a.icon}</i><b>{a.name} {y}</b><small>متصدّر الحين · تتوزع 31 ديسمبر</small></span>)}
+      </div>
     </Section>
   )
 }

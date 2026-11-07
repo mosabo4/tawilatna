@@ -39,9 +39,9 @@ returns jsonb language plpgsql security definer set search_path = public, extens
 declare s text := _auth(p_player, p_pin); v_id uuid;
 begin
   if s <> 'ok' then return jsonb_build_object('error', s); end if;
-  if p_kind not in ('react','tease','baby','retitle','predict','bet','challenge','rematch','thanks','veto','opener','lucky','shelf','award','board','firstturn','gift','alert','immune') then return jsonb_build_object('error', 'bad_input'); end if;
+  if p_kind not in ('react','tease','baby','retitle','predict','bet','challenge','rematch','thanks','veto','opener','lucky','shelf','award','board','firstturn','gift','alert','immune','teampick','houserule','seat','swap','caption','hotseat','nick','godfather','box','guarantee','story','luckbox','risk') then return jsonb_build_object('error', 'bad_input'); end if;
   if p_data is null or jsonb_typeof(p_data) <> 'object' or length(p_data::text) > 1000 then return jsonb_build_object('error', 'bad_input'); end if;
-  if p_target = p_player and p_kind in ('tease','baby','retitle','challenge','lucky') then return jsonb_build_object('error', 'bad_input'); end if;
+  if p_target = p_player and p_kind in ('tease','baby','retitle','challenge','lucky','caption','nick','godfather','gift','hotseat','swap') then return jsonb_build_object('error', 'bad_input'); end if;
   insert into actions(player_id, kind, target, game_id, play_id, data) values (p_player, p_kind, p_target, p_game, p_play, p_data) returning id into v_id;
   return jsonb_build_object('ok', true, 'id', v_id);
 end $$;

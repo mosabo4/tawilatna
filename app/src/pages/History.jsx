@@ -163,6 +163,34 @@ function PlayPowers({ play, winners, lucky }) {
     : <button key="r" className="btn ghost small" disabled={busy} onClick={() => run('rematch', { target: winners[0], play: play.id }, 'انرسل طلب الريماتش 🔁')}>🔁 أطلب ريماتش</button>)
   if (winners.length && !winners.includes(me.id) && !lucky && can('lucky')) rows.push(luckyLeft ? <span key="l" className="pp-done muted">🍀 ماسح الفوز يرجع بعد {luckyLeft} يوم</span>
     : <button key="l" className="btn ghost small" disabled={busy} onClick={() => run('lucky', { target: winners[0], play: play.id }, '🍀 انحط عليه «بالحظ»')}>🍀 فوزه بالحظ</button>)
-  if (!rows.length) return null
-  return <div className="glass play-powers">{rows}</div>
+  const mineR = play.results.find(r => r.player_id === me.id)
+  const above = mineR && play.results.find(r => r.position === mineR.position - 1)
+  const swapped = acts.some(a => a.kind === 'swap' && a.play_id === play.id)
+  if (above && !swapped && can('swap') && mineR.score != null && above.score === mineR.score) {
+    const left = cooldownLeft(idx, me.id, 'swap', 30)
+    rows.push(left ? <span key="s" className="pp-done muted">🔀 تبديل المركز يرجع بعد {left} يوم</span>
+      : <button key="s" className="btn ghost small" disabled={busy} onClick={() => run('swap', { target: above.player_id, play: play.id }, '🔀 أخذت مركزه')}>🔀 خذ مركز {idx.playersById.get(above.player_id)?.name} (متعادلين)</button>)
+  }
+  return <>
+    {rows.length > 0 && <div className="glass play-powers">{rows}</div>}
+    <Stories play={play} />
+  </>
+}
+
+// المذكرات (ليفل 5): قصة القيم
+function Stories({ play }) {
+  const { idx, me } = useStore()
+  const { can, doAction, undoAction } = usePerks()
+  const [t, setT] = useState('')
+  const list = (idx.actions || []).filter(a => a.kind === 'story' && a.play_id === play.id)
+  const inPlay = play.results.some(r => r.player_id === me.id)
+  const mine = list.find(a => a.player_id === me.id)
+  if (!list.length && !(inPlay && can('story'))) return null
+  return (
+    <section className="glass stories">
+      <b>📜 مذكرات القيم</b>
+      {list.map(a => <blockquote key={a.id}>{a.data?.text}<small>— {idx.playersById.get(a.player_id)?.name}{(a.player_id === me.id || me.is_admin) && <button className="link-btn danger" onClick={() => undoAction(a.id, 'انشالت')}>شيل</button>}</small></blockquote>)}
+      {inPlay && can('story') && !mine && <div className="form"><textarea className="input" rows={3} maxLength={400} value={t} onChange={e => setT(e.target.value)} placeholder="وش صار في هالقيم؟ اكتب القصة للتاريخ…" /><button className="btn primary small" disabled={!t.trim()} onClick={() => doAction('story', { play: play.id, data: { text: t.trim() } }, '📜 انحفظت في السجل').then(() => setT('')).catch(() => {})}>احفظ القصة</button></div>}
+    </section>
+  )
 }

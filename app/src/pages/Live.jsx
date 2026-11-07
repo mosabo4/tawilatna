@@ -7,7 +7,7 @@ import { TopBar, Section, Cover } from '../ui'
 import { StandingRows } from './Ranking'
 import { Character } from '../characters'
 import { usePerks } from '../perks'
-import { boardSide, cooldownLeft } from '../actions'
+import { boardSide, cooldownLeft, liveActs, hotSeat } from '../actions'
 
 const dur = ms => { const m = Math.max(0, Math.floor(ms / 60000)); return m < 60 ? `${m} دقيقة` : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} ساعة` }
 
@@ -116,6 +116,7 @@ export default function Live() {
 
         <BoardSide />
         <FirstTurn people={people} />
+        <Decisions people={people} />
         <Forecast live={live} people={people} />
 
         {plays.length > 0 && <Section title="ترتيب الليلة"><StandingRows rows={table} me={me} /></Section>}
@@ -203,6 +204,59 @@ function FirstTurn({ people }) {
             <button className="btn primary small" disabled={!game || !who} onClick={() => doAction('firstturn', { target: who, game }, '⏭️ انحفظ').catch(() => {})}>ثبّت</button>
           </div>
         </>)}
+      </div>
+    </Section>
+  )
+}
+
+// قرارات الليلة: قانون منزلي، المقعد، الفريق، ضمان الخاسر، ضعف أو لا شي
+function Decisions({ people }) {
+  const { idx, me } = useStore()
+  const { can, doAction, fx } = usePerks()
+  const [open, setOpen] = useState(null)
+  const [v, setV] = useState({})
+  const nm = id => idx.playersById.get(id)?.name
+  const rules = liveActs(idx, 'houserule'), seats = liveActs(idx, 'seat'), teams = liveActs(idx, 'teampick'), guar = liveActs(idx, 'guarantee')
+  const risks = (fx?.risks || []).filter(a => Date.now() - new Date(a.created_at).getTime() < 12 * 3600e3)
+  const hs = hotSeat(idx)
+  const box = (fx?.boxes || []).find(b => !b.winner)
+  const cd = (k, d) => (me ? cooldownLeft(idx, me.id, k, d) : 0)
+  const opts = me ? [
+    { id: 'houserule', icon: '📏', label: 'قانون منزلي', left: cd('houserule', 7) },
+    { id: 'seat', icon: '🪑', label: 'احجز مقعدك', left: seats.some(a => a.player_id === me.id) ? 1 : 0 },
+    { id: 'teampick', icon: '🤜', label: 'اختر شريكك', left: cd('teampick', 7) },
+    { id: 'risk', icon: '⚡', label: 'ضعف أو لا شي', left: 0 },
+    { id: 'guarantee', icon: '🛟', label: 'ضمان الخاسر', left: cd('guarantee', 30) },
+  ].filter(o => can(o.id)) : []
+  const list = [
+    ...(hs ? [<li key="hs">🔥 <b>الكرسي الساخن:</b> الكل يتحدى {nm(hs.target)}</li>] : []),
+    ...(box ? [<li key="box">💰 في الصندوق <b>{box.amount} XP</b> لأول واحد يفوز (من {nm(box.player_id)})</li>] : []),
+    ...rules.map(a => <li key={a.id}>📏 <b>قانون {nm(a.player_id)}:</b> {a.data?.text}</li>),
+    ...seats.map(a => <li key={a.id}>🪑 <b>{nm(a.player_id)}</b> حاجز: {a.data?.text}</li>),
+    ...teams.map(a => <li key={a.id}>🤜 <b>{nm(a.player_id)}</b> اختار {nm(a.target)} شريكه{a.game_id ? ` في ${idx.gamesById.get(a.game_id)?.name}` : ''}</li>),
+    ...guar.map(a => <li key={a.id}>🛟 ضمان الخاسر شغّال الليلة (من {nm(a.player_id)}): آخر واحد ياخذ +20</li>),
+    ...risks.map(a => <li key={a.id}>⚡ <b>{nm(a.player_id)}</b> خاطر في {idx.gamesById.get(a.game_id)?.name} {a.ok == null ? '⏳' : a.ok ? '✓ +15' : '✗ -10'}</li>),
+  ]
+  if (!list.length && !opts.length) return null
+  const run = (kind, args, msg) => doAction(kind, args, msg).then(() => { setOpen(null); setV({}) }).catch(() => {})
+  const games = [...idx.games].sort((a, b) => a.name.localeCompare(b.name))
+  return (
+    <Section title="📋 قرارات الليلة">
+      <div className="pad-x pad-b fc">
+        {list.length > 0 && <ul className="dec-list">{list}</ul>}
+        {opts.length > 0 && <div className="ppow-row">{opts.map(o => <button key={o.id} className={`chip ${open === o.id ? 'on' : ''}`} disabled={o.left > 0} onClick={() => setOpen(open === o.id ? null : o.id)}>{o.icon} {o.label}{o.left > 1 ? ` · ${o.left} يوم` : ''}</button>)}</div>}
+        {open === 'houserule' && <div className="fc-row"><input className="input" maxLength={80} placeholder="مثلاً: الخسران يرتب اللعبة" onChange={e => setV({ t: e.target.value })} /><button className="btn primary small" disabled={!v.t?.trim()} onClick={() => run('houserule', { data: { text: v.t.trim() } }, '📏 انحط القانون')}>ثبّت</button></div>}
+        {open === 'seat' && <div className="fc-row"><input className="input" maxLength={40} placeholder="مثلاً: جنب البورد، على الكنب" onChange={e => setV({ t: e.target.value })} /><button className="btn primary small" disabled={!v.t?.trim()} onClick={() => run('seat', { data: { text: v.t.trim() } }, '🪑 انحجز')}>احجز</button></div>}
+        {open === 'teampick' && <div className="fc-row">
+          <select className="input" onChange={e => setV(x => ({ ...x, g: e.target.value }))}><option value="">أي لعبة</option>{games.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select>
+          <select className="input" onChange={e => setV(x => ({ ...x, p: e.target.value }))}><option value="">شريكك</option>{people.filter(p => p.id !== me.id).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+          <button className="btn primary small" disabled={!v.p} onClick={() => run('teampick', { target: v.p, game: v.g || null }, '🤜 انحفظ الفريق')}>ثبّت</button>
+        </div>}
+        {open === 'risk' && <div className="fc-row">
+          <select className="input" onChange={e => setV({ g: e.target.value })}><option value="">اللعبة الجاية</option>{games.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select>
+          <button className="btn primary small" disabled={!v.g} onClick={() => run('risk', { game: v.g }, '⚡ خاطرت! لو فزت +15، لو خسرت -10')}>خاطر</button>
+        </div>}
+        {open === 'guarantee' && <div className="fc-row"><span className="muted small">آخر واحد في ترتيب الليلة ياخذ +20 XP تعويض.</span><button className="btn primary small" onClick={() => run('guarantee', {}, '🛟 تفعّل ضمان الخاسر')}>فعّل</button></div>}
       </div>
     </Section>
   )

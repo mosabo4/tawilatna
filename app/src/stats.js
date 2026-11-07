@@ -8,6 +8,10 @@ const EXP_FALLBACK = {
 }
 const CAT_FIX = { 'The Vale of Eternity': 'family', '7 Wonders': 'family' }
 export function buildIndex(data) {
+  // اسم مستعار (ليفل 13): ساعتين، الاسم الأصلي يبقى في realName
+  const nicks = new Map()
+  for (const x of data.actions || []) if (x.kind === 'nick' && x.target && x.data?.name && Date.now() - new Date(x.created_at).getTime() < 2 * 3600e3 && !nicks.has(x.target)) nicks.set(x.target, x.data.name)
+  data = { ...data, players: data.players.map(p => (nicks.has(p.id) ? { ...p, realName: p.name, name: nicks.get(p.id) } : p)) }
   const players = new Map(data.players.map(p => [p.id, p]))
   const byName = new Map(data.games.map(g => [g.name, g]))
   const allGames = data.games.map(g => {
@@ -26,6 +30,14 @@ export function buildIndex(data) {
   for (const r of data.results) {
     if (!resultsByPlay.has(r.play_id)) resultsByPlay.set(r.play_id, [])
     resultsByPlay.get(r.play_id).push(r)
+  }
+  // تبديل المركز (ليفل 15): ياخذ مركز اللي قدّامه في قيم متعادل بالنقاط
+  for (const x of data.actions || []) if (x.kind === 'swap' && x.play_id && x.target) {
+    const arr = resultsByPlay.get(x.play_id); if (!arr) continue
+    const i = arr.findIndex(r => r.player_id === x.player_id), j = arr.findIndex(r => r.player_id === x.target)
+    if (i < 0 || j < 0) continue
+    const a2 = { ...arr[i], position: arr[j].position }, b2 = { ...arr[j], position: arr[i].position }
+    arr[i] = a2; arr[j] = b2
   }
   for (const arr of resultsByPlay.values()) arr.sort((a, b) => a.position - b.position)
   // plays: الأحدث أولاً، ومع كل قيم نتائجه
@@ -152,4 +164,13 @@ export function daysSince(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
   const now = new Date(); now.setHours(0, 0, 0, 0)
   return Math.round((now - d) / 86400000)
+}
+
+// ملك اللعبة: أكثر واحد فاز فيها (3 فوز على الأقل، ولازم يكون قدّام الثاني)
+export function kingOf(idx, gameId) {
+  const w = new Map()
+  for (const p of idx.plays) if (p.game_id === gameId && p.results.length > 1) for (const r of p.results) if (r.position === 1) w.set(r.player_id, (w.get(r.player_id) || 0) + 1)
+  const s = [...w.entries()].sort((a, b) => b[1] - a[1])
+  if (!s.length || s[0][1] < 3 || (s[1] && s[1][1] === s[0][1])) return null
+  return { player: idx.playersById.get(s[0][0]), wins: s[0][1], gap: s[0][1] - (s[1]?.[1] || 0) }
 }

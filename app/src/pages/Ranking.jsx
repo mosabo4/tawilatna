@@ -1,3 +1,4 @@
+import { usePerks } from '../perks'
 import { useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { standings, counts } from '../stats'
@@ -6,6 +7,7 @@ import { Avatar, Section } from '../ui'
 
 // صف لكل لاعب: مركزه، اسمه، شريط المستوى، وكم فاز
 export function StandingRows({ rows, me }) {
+  const { look } = usePerks()
   const played = rows.filter(r => r.plays > 0)
   const idle = rows.filter(r => r.plays === 0)
   return (
@@ -17,7 +19,8 @@ export function StandingRows({ rows, me }) {
               <span className={`st-rank r${i + 1}`}>{i + 1}</span>
               <Avatar player={r.player} size={32} />
               <span className="st-main">
-                <span className="st-top"><b>{r.player.name}</b><small>🏆 {r.wins} من {r.plays}</small></span>
+                <span className="st-top"><b className={look(r.player.id).nameFx ? 'name-fx' : ''}>{r.player.name}</b><small>🏆 {r.wins} من {r.plays}</small></span>
+                {look(r.player.id).caption && <span className="st-cap">💬 «{look(r.player.id).caption.data?.text}»</span>}
                 <span className="st-bar"><span style={{ width: `${Math.max(r.points, 3)}%`, '--c': r.player.color }} /></span>
               </span>
               <b className="st-pct">{r.points}<small>%</small></b>

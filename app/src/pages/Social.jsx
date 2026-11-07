@@ -3,6 +3,7 @@ import { useStore, go } from '../store'
 import { api } from '../api'
 import { usePerks } from '../perks'
 import { cooldownLeft } from '../actions'
+import { IMG_CHARS, imgSrc } from '../characters'
 import { Avatar, Section, Empty, Cover, Confirm, playersText, fmtDate } from '../ui'
 
 // ---------- الجلسة الجاية ----------
@@ -199,7 +200,9 @@ export function Board() {
   const [busy, setBusy] = useState(false)
   const [del, setDel] = useState(null)
   useEffect(() => { const t = setInterval(reload, 30000); return () => clearInterval(t) }, [reload])
-  const { active, look, doAction, undoAction } = usePerks()
+  const { active, look, doAction, undoAction, can } = usePerks()
+  const faces = idx.players.filter(p => can('faceSticker', p.id) && IMG_CHARS[(p.realName || p.name).trim()])
+  const emo = e => e?.startsWith('face:') ? (() => { const p = idx.playersById.get(e.slice(5)); const ic = p && IMG_CHARS[(p.realName || p.name).trim()]; return ic ? <img className="face-r" src={imgSrc(ic.slug, 'e', 'bust')} alt={p.name} /> : '🙂' })() : e
   const [reactFor, setReactFor] = useState(null)
   const pins = new Set(idx.players.map(p => look(p.id).pin).filter(Boolean))
   const reactsOf = id => (idx.actions || []).filter(a => a.kind === 'react' && a.data?.post === id)
@@ -246,9 +249,9 @@ export function Board() {
                         if (!groups.length && !active.reacts) return null
                         return (
                           <div className="reacts">
-                            {groups.map(g => <button key={g.e} className={`react-on ${g.who.some(x => x.player_id === me?.id) ? 'mine' : ''}`} disabled={!active.reacts} onClick={() => react(p.id, g.e)} title={g.who.map(x => idx.playersById.get(x.player_id)?.name).join('، ')}>{g.e} <small>{g.who.length}</small></button>)}
+                            {groups.map(g => <button key={g.e} className={`react-on ${g.who.some(x => x.player_id === me?.id) ? 'mine' : ''}`} disabled={!active.reacts} onClick={() => react(p.id, g.e)} title={g.who.map(x => idx.playersById.get(x.player_id)?.name).join('، ')}>{emo(g.e)} <small>{g.who.length}</small></button>)}
                             {active.reacts && (reactFor === p.id
-                              ? ['😂', '🔥', '👏', '😭', '🤡', '💀'].map(e => <button key={e} onClick={() => react(p.id, e)}>{e}</button>)
+                              ? [...['😂', '🔥', '👏', '😭', '🤡', '💀'], ...faces.map(f => `face:${f.id}`)].map(e => <button key={e} onClick={() => react(p.id, e)}>{emo(e)}</button>)
                               : <button className="react-add" onClick={() => setReactFor(p.id)}>+😀</button>)}
                           </div>
                         )

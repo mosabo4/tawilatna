@@ -13,12 +13,18 @@ const after = (idx, iso, maxDays, test) => {
     .sort((a, b) => tsOf(a).localeCompare(tsOf(b)))[0] || null
 }
 const pos = (p, pid) => p.results.find(r => r.player_id === pid)?.position
+// أول يوم لعب بعد وقت معيّن (ويحضره كل اللي في القائمة)
+const nextDay = (idx, iso, who) => {
+  const d0 = iso.slice(0, 10)
+  const days = [...new Set(idx.plays.filter(p => tsOf(p) > iso || p.played_on > d0).map(p => p.played_on))].sort()
+  return days.find(d => who.every(w => idx.plays.some(p => p.played_on === d && p.results.some(r => r.player_id === w)))) || null
+}
 
 export function resolveActions(idx) {
   const acts = idx.actions || []
   const xp = new Map() // pid -> {predict, bet, thanks}
-  const add = (pid, k, v) => { if (!xp.has(pid)) xp.set(pid, { predict: 0, thanks: 0, thankGive: 0, gift: 0, lucky: 0 }); xp.get(pid)[k] += v }
-  const predictions = [], challenges = [], rematches = []
+  const add = (pid, k, v) => { if (!xp.has(pid)) xp.set(pid, { predict: 0, thanks: 0, thankGive: 0, gift: 0, lucky: 0, luckbox: 0, risk: 0, godfather: 0, box: 0, guarantee: 0 }); xp.get(pid)[k] += v }
+  const predictions = [], challenges = [], rematches = [], risks = [], boxes = [], guarantees = []
   for (const a of acts) {
     if (a.kind === 'predict') {
       const p = after(idx, a.created_at, 2, x => x.game_id === a.game_id)
@@ -35,6 +41,40 @@ export function resolveActions(idx) {
       const p = orig ? after(idx, a.created_at, 30, x => x.game_id === orig.game_id && x.results.some(r => r.player_id === a.player_id) && x.results.some(r => r.player_id === w)) : null
       rematches.push({ ...a, orig, rival: w, play: p, done: !!p })
     } else if (a.kind === 'gift' && a.target) add(a.target, 'gift', 50)
+    else if (a.kind === 'luckbox') add(a.player_id, 'luckbox', Math.max(0, Math.min(60, Number(a.data?.xp) || 0)))
+    else if (a.kind === 'risk') {
+      const p = after(idx, a.created_at, 2, x => x.game_id === a.game_id && x.results.some(r => r.player_id === a.player_id))
+      const ok = p ? pos(p, a.player_id) === 1 : null
+      if (p) add(a.player_id, 'risk', ok ? 15 : -10)
+      risks.push({ ...a, play: p, ok })
+    } else if (a.kind === 'godfather' && a.target) {
+      const d = nextDay(idx, a.created_at, [a.player_id, a.target])
+      if (d) {
+        const mine = idx.plays.filter(p => p.played_on === d && p.results.some(r => r.player_id === a.player_id))
+        const earned = mine.length * 10 + mine.filter(p => pos(p, a.player_id) === 1 && p.results.length > 1).length * 5
+        add(a.target, 'godfather', Math.round(earned / 2)); add(a.player_id, 'godfather', 20)
+      }
+    } else if (a.kind === 'box') {
+      const amt = Math.max(20, Math.min(100, Number(a.data?.amount) || 0))
+      add(a.player_id, 'box', -amt)
+      const p = after(idx, a.created_at, 60, x => x.results.length > 1)
+      const w = p?.results.find(r => r.position === 1)?.player_id
+      if (w) add(w, 'box', amt)
+      boxes.push({ ...a, amount: amt, play: p, winner: w || null })
+    } else if (a.kind === 'guarantee') {
+      const d = nextDay(idx, a.created_at, [])
+      if (d) {
+        const st = new Map()
+        for (const p of idx.plays.filter(x => x.played_on === d && x.results.length > 1)) for (const r of p.results) {
+          const s = st.get(r.player_id) || { b: 0, f: 0 }
+          for (const o of p.results) if (o !== r) { s.f++; s.b += o.position > r.position ? 1 : o.position === r.position ? .5 : 0 }
+          st.set(r.player_id, s)
+        }
+        const last = [...st.entries()].sort((x, y) => x[1].b / x[1].f - y[1].b / y[1].f)[0]
+        if (last) add(last[0], 'guarantee', 20)
+        guarantees.push({ ...a, day: d, loser: last?.[0] || null })
+      } else guarantees.push({ ...a, day: null, loser: null })
+    }
     else if (a.kind === 'lucky' && a.target && a.play_id) {
       const p = idx.plays.find(x => x.id === a.play_id)
       if (p) {
@@ -43,7 +83,7 @@ export function resolveActions(idx) {
       }
     } else if (a.kind === 'thanks' && a.target) { add(a.target, 'thanks', 10); add(a.player_id, 'thankGive', 3) }
   }
-  return { xp, predictions, challenges, rematches }
+  return { xp, predictions, challenges, rematches, risks, boxes, guarantees }
 }
 
 // المفعول الحالي على كل لاعب (ملصقات، بيبي، لقب مغيّر)
@@ -51,7 +91,7 @@ export function activeEffects(idx, now = Date.now()) {
   const acts = idx.actions || []
   const live = (a, ms) => now - new Date(a.created_at).getTime() < ms
   const on = new Map()
-  const get = pid => { if (!on.has(pid)) on.set(pid, { teases: [], baby: null, retitle: null, immune: null }); return on.get(pid) }
+  const get = pid => { if (!on.has(pid)) on.set(pid, { teases: [], baby: null, retitle: null, immune: null, caption: null }); return on.get(pid) }
   const IMM = 7 * DAY
   const immunes = acts.filter(a => a.kind === 'immune')
   const shielded = (pid, at) => immunes.some(i => i.player_id === pid && new Date(at) >= new Date(i.created_at) && new Date(at) - new Date(i.created_at) < IMM)
@@ -61,6 +101,7 @@ export function activeEffects(idx, now = Date.now()) {
     if (a.kind === 'tease' && live(a, TEASE_MS)) get(a.target).teases.push(a)
     if (a.kind === 'baby' && live(a, BABY_MS) && !get(a.target).baby) get(a.target).baby = a
     if (a.kind === 'retitle' && live(a, RETITLE_MS) && !get(a.target).retitle) get(a.target).retitle = a
+    if (a.kind === 'caption' && live(a, DAY) && !get(a.target).caption) get(a.target).caption = a
   }
   return on
 }
@@ -79,3 +120,19 @@ export const boardSide = (idx, now = Date.now()) => (idx.actions || []).find(a =
 // تنبيه ذهبي شغّال (24 ساعة)
 export const goldenAlert = (idx, now = Date.now()) => (idx.actions || []).find(a => a.kind === 'alert' && now - new Date(a.created_at).getTime() < DAY) || null
 export const isImmune = (idx, pid, now = Date.now()) => (idx.actions || []).some(a => a.kind === 'immune' && a.player_id === pid && now - new Date(a.created_at).getTime() < 7 * DAY)
+
+// أفعال الجلسة اللي شغّالة (12 ساعة): قانون منزلي، مقعد، فريق، ضمان الخاسر
+export const liveActs = (idx, kind, hours = 12, now = Date.now()) => (idx.actions || []).filter(a => a.kind === kind && now - new Date(a.created_at).getTime() < hours * 3600e3)
+export const hotSeat = (idx, now = Date.now()) => (idx.actions || []).find(a => a.kind === 'hotseat' && now - new Date(a.created_at).getTime() < 7 * DAY) || null
+// راية الهزيمة: آخر تحدي محسوم بين كل اثنين، الخسران عليه راية لين يفوز
+export function flagsOn(challenges) {
+  const last = new Map()
+  for (const c of [...challenges].filter(c => c.play && c.winner).sort((x, y) => tsOf(x.play).localeCompare(tsOf(y.play)))) {
+    const k = [c.player_id, c.target].sort().join('|')
+    last.set(k, c)
+  }
+  const out = new Map()
+  for (const c of last.values()) { const loser = c.winner === c.player_id ? c.target : c.player_id; if (!out.has(loser)) out.set(loser, []); out.get(loser).push(c.winner) }
+  return out
+}
+export const NICK_MS = 2 * 3600e3

@@ -13,7 +13,7 @@ export const BASE_LOOKS = {
   'اياد': { skin: '#B97E56', hair: '#16100C', hairStyle: 'wavy', beard: 'goatee', outfit: '#1E2A4E', collar: 'shirt', hat: null, glasses: null, brows: 'raised', mouth: 'smirk' },
 }
 const FALLBACK = { skin: '#C99270', hair: '#1E1612', hairStyle: 'short', beard: null, outfit: '#5B6CFF', collar: 'shirt', hat: null, glasses: null, brows: 'soft', mouth: 'smile' }
-export const lookOf = (player, custom) => ({ ...(BASE_LOOKS[player?.name?.trim()] || { ...FALLBACK, outfit: player?.color || FALLBACK.outfit }), ...(custom || {}) })
+export const lookOf = (player, custom) => ({ ...(BASE_LOOKS[(player?.realName || player?.name)?.trim()] || { ...FALLBACK, outfit: player?.color || FALLBACK.outfit }), ...(custom || {}) })
 
 // خيارات التعديل (تنفتح مع الليفلات)
 export const CUSTOM = {
@@ -127,8 +127,9 @@ export function Character({ player, custom, pose: pose0 = 'idle', size = 120, fl
   const [cardPick] = useState(() => Math.floor(Math.random() * 4))
   const { look: pk } = usePerks()
   const baby = player && pk(player.id).baby
-  const pose = baby && ['idle', 'cheer', 'dance', 'jump'].includes(pose0) ? 'baby' : pose0
-  const ic = IMG_CHARS[player?.name?.trim()]
+  const myPose = player ? pk(player.id).pose : null
+  const pose = baby && ['idle', 'cheer', 'dance', 'jump'].includes(pose0) ? 'baby' : pose0 === 'idle' && myPose ? myPose : pose0
+  const ic = IMG_CHARS[(player?.realName || player?.name)?.trim()]
   const st = (ic && ic.styles[player?.char_style] ? player.char_style : null) ?? ic?.def
   if (ic && st && st !== 'svg' && ic.styles[st]) {
     const sty = ic.styles[st]

@@ -11,8 +11,11 @@ import { cooldownLeft, isImmune } from '../actions'
 import { computeTitles } from '../titles'
 import { useLevels, AchList, XpHow, CrewLevels } from './Levels'
 import { TitlesList } from './Titles'
-import { ACTIONS, Stage } from '../characters'
+import { ACTIONS, Stage, Character } from '../characters'
+import { counts } from '../stats'
 import { api } from '../api'
+
+const POSES = [['idle', 'الوقفة العادية'], ['cheer', 'الاحتفال'], ['dance', 'الرقص'], ['laugh', 'الضحك'], ['jump', 'النطّة'], ['crown', 'التاج'], ['flag', 'الراية']]
 
 function Ring({ value, size = 92, children }) {
   const r = (size - 10) / 2, c = 2 * Math.PI * r
@@ -71,6 +74,9 @@ function Main() {
     { id: 'gold', label: 'الكرت الذهبي', val: perks.gold ? 'شغّال' : 'مطفي' },
     { id: 'celebrate', label: 'احتفال الفوز', val: perks.celebrate ? 'شغّال' : 'مطفي' },
     { id: 'customTitle', label: 'لقبك الخاص', val: perks.customTitle || 'اكتبه' },
+    { id: 'pose', label: 'وضعية شخصيتك', val: POSES.find(p => p[0] === perks.pose)?.[1] || 'العادية' },
+    { id: 'nameFx', label: 'اسم متحرك', val: perks.nameFx ? 'شغّال' : 'مطفي' },
+    { id: 'frame2', label: 'إطار بألوانك', val: perks.frame === 'custom' ? <><i className="sw-dot" style={{ background: perks.fc1 }} /><i className="sw-dot" style={{ background: perks.fc2 || perks.fc1 }} /></> : 'اختر' },
   ].map(o => ({ ...o, open: can(o.need || o.id), lvl: levelOfReward(o.need || o.id) }))
   const powers = [
     { id: 'scene', icon: '🎭', name: 'مشهد الرئيسية', val: scene.target ? `${ACTIONS.find(a => a.id === (scene.action || 'punch'))?.label} ${nameOf(scene.target)}` : 'بدون' },
@@ -78,6 +84,9 @@ function Main() {
     { id: 'alert', icon: '📢', name: 'التنبيه الذهبي', val: cooldownLeft(idx, me.id, 'alert', 7) ? `بعد ${cooldownLeft(idx, me.id, 'alert', 7)} يوم` : 'جاهز' },
     { id: 'immune', icon: '🛡️', name: 'الحصانة', val: isImmune(idx, me.id) ? 'شغّالة' : cooldownLeft(idx, me.id, 'immune', 30) ? `بعد ${cooldownLeft(idx, me.id, 'immune', 30)} يوم` : 'جاهزة' },
     { id: 'award', icon: '🛠️', name: 'صانع الجوائز', val: 'اخترع جائزة' },
+    { id: 'luckbox', icon: '🎁', name: 'صندوق الحظ', val: cooldownLeft(idx, me.id, 'luckbox', 7) ? `بعد ${cooldownLeft(idx, me.id, 'luckbox', 7)} يوم` : 'افتحه!' },
+    { id: 'hotseat', icon: '🔥', name: 'الكرسي الساخن', val: cooldownLeft(idx, me.id, 'hotseat', 30) ? `بعد ${cooldownLeft(idx, me.id, 'hotseat', 30)} يوم` : 'جاهز' },
+    { id: 'box', icon: '💰', name: 'صندوق الشلة', val: cooldownLeft(idx, me.id, 'box', 7) ? `بعد ${cooldownLeft(idx, me.id, 'box', 7)} يوم` : 'حط XP' },
   ].filter(p => can(p.id))
 
   const editors = {
@@ -132,6 +141,27 @@ function Main() {
     immune: isImmune(idx, me.id) ? <p className="muted">🛡️ الحصانة شغّالة، محد يقدر يطقطق عليك.</p> : cooldownLeft(idx, me.id, 'immune', 30) ? <p className="muted">ترجع لك بعد {cooldownLeft(idx, me.id, 'immune', 30)} يوم.</p> : <div className="form">
       <p className="muted">أسبوع كامل محد يقدر يلزّق عليك ملصق، ولا يسوّيك بيبي، ولا يغيّر لقبك.</p>
       <button className="btn primary small" onClick={async () => { try { await doAction('immune', {}, '🛡️ صرت محصّن أسبوع'); setSheet(null) } catch { /* toast */ } }}>فعّل الحصانة</button>
+    </div>,
+    pose: <div className="title-pick">{POSES.map(([k, n]) => <button key={k} className={`chip ${(perks.pose || 'idle') === k ? 'on' : ''}`} onClick={() => set({ pose: k === 'idle' ? null : k })}>{n}</button>)}
+      <div className="pose-prev"><Character player={me} pose="idle" size={110} /></div></div>,
+    nameFx: <label className="switch"><input type="checkbox" checked={!!perks.nameFx} onChange={e => set({ nameFx: e.target.checked })} /><span>اسمك يتلوّن ويتحرك في كل مكان</span></label>,
+    frame2: <div className="form">
+      <div className="fc-row"><span>اللون الأول</span><input type="color" value={perks.fc1 || '#FFC45C'} onChange={e => set({ fc1: e.target.value, frame: 'custom' })} /></div>
+      <div className="fc-row"><span>اللون الثاني</span><input type="color" value={perks.fc2 || perks.fc1 || '#5B7CFF'} onChange={e => set({ fc2: e.target.value, frame: 'custom' })} /></div>
+      <div className="row gap"><span className="avatar-demo"><Avatar player={me} size={56} /></span>{perks.frame === 'custom' && <button className="link-btn" onClick={() => set({ frame: null })}>شيل الإطار</button>}</div>
+    </div>,
+    luckbox: cooldownLeft(idx, me.id, 'luckbox', 7) ? <p className="muted">فتحته هالأسبوع. يرجع بعد {cooldownLeft(idx, me.id, 'luckbox', 7)} يوم.</p> : <div className="form">
+      <p className="muted">داخل الصندوق XP عشوائي من 10 لين 60.</p>
+      <button className="btn primary" onClick={async () => { const roll = Math.random(); const xp = roll < .4 ? 10 : roll < .7 ? 20 : roll < .88 ? 30 : roll < .97 ? 45 : 60; try { await doAction('luckbox', { data: { xp } }, `🎁 طلع لك ${xp} XP!${xp >= 45 ? ' 🔥' : ''}`); setSheet(null) } catch { /* toast */ } }}>🎁 افتح الصندوق</button>
+    </div>,
+    hotseat: cooldownLeft(idx, me.id, 'hotseat', 30) ? <p className="muted">ترجع لك بعد {cooldownLeft(idx, me.id, 'hotseat', 30)} يوم.</p> : <div className="form">
+      <select className="input" onChange={e => setTxt(t => ({ ...t, hs: e.target.value }))}><option value="">مين على الكرسي الساخن؟</option>{idx.players.filter(p => p.id !== me.id).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+      <button className="btn primary small" disabled={!txt.hs} onClick={async () => { try { await doAction('hotseat', { target: txt.hs }, '🔥 انحط على الكرسي الساخن'); setSheet(null) } catch { /* toast */ } }}>ثبّت أسبوع</button>
+    </div>,
+    box: cooldownLeft(idx, me.id, 'box', 7) ? <p className="muted">ترجع لك بعد {cooldownLeft(idx, me.id, 'box', 7)} يوم.</p> : <div className="form">
+      <span>كم تحط في الصندوق؟ <b>{txt.bx || 40} XP</b> (تنخصم منك)</span>
+      <input type="range" min="20" max="100" step="10" value={txt.bx || 40} onChange={e => setTxt(t => ({ ...t, bx: +e.target.value }))} />
+      <button className="btn primary small" onClick={async () => { try { await doAction('box', { data: { amount: txt.bx || 40 } }, '💰 الصندوق جاهز لأول فايز'); setSheet(null) } catch { /* toast */ } }}>حط في الصندوق</button>
     </div>,
     award: <div className="form">
       <input className="input" maxLength={30} placeholder="اسم الجائزة" onChange={e => setTxt(t => ({ ...t, an: e.target.value }))} />
@@ -207,6 +237,8 @@ function Main() {
         </a>
       </section>
 
+      {can('report') && <Report />}
+
       {awards.length > 0 && (
         <section className="glass awards">
           <b>🛠️ جوائز اخترعتها الشلة</b>
@@ -234,5 +266,41 @@ function Main() {
         </div>
       )}
     </div>
+  )
+}
+
+// تقريرك الخاص (ليفل 12): لك بس، ما يدخل في ملخص الشهر
+function Report() {
+  const { idx, me } = useStore()
+  const rep = useMemo(() => {
+    const vs = new Map(), games = new Map()
+    for (const p of idx.plays) {
+      const g = idx.gamesById.get(p.game_id); if (!counts(p, g)) continue
+      const mine = p.results.find(r => r.player_id === me.id); if (!mine) continue
+      const gs = games.get(p.game_id) || { g, n: 0, w: 0 }; gs.n++; if (mine.position === 1) gs.w++; games.set(p.game_id, gs)
+      for (const o of p.results) if (o.player_id !== me.id) {
+        const v = vs.get(o.player_id) || { p: idx.playersById.get(o.player_id), beat: 0, lost: 0 }
+        if (mine.position < o.position) v.beat++; else if (mine.position > o.position) v.lost++
+        vs.set(o.player_id, v)
+      }
+    }
+    const L = [...vs.values()].filter(v => v.p)
+    const G = [...games.values()].filter(x => x.n >= 2)
+    return {
+      victim: [...L].sort((a, b) => b.beat - a.beat)[0], nemesis: [...L].sort((a, b) => b.lost - a.lost)[0],
+      best: [...G].sort((a, b) => b.w / b.n - a.w / a.n)[0], worst: [...G].sort((a, b) => a.w / a.n - b.w / b.n)[0],
+    }
+  }, [idx, me.id])
+  const row = (ic, t, v) => v && <li><span>{ic}</span><span className="rp-t">{t}</span><b>{v}</b></li>
+  return (
+    <section className="glass report">
+      <b>🔒 تقريرك الخاص <small>يشوفه أنت بس</small></b>
+      <ul>
+        {row('😈', 'أكثر واحد تغلبه', rep.victim && `${rep.victim.p.name} (${rep.victim.beat} مرة)`)}
+        {row('😤', 'أكثر واحد يغلبك', rep.nemesis && `${rep.nemesis.p.name} (${rep.nemesis.lost} مرة)`)}
+        {row('💪', 'أقوى لعبة لك', rep.best && `${rep.best.g.name} (${rep.best.w}/${rep.best.n})`)}
+        {row('🫠', 'أضعف لعبة لك', rep.worst && `${rep.worst.g.name} (${rep.worst.w}/${rep.worst.n})`)}
+      </ul>
+    </section>
   )
 }

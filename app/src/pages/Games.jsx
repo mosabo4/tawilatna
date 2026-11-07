@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { api } from '../api'
-import { gameStats, allGameStats, daysSince, standings } from '../stats'
+import { gameStats, allGameStats, daysSince, standings, kingOf } from '../stats'
 import { StandingRows } from './Ranking'
 import { ExpansionsSection } from './Expansions'
 import { usePerks } from '../perks'
 import { SCORING } from '../scoring'
 import { CATEGORIES, catOf, weightLabel } from '../categories'
-import { Cover, Empty, ScoreBadge, TopBar, Section, PlayerTag, RatingInput, Field, Confirm, Weight, ago, fmtDate, fmtScore, playersText, timeText, range, IconUsers, IconClock } from '../ui'
+import { Avatar, Cover, Empty, ScoreBadge, TopBar, Section, PlayerTag, RatingInput, Field, Confirm, Weight, ago, fmtDate, fmtScore, playersText, timeText, range, IconUsers, IconClock } from '../ui'
 import { PlayCard } from './History'
 import Cabinet, { CabinetHint } from './Cabinet'
 import TableHero from './TableHero'
@@ -57,7 +57,7 @@ export default function Games() {
   const setC = c => { setCat(c); write('tw-gcat', c) }
   const setS = s => { setSort(s); write('tw-gsort2', s) }
 
-  const all = useMemo(() => allGameStats(idx), [idx])
+  const all = useMemo(() => allGameStats(idx).map(g => ({ ...g, king: kingOf(idx, g.game.id)?.player?.name || null })), [idx])
   const counts = useMemo(() => {
     const m = {}
     for (const g of all) { const c = catOf(g.game).id; m[c] = (m[c] || 0) + 1 }
@@ -252,6 +252,7 @@ export function GameView({ id }) {
           <div className="gh-avg"><ScoreBadge value={st.avg} big /><span>{st.ratings.length ? `تقييم الشلة من ${st.ratings.length}` : 'ما أحد قيّمها'}<br /><small className="muted">{st.plays.length} قيم، {ago(daysSince(st.lastPlayed))}{owner ? `، لعبة ${owner.name}` : ''}</small></span></div>
         </div>
 
+        {(() => { const k = kingOf(idx, id); return k?.player ? <a className="glass king" href={`#/player/${k.player.id}`}><Avatar player={k.player} size={34} /><span><small>👑 ملك اللعبة</small><b>{k.player.name}</b></span><em>{k.wins} فوز · قدّام الثاني بـ{k.gap}</em></a> : null })()}
         <div className="facts-grid">
           <div><span>اللاعبين</span><b>{playersText(game) || '—'}</b></div>
           <div><span>المدة</span><b>{timeText(game) ? timeText(game).replace(' د', ' دقيقة') : '—'}</b></div>

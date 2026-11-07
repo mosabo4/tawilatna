@@ -9,7 +9,8 @@ import { buildEvents, getSeen, timeAgo } from '../events'
 import { api } from '../api'
 import { getLive, livePlays } from '../live'
 import { usePerks } from '../perks'
-import { boardSide, goldenAlert } from '../actions'
+import { boardSide, goldenAlert, hotSeat } from '../actions'
+import { missionOf, todayKey, idxBefore, levelOfReward } from '../levels'
 
 export default function Home() {
   const { idx, me } = useStore()
@@ -53,11 +54,22 @@ export default function Home() {
     if (near && near.progress[0] / near.progress[1] >= 0.5) needs.push({ icon: near.icon, title: `قرّبت من «${near.name}»`, sub: `${near.desc} · ${Math.min(...near.progress)}/${near.progress[1]}`, href: '#/progress/ach', btn: `+${near.xp} XP` })
   }
   const legends = levels ? [...levels.values()].filter(l => l.level >= 20) : []
+  if (me) {
+    const m = missionOf(todayKey()); const done = m.test(idx, me.id, todayKey())
+    needs.unshift({ icon: '🎯', title: `تحدي اليوم: ${m.text}`, sub: done ? 'خلّصته ✓ ' : 'مهمة اليوم لك وللشلة', href: { rate: '#/me/games', comment: '#/games', post: '#/board', pick: '#/friday', play: '#/live', react: '#/board' }[m.id], btn: done ? '✓ +15' : '+15 XP', hot: !done })
+  }
+  const nm = id => idx.playersById.get(id)?.name
+  const announces = (fx?.challenges || []).filter(c => c.winner && c.play && Date.now() - new Date(c.play.created_at || c.play.played_on).getTime() < 864e5 && (levels?.get(c.winner)?.level || 0) >= levelOfReward('announce'))
+  const hs = hotSeat(idx)
+  const box = (fx?.boxes || []).find(b => !b.winner)
   const tonight = live ? livePlays(idx, live).length : 0
 
   return (
     <div className="page stack home">
       {goldenAlert(idx) && <div className="golden-alert"><span>📢</span><p>{goldenAlert(idx).data?.text}<small>— {idx.playersById.get(goldenAlert(idx).player_id)?.name}</small></p></div>}
+      {announces.map(c => <div key={c.id} className="announce">📣 <b>{nm(c.winner)}</b> سحق <b>{nm(c.winner === c.player_id ? c.target : c.player_id)}</b> في تحدي رسمي{c.play ? ` (${idx.gamesById.get(c.play.game_id)?.name})` : ''}!</div>)}
+      {hs && <div className="announce hot">🔥 الكرسي الساخن: الكل يتحدى <b>{nm(hs.target)}</b> هالأسبوع</div>}
+      {box && <div className="announce boxa">💰 في صندوق الشلة <b>{box.amount} XP</b> لأول واحد يفوز!</div>}
       <Scenes />
 
       {live && boardSide(idx) && <div className="glass board-side">🎯 البورد على اتجاه <b>{idx.playersById.get(boardSide(idx).player_id)?.name}</b> الليلة</div>}
@@ -83,6 +95,7 @@ export default function Home() {
         </div>
       )}
 
+      <MonthStatue />
       {legends.length > 0 && (
         <a className="glass hall" href="#/progress/crew">
           <b>🏛️ قاعة المشاهير</b>
@@ -201,5 +214,25 @@ function BoardPeek({ seen }) {
         </form>
       )}
     </Section>
+  )
+}
+
+// تمثال الشهر: صاحب أكثر XP في الشهر اللي فات
+function MonthStatue() {
+  const { idx } = useStore()
+  const top = useMemo(() => {
+    const now = new Date()
+    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+    const end = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const a = computeLevels(idxBefore(idx, end)), b = computeLevels(idxBefore(idx, start))
+    const gains = [...a.values()].map(l => ({ p: l.player, g: l.xp - (b.get(l.player.id)?.xp || 0) })).sort((x, y) => y.g - x.g)
+    return gains[0]?.g > 0 ? { ...gains[0], month: new Date(start).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long' }) } : null
+  }, [idx])
+  if (!top) return null
+  return (
+    <a className="glass statue" href={`#/player/${top.p.id}`}>
+      <span className="st-chr"><Character player={top.p} pose="crown" size={70} /></span>
+      <span><small>🗿 تمثال شهر {top.month}</small><b>{top.p.name}</b><small>جمع <bdi>{top.g} XP</bdi> في الشهر</small></span>
+    </a>
   )
 }

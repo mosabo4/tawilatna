@@ -150,7 +150,7 @@ export default function Me({ sub }) {
           <div className="mc-body">
             <span className="mc-chr"><Character player={me} custom={active.char} size={150} /></span>
             <div className="mc-mid">
-              <b className="mc-nm">{me.name}</b>
+              <b className={`mc-nm ${active.nameFx ? 'name-fx' : ''}`}>{me.name}</b>
               {active.title ? <TitleBadge title={active.title} kind={active.titleKind} small /> : <span className="mc-tb">{lv.title}</span>}
               <span className="mc-lv"><span className="mc-lvn">{lv.level}</span>ليفل · <bdi>{lv.xp} XP</bdi></span>
             </div>

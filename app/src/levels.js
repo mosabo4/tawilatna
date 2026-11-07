@@ -20,6 +20,12 @@ export const XP_RULES = [
   { id: 'fullhouse', icon: '👨‍👩‍👦', label: 'جلسة حضرتها الشلة كاملة', xp: 20 },
   { id: 'gift', icon: '🎁', label: 'هدية من واحد من الشلة', xp: 50 },
   { id: 'lucky', icon: '🍀', label: 'فوز انحط عليه «بالحظ»: ينقص نص XP القيم', xp: 0 },
+  { id: 'daily', icon: '🎯', label: 'تحدي اليوم', xp: 15 },
+  { id: 'luckbox', icon: '🎁', label: 'صندوق الحظ (ليفل 5)', xp: 0 },
+  { id: 'risk', icon: '⚡', label: 'ضعف أو لا شي: +15 لو فزت، -10 لو خسرت (ليفل 12)', xp: 0 },
+  { id: 'godfather', icon: '🤝', label: 'العرّاب وتلميذه (ليفل 15)', xp: 0 },
+  { id: 'box', icon: '💰', label: 'صندوق الشلة: تحطه أو تكسبه (ليفل 17)', xp: 0 },
+  { id: 'guarantee', icon: '🛟', label: 'ضمان الخاسر: آخر واحد في الجلسة ياخذ +20', xp: 0 },
 ]
 const XP = Object.fromEntries(XP_RULES.map(r => [r.id, r.xp]))
 
@@ -37,32 +43,54 @@ export const REWARDS = [
   { level: 2, id: 'color', icon: '🎨', name: 'لون حسابك', desc: 'لون يطلع لك في صورتك وبطاقتك، والكل يشوفه' },
   { level: 3, id: 'title', icon: '🏷️', name: 'لقب جنب اسمك', desc: 'تحط جنب اسمك واحد من الألقاب اللي فتحتها' },
   { level: 3, id: 'thanks', icon: '🙏', name: 'شكر المجهّز', desc: 'تشكر اللي جهّز اللعبة الثقيلة: هو ياخذ +10 XP وأنت +3' },
+  { level: 4, id: 'seat', icon: '🪑', name: 'حجز المقعد', desc: 'تختار وين تجلس على الطاولة الليلة' },
   { level: 4, id: 'reacts', icon: '😂', name: 'ردود فعل', desc: 'إيموجي على كتابات اللوحة' },
   { level: 4, id: 'f-silver', icon: '🥈', name: 'إطار فضي', desc: 'أول إطار لصورتك' },
+  { level: 5, id: 'luckbox', icon: '🎁', name: 'صندوق الحظ', desc: 'مرة بالأسبوع تفتح صندوق فيه XP عشوائي' },
+  { level: 5, id: 'story', icon: '📜', name: 'المذكرات', desc: 'تكتب قصة قيم مميز وتنحفظ في سجل الشلة' },
   { level: 5, id: 'vote2', icon: '🗳️', name: 'صوت مضاعف', desc: 'اختياراتك للجلسة الجاية تنحسب صوتين' },
   { level: 5, id: 'rematch', icon: '🔁', name: 'ريماتش رسمي', desc: 'بعد ما تخسر تطلب إعادة، ويطلع للفايز تنبيه' },
   { level: 5, id: 'pin', icon: '📌', name: 'تثبيت كتابة', desc: 'كتابة وحدة لك فوق اللوحة' },
+  { level: 6, id: 'houserule', icon: '📏', name: 'قانون منزلي', desc: 'تضيف قانون مؤقت للجلسة، مثل «الخسران يرتب اللعبة»، مرة بالأسبوع' },
   { level: 6, id: 'tease', icon: '😭', name: 'الطقطقة', desc: 'ملصق على صورة واحد من الشلة 3 أيام، مرة بالأسبوع' },
   { level: 6, id: 'eleven', icon: '🔥', name: 'تقييم 11 من 10', desc: 'لعبة وحدة من كل تصنيف تعطيها 11' },
   { level: 7, id: 'board', icon: '🎯', name: 'البورد على جهتك', desc: 'جلسة وحدة بالشهر يكون البورد على اتجاهك طول الجلسة' },
   { level: 7, id: 'scene', icon: '🎭', name: 'مشهد الرئيسية', desc: 'مشهد متحرك بينك وبين واحد من الشلة في الرئيسية' },
+  { level: 8, id: 'pose', icon: '🕺', name: 'وضعية شخصيتك', desc: 'تختار وش وضعية شخصيتك اللي تطلع للكل' },
   { level: 8, id: 'firstturn', icon: '⏭️', name: 'تجاوز الدور', desc: 'تختار مين يبدأ اللعب في قيم واحد، مرة بالأسبوع' },
   { level: 8, id: 'predict', icon: '🔮', name: 'التوقعات', desc: 'تتوقع الفايز قبل القيم، وإذا صح تاخذ +15 XP' },
+  { level: 9, id: 'teampick', icon: '🤜', name: 'اختيار الفريق', desc: 'في الألعاب الجماعية تختار شريكك، مرة بالأسبوع' },
   { level: 9, id: 'baby', icon: '👶', name: 'طقطقة البيبي', desc: 'شخصية واحد تصير بيبي يبكي يوم كامل، مرة بالأسبوع' },
   { level: 9, id: 'f-fire', icon: '🔥', name: 'إطار نار', desc: 'إطار يولّع' },
+  { level: 10, id: 'caption', icon: '💬', name: 'التعليق الإجباري', desc: 'جملة تطلع تحت اسم واحد في الترتيب يوم كامل، مرة بالأسبوع' },
+  { level: 10, id: 'weakness', icon: '🎯', name: 'نقطة ضعف الخصم', desc: 'تشوف في صفحة أي لاعب أكثر لعبة يخسر فيها' },
   { level: 10, id: 'challenge', icon: '⚔️', name: 'تحدي رسمي', desc: 'تتحدى واحد، وأول قيم بينكم ينحسب في سجل التحديات' },
   { level: 10, id: 'f-gold', icon: '🥇', name: 'إطار ذهبي', desc: 'ذهبي يلف حول صورتك' },
+  { level: 11, id: 'nameFx', icon: '🌈', name: 'اسم ملوّن متحرك', desc: 'اسمك بتدرّج ألوان يتحرك في كل مكان' },
+  { level: 11, id: 'flag', icon: '🏳️', name: 'راية الهزيمة', desc: 'اللي تفوز عليه في تحدي رسمي تطلع على صورته راية بيضاء لين يفوز عليك' },
   { level: 11, id: 'retitle', icon: '🏷️', name: 'تغيير لقب صاحبك', desc: 'تكتب لقب لواحد من الشلة يطلع للكل يوم كامل، مرة بالأسبوع' },
   { level: 12, id: 'bg', icon: '🖼️', name: 'خلفية بطاقتك', desc: 'خلفية خاصة لبطاقتك' },
+  { level: 12, id: 'announce', icon: '📣', name: 'إعلان الهزيمة', desc: 'لما تفوز في تحدي رسمي يطلع إعلان للكل في الرئيسية' },
+  { level: 12, id: 'report', icon: '🔒', name: 'تقريرك الخاص', desc: 'إحصائيات مخفية لك بس: مين تغلبه أكثر ومين يغلبك' },
+  { level: 12, id: 'risk', icon: '⚡', name: 'ضعف أو لا شي', desc: 'تخاطر على قيم: لو فزت +15 زيادة، لو خسرت -10' },
   { level: 12, id: 'gift', icon: '🎁', name: 'إهداء XP', desc: 'تهدي واحد من الشلة 50 XP بدون ما تخسر شي، مرة بالأسبوع' },
   { level: 12, id: 'celebrate', icon: '🎉', name: 'احتفال الفوز', desc: 'ورق ملوّن يتطاير مع اسمك في صفحة كل قيم تفوزه' },
+  { level: 13, id: 'nick', icon: '🎭', name: 'اسم مستعار', desc: 'تغيّر اسم واحد في التطبيق ساعتين، مرة بالأسبوع' },
+  { level: 13, id: 'guarantee', icon: '🛟', name: 'ضمان الخاسر', desc: 'تفعّله لجلسة: آخر واحد فيها ياخذ +20 XP، مرة بالشهر' },
   { level: 13, id: 'veto', icon: '🚫', name: 'الفيتو', desc: 'تشيل لعبة من اختيارات الجلسة الجاية، مرة بالشهر' },
+  { level: 14, id: 'faceSticker', icon: '😜', name: 'ملصق وجهك', desc: 'وجهك يصير ردّ فعل تستخدمه الشلة في اللوحة' },
   { level: 14, id: 'lucky', icon: '🍀', name: 'ماسح الفوز', desc: 'تحط «بالحظ 🍀» على فوز واحد: الفوز ينحسب بس ياخذ نص الـXP، مرة بالشهر' },
   { level: 14, id: 'predict2', icon: '🔮', name: 'التوقع المضاعف', desc: 'توقعك الصحيح يعطيك +30 بدال +15' },
+  { level: 15, id: 'swap', icon: '🔀', name: 'تبديل المركز', desc: 'إذا تعادلت بالنقاط مع اللي قدّامك تاخذ مركزه، مرة بالشهر' },
+  { level: 15, id: 'godfather', icon: '🤝', name: 'العرّاب', desc: 'تختار لاعب أقل منك بليفلين: جلستكم الجاية ياخذ نص XP أقيامك وأنت +20' },
   { level: 15, id: 'gold', icon: '🃏', name: 'الكرت الذهبي', desc: 'بطاقتك تصير كرت لاعب ذهبي' },
   { level: 15, id: 'f-diamond', icon: '💎', name: 'إطار ماسي', desc: 'أندر إطار في الطاولة' },
+  { level: 16, id: 'hotseat', icon: '🔥', name: 'الكرسي الساخن', desc: 'تختار واحد لازم الكل يتحداه الجلسة الجاية، مرة بالشهر' },
+  { level: 16, id: 'frame2', icon: '🎨', name: 'إطار بألوانك', desc: 'إطار بلونين تختارهم أنت' },
   { level: 16, id: 'opener', icon: '🎬', name: 'لعبة الافتتاح', desc: 'تحدد أول لعبة في الجلسة الجاية، مرة بالشهر' },
+  { level: 17, id: 'box', icon: '💰', name: 'صندوق الشلة', desc: 'تحط من XP حقك في صندوق، وأول واحد يفوز ياخذه، مرة بالأسبوع' },
   { level: 17, id: 'customTitle', icon: '✍️', name: 'لقب تكتبه بنفسك', desc: 'لقبك أنت تختار كلامه' },
+  { level: 18, id: 'legendPage', icon: '🏛️', name: 'صفحة الأسطورة', desc: 'قسم في صفحتك فيه أعظم انتصاراتك' },
   { level: 18, id: 'alert', icon: '📢', name: 'التنبيه الذهبي', desc: 'تنبيه يطلع للكل في أعلى الرئيسية يوم كامل، مرة بالأسبوع' },
   { level: 19, id: 'immune', icon: '🛡️', name: 'الحصانة', desc: 'محد يقدر يطقطق عليك أسبوع كامل، مرة بالشهر' },
   { level: 20, id: 'hall', icon: '🏛️', name: 'قاعة المشاهير', desc: 'صورتك تنحط في الرئيسية كأسطورة' },
@@ -132,7 +160,8 @@ export function computeLevels(idx) {
       session: s.sessions * XP.session, play: s.plays * XP.play, newgame: s.games * XP.newgame, rate: ratings * XP.rate,
       comment: comments * XP.comment, win: wins * XP.win, picks: pickWeeks * XP.picks, post: posts * XP.post, streak: streaks * XP.streak, setup: setups * XP.setup, cleanup: cleanups * XP.cleanup,
       thanks: ax.get(pl.id)?.thanks || 0, thankGive: ax.get(pl.id)?.thankGive || 0, predict: ax.get(pl.id)?.predict || 0,
-      gift: ax.get(pl.id)?.gift || 0, lucky: ax.get(pl.id)?.lucky || 0, fullhouse: fullDays.filter(d => myDays.has(d)).length * XP.fullhouse,
+      gift: ax.get(pl.id)?.gift || 0, lucky: ax.get(pl.id)?.lucky || 0, luckbox: ax.get(pl.id)?.luckbox || 0, risk: ax.get(pl.id)?.risk || 0,
+      godfather: ax.get(pl.id)?.godfather || 0, box: ax.get(pl.id)?.box || 0, guarantee: ax.get(pl.id)?.guarantee || 0, daily: dailyDone(idx, pl.id).length * XP.daily, fullhouse: fullDays.filter(d => myDays.has(d)).length * XP.fullhouse,
     }
     const achievements = ACHIEVEMENTS.map(a => ({ ...a, done: !!a.test(s), progress: a.prog ? a.prog(s) : null }))
     const achXp = achievements.filter(a => a.done).reduce((t, a) => t + a.xp, 0)
@@ -206,4 +235,28 @@ export function xpLog(idx, pid) {
   }
   const icon = Object.fromEntries(XP_RULES.map(r => [r.id, r.icon]))
   return ev.filter(e => e.at).map(e => ({ ...e, icon: icon[e.type] })).sort((a, b) => b.at.localeCompare(a.at))
+}
+
+// تحدي اليوم: مهمة صغيرة تتغير كل يوم (للكل)
+export const MISSION_START = '2026-11-07'
+const day = iso => (iso || '').slice(0, 10)
+export const MISSIONS = [
+  { id: 'rate', icon: '⭐', text: 'قيّم لعبة أو عدّل تقييمك', test: (idx, pid, d) => idx.ratings.some(r => r.player_id === pid && day(r.updated_at) === d) },
+  { id: 'comment', icon: '💬', text: 'علّق على لعبة', test: (idx, pid, d) => (idx.comments || []).some(c => c.player_id === pid && day(c.updated_at) === d) },
+  { id: 'post', icon: '📝', text: 'اكتب شي في اللوحة', test: (idx, pid, d) => (idx.posts || []).some(p => p.player_id === pid && day(p.created_at) === d) },
+  { id: 'pick', icon: '🎲', text: 'اختر لعبة للجلسة الجاية', test: (idx, pid, d) => (idx.picks || []).some(p => p.player_id === pid && day(p.created_at) === d) },
+  { id: 'play', icon: '🎮', text: 'العب قيم', test: (idx, pid, d) => idx.plays.some(p => p.played_on === d && p.results.some(r => r.player_id === pid)) },
+  { id: 'react', icon: '😂', text: 'رد على كتابة في اللوحة', test: (idx, pid, d) => (idx.actions || []).some(a => a.kind === 'react' && a.player_id === pid && day(a.created_at) === d) },
+]
+const hashDay = d => [...d].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
+export const missionOf = d => MISSIONS[hashDay(d) % MISSIONS.length]
+export const todayKey = () => new Date().toISOString().slice(0, 10)
+export function dailyDone(idx, pid) {
+  const out = []
+  const end = todayKey()
+  for (let t = new Date(MISSION_START + 'T00:00:00Z'); t.toISOString().slice(0, 10) <= end; t = new Date(t.getTime() + 864e5)) {
+    const d = t.toISOString().slice(0, 10)
+    if (missionOf(d).test(idx, pid, d)) out.push(d)
+  }
+  return out
 }

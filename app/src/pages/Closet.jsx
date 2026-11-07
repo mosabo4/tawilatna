@@ -12,7 +12,7 @@ export function CharacterEditor() {
   const { perks, set, level: L, active } = usePerks()
   const ch = perks.char || {}
   const setCh = (k, v) => set({ char: { ...ch, [k]: v } })
-  const ic = IMG_CHARS[me.name.trim()]
+  const ic = IMG_CHARS[(me.realName || me.name).trim()]
   if (ic) {
     const st = ic.styles[me.char_style] ? me.char_style : ic.def
     const sty = ic.styles[st]
@@ -78,7 +78,7 @@ export function StyleAdmin() {
   const all = Object.keys(IMG_CHARS['هاني']?.styles || {})
   const setAll = async style => {
     setBusy('all')
-    try { await act(async (p, pin) => { for (const pl of idx.players) if (IMG_CHARS[pl.name.trim()]?.styles[style]) await api.setCharStyle(p, pin, pl.id, style) }, 'انحفظ للكل') } catch { /* toast */ } finally { setBusy(null) }
+    try { await act(async (p, pin) => { for (const pl of idx.players) if (IMG_CHARS[(pl.realName || pl.name).trim()]?.styles[style]) await api.setCharStyle(p, pin, pl.id, style) }, 'انحفظ للكل') } catch { /* toast */ } finally { setBusy(null) }
   }
   return (
     <Section title="أسلوب الشخصيات">
@@ -87,7 +87,7 @@ export function StyleAdmin() {
         {all.map(k => <button key={k} className="chip" disabled={!!busy} onClick={() => setAll(k)}>{IMG_CHARS['هاني'].styles[k].name}</button>)}
       </div>
       {idx.players.map(pl => {
-        const ic = IMG_CHARS[pl.name.trim()]; if (!ic) return null
+        const ic = IMG_CHARS[(pl.realName || pl.name).trim()]; if (!ic) return null
         const cur = ic.styles[pl.char_style] ? pl.char_style : ic.def
         return (
           <div key={pl.id} className="style-admin">

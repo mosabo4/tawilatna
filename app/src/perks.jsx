@@ -5,7 +5,7 @@ import { useStore } from './store'
 import { api } from './api'
 import { computeLevels, levelOfReward } from './levels'
 import { TITLE_DEFS, computeTitles } from './titles'
-import { resolveActions, activeEffects } from './actions'
+import { resolveActions, activeEffects, flagsOn } from './actions'
 
 const KEY = 'tw-perks'
 const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } }
@@ -25,7 +25,7 @@ export const BGS = [
   { id: 'pitch', name: 'ملعب', css: 'repeating-linear-gradient(90deg, #1f7a3a 0 28px, #22863f 28px 56px)' },
   { id: 'neon', name: 'نيون', css: 'linear-gradient(135deg, #ff2fa0 0%, #6a2cff 50%, #00d4ff 100%)' },
 ]
-const SHARED = ['color', 'title', 'frame', 'pinned', 'bg', 'celebrate', 'gold', 'customTitle']
+const SHARED = ['color', 'title', 'frame', 'pinned', 'bg', 'celebrate', 'gold', 'customTitle', 'nameFx', 'pose', 'fc1', 'fc2']
 
 export const TITLE_STYLES = Object.fromEntries(TITLE_DEFS.map(t => [t.name, { icon: t.icon, from: t.from, to: t.to, ring: t.ring, shine: t.rarity === 'legend' }]))
 export function TitleBadge({ title, small, kind }) {
@@ -78,7 +78,7 @@ export function PerksProvider({ children }) {
 
   const levels = useMemo(() => (idx ? computeLevels(idx) : null), [idx])
   const titlesMap = useMemo(() => (idx && levels ? computeTitles(idx, levels) : new Map()), [idx, levels])
-  const fx = useMemo(() => (idx ? { ...resolveActions(idx), effects: activeEffects(idx) } : null), [idx])
+  const fx = useMemo(() => { if (!idx) return null; const r = resolveActions(idx); return { ...r, effects: activeEffects(idx), flags: flagsOn(r.challenges) } }, [idx])
   const real = (levels && me && levels.get(me.id)?.level) || 0
   const test = !!(local.test && me?.is_admin)
   const L = test ? 99 : real
@@ -92,7 +92,8 @@ export function PerksProvider({ children }) {
     const d = (me && pid === me.id) ? mine : (dbReady ? rowOf(pid) || {} : {})
     const ok = id => lvOf(pid) >= levelOfReward(id)
     const fr = FRAMES.find(f => f.id === d.frame)
-    const eff = fx?.effects.get(pid) || { teases: [], baby: null, retitle: null }
+    const eff = fx?.effects.get(pid) || { teases: [], baby: null, retitle: null, caption: null, immune: null }
+    const flaggers = (fx?.flags.get(pid) || []).filter(w => lvOf(w) >= levelOfReward('flag'))
     let title = null, titleKind = 'std'
     if (eff.retitle) { title = eff.retitle.data?.title; titleKind = 'retitle' }
     else if (ok('customTitle') && d.customTitle) { title = d.customTitle; titleKind = 'custom' }
@@ -100,7 +101,10 @@ export function PerksProvider({ children }) {
     return {
       color: ok('color') ? d.color || null : null,
       title, titleKind,
-      frame: fr && lvOf(pid) >= fr.level ? fr.id : null,
+      frame: d.frame === 'custom' && ok('frame2') && d.fc1 ? 'custom' : fr && lvOf(pid) >= fr.level ? fr.id : null,
+      fc: [d.fc1, d.fc2 || d.fc1],
+      nameFx: ok('nameFx') && !!d.nameFx, pose: ok('pose') ? d.pose || null : null,
+      caption: eff.caption, immune: eff.immune, flag: flaggers.length ? flaggers : null,
       pin: ok('pin') ? d.pinned || null : null,
       bg: ok('bg') ? BGS.find(b => b.id === d.bg) || null : null,
       celebrate: ok('celebrate') && !!d.celebrate,
