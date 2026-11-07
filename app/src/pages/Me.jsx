@@ -145,14 +145,27 @@ export default function Me({ sub }) {
     <div className="page">
       <header className="sec-head"><div className="sec-top"><h1>أنا</h1></div></header>
       <div className="stack">
-        <a className={`me-hero ${active.legend ? 'legend' : ''}`} href="#/progress" style={{ '--c': active.color || me.color }}>
-          <span className="me-char"><Character player={me} custom={active.char} size={110} /></span>
-          <div className="me-info">
-            <b className={active.legend ? 'legend-name' : ''}>{me.name}</b>
-            {active.title ? <TitleBadge title={active.title} small /> : <small>{lv.title}</small>}
-            <span className="muted small">ليفل {lv.level} · {lv.xp} XP</span>
-            <span className="lv-bar"><span style={{ width: `${Math.max(3, lv.progress * 100)}%`, '--c': active.color || me.color }} /></span>
-            <small className="muted">باقي {lv.need - lv.into} XP على ليفل {lv.level + 1}</small>
+        <a className={`me-card ${active.legend ? 'legend' : ''}`} href="#/progress" style={{ '--c': active.color || me.color }}>
+          <div className="mc-body">
+            <span className="mc-chr"><Character player={me} custom={active.char} size={150} /></span>
+            <div className="mc-mid">
+              <b className={`mc-nm ${active.legend ? 'legend-name' : ''}`}>{me.name}</b>
+              {active.title ? <TitleBadge title={active.title} small /> : <span className="mc-tb">{lv.title}</span>}
+              <span className="mc-lv"><span className="mc-lvn">{lv.level}</span>ليفل · <bdi>{lv.xp} XP</bdi></span>
+            </div>
+            <div className="mc-left">
+              <div className="mc-big"><bdi>{st.points ?? '—'}{st.points != null && <em>%</em>}</bdi></div>
+              <small className="mc-cap">المستوى</small>
+              <div className="mc-chips">
+                <span>🏆 <b><bdi>{st.wins}/{st.plays}</bdi></b> فوز</span>
+                <span>🎲 <b>{lv.stats.games}</b> {lv.stats.games === 1 ? 'لعبة' : 'ألعاب'}</span>
+                <span>🔥 <b>{lv.stats.bestWinStreak}</b> سلسلة</span>
+              </div>
+            </div>
+          </div>
+          <div className="mc-xp">
+            <div className="mc-xprow"><span>باقي <bdi>{lv.need - lv.into} XP</bdi> على ليفل {lv.level + 1}</span><bdi>{Math.round(lv.progress * 100)}%</bdi></div>
+            <div className="mc-bar"><i style={{ width: `${Math.max(3, lv.progress * 100)}%` }} /></div>
           </div>
         </a>
 
@@ -162,14 +175,6 @@ export default function Me({ sub }) {
             <span className="mp-txt"><b>تقدّمي وجوائزي</b><small>{lv.nextReward ? `الجاية: ${lv.nextReward.icon} ${lv.nextReward.name} · ليفل ${lv.nextReward.level}` : 'فتحت كل شي 👑'}</small></span>
             <i aria-hidden="true">‹</i>
           </a>
-        </div>
-
-        <h2 className="h-sec">أرقامك</h2>
-        <div className="me-stats compact">
-          <div><b>{st.points ?? '—'}{st.points != null && <small>%</small>}</b><span>المستوى</span></div>
-          <div><b>{st.wins}<small>/{st.plays}</small></b><span>فوز من أقيام</span></div>
-          <div><b>{lv.stats.games}</b><span>لعبة تعرفها</span></div>
-          <div><b>{lv.stats.bestWinStreak}</b><span>أطول سلسلة فوز</span></div>
         </div>
 
         <nav className="me-links slim">

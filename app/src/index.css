@@ -1436,3 +1436,27 @@ a.pw:active { transform: scale(.99); }
 .pc-top { display: flex; justify-content: space-between; align-items: center; }
 .pc-top b { font-size: 14px; } .pc-top em { font-style: normal; font-size: 13px; color: var(--muted); direction: ltr; }
 .pc > small { font-size: 11.5px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* بطاقة أنا */
+.me-card { position: relative; display: flex; flex-direction: column; align-items: stretch; width: 100%; border-radius: 26px; overflow: hidden; color: inherit; text-decoration: none; background: linear-gradient(150deg, color-mix(in srgb, var(--c) 28%, #2a2b5c) 0%, #2a2b5c 55%, #1b1f45 100%); border: 1px solid rgba(255,255,255,.14); box-shadow: 0 20px 40px -20px #000; }
+.me-card::before { content: ''; position: absolute; right: -60px; top: -60px; width: 260px; height: 260px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--c) 60%, transparent), transparent 70%); pointer-events: none; }
+.me-card.legend { background: linear-gradient(120deg, rgba(91,124,255,.35), rgba(195,139,255,.35), rgba(255,143,177,.3), rgba(91,124,255,.35)); background-size: 300% 100%; animation: legendBg 8s linear infinite; }
+.mc-body { position: relative; display: grid; grid-template-columns: 116px minmax(0, 1fr) 104px; align-items: end; min-height: 196px; }
+.mc-chr { align-self: end; justify-self: center; display: flex; align-items: flex-end; height: 196px; }
+.mc-chr .chr-img { height: 196px !important; width: auto; max-width: 140px; object-fit: contain; object-position: bottom; }
+.mc-mid { align-self: center; display: flex; flex-direction: column; align-items: flex-start; gap: 7px; padding: 16px 4px; min-width: 0; }
+.mc-nm { font-size: 24px; line-height: 1.15; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mc-tb { font-size: 11px; padding: 3px 9px; border-radius: 999px; background: linear-gradient(135deg, #6b4dd8, #3c7bff); font-weight: 600; white-space: nowrap; }
+.mc-lv { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); white-space: nowrap; }
+.mc-lvn { width: 28px; height: 28px; border-radius: 9px; display: grid; place-items: center; background: linear-gradient(135deg, #FFC45C, #FF7A59); color: #2a1300; font-weight: 800; font-size: 14px; }
+.mc-left { align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 14px 12px 14px 10px; }
+.mc-big { font-size: 34px; font-weight: 800; line-height: 1; }
+.mc-big em { font-style: normal; font-size: 16px; color: var(--muted); font-weight: 600; }
+.mc-cap { font-size: 10.5px; color: var(--muted); margin-bottom: 4px; }
+.mc-chips { display: flex; flex-direction: column; gap: 5px; }
+.mc-chips span { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); background: rgba(255,255,255,.08); border-radius: 10px; padding: 4px 7px; white-space: nowrap; }
+.mc-chips b { color: var(--ink); }
+.me-card .mc-xp { display: block; position: relative; width: 100%; align-self: stretch; padding: 10px 16px 12px; background: rgba(0,0,0,.22); border-top: 1px solid rgba(255,255,255,.08); }
+.mc-xprow { display: flex; justify-content: space-between; font-size: 11.5px; color: var(--muted); margin-bottom: 6px; }
+.mc-bar { height: 7px; border-radius: 9px; background: rgba(255,255,255,.1); overflow: hidden; }
+.mc-bar i { display: block; height: 100%; border-radius: 9px; background: linear-gradient(90deg, #FF7A59, #FFC45C); }
