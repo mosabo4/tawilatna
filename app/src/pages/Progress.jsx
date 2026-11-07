@@ -7,6 +7,7 @@ import { Avatar, TopBar } from '../ui'
 import { usePerks, PALETTE, FRAMES, BGS, TITLE_STYLES, TitleBadge } from '../perks'
 import { REWARDS, xpFor, levelOfReward } from '../levels'
 import { CATEGORIES } from '../categories'
+import { cooldownLeft, isImmune } from '../actions'
 import { computeTitles } from '../titles'
 import { useLevels, AchList, XpHow, CrewLevels } from './Levels'
 import { TitlesList } from './Titles'
@@ -74,6 +75,8 @@ function Main() {
   const powers = [
     { id: 'scene', icon: '🎭', name: 'مشهد الرئيسية', val: scene.target ? `${ACTIONS.find(a => a.id === (scene.action || 'punch'))?.label} ${nameOf(scene.target)}` : 'بدون' },
     { id: 'pin', icon: '📌', name: 'تثبيت كتابة', val: active.pin ? 'مثبّتة' : 'بدون' },
+    { id: 'alert', icon: '📢', name: 'التنبيه الذهبي', val: cooldownLeft(idx, me.id, 'alert', 7) ? `بعد ${cooldownLeft(idx, me.id, 'alert', 7)} يوم` : 'جاهز' },
+    { id: 'immune', icon: '🛡️', name: 'الحصانة', val: isImmune(idx, me.id) ? 'شغّالة' : cooldownLeft(idx, me.id, 'immune', 30) ? `بعد ${cooldownLeft(idx, me.id, 'immune', 30)} يوم` : 'جاهزة' },
     { id: 'award', icon: '🛠️', name: 'صانع الجوائز', val: 'اخترع جائزة' },
   ].filter(p => can(p.id))
 
@@ -120,6 +123,15 @@ function Main() {
       </select>
       <input className="input" maxLength={20} defaultValue={myShelf?.data?.name || `رف ${me.name}`} onChange={e => setTxt(t => ({ ...t, sh: e.target.value }))} />
       <button className="btn primary small" disabled={!(txt.cat || myShelf?.data?.cat)} onClick={async () => { try { if (myShelf) await undoAction(myShelf.id); await doAction('shelf', { data: { cat: txt.cat || myShelf?.data?.cat, name: (txt.sh ?? myShelf?.data?.name ?? `رف ${me.name}`).trim() } }, '🗄️ انسمّى الرف'); setSheet(null) } catch { /* toast */ } }}>احفظ</button>
+    </div>,
+    alert: cooldownLeft(idx, me.id, 'alert', 7) ? <p className="muted">استخدمته هالأسبوع. يرجع لك بعد {cooldownLeft(idx, me.id, 'alert', 7)} يوم.</p> : <div className="form">
+      <input className="input" maxLength={80} placeholder="مثلاً: الليلة كاتان ولا أحد يعتذر" onChange={e => setTxt(t => ({ ...t, al: e.target.value }))} />
+      <button className="btn primary small" disabled={!txt.al?.trim()} onClick={async () => { try { await doAction('alert', { data: { text: txt.al.trim() } }, '📢 طلع التنبيه للكل'); setSheet(null) } catch { /* toast */ } }}>انشر للكل</button>
+      <p className="hint">يطلع في أعلى الرئيسية للكل يوم كامل.</p>
+    </div>,
+    immune: isImmune(idx, me.id) ? <p className="muted">🛡️ الحصانة شغّالة، محد يقدر يطقطق عليك.</p> : cooldownLeft(idx, me.id, 'immune', 30) ? <p className="muted">ترجع لك بعد {cooldownLeft(idx, me.id, 'immune', 30)} يوم.</p> : <div className="form">
+      <p className="muted">أسبوع كامل محد يقدر يلزّق عليك ملصق، ولا يسوّيك بيبي، ولا يغيّر لقبك.</p>
+      <button className="btn primary small" onClick={async () => { try { await doAction('immune', {}, '🛡️ صرت محصّن أسبوع'); setSheet(null) } catch { /* toast */ } }}>فعّل الحصانة</button>
     </div>,
     award: <div className="form">
       <input className="input" maxLength={30} placeholder="اسم الجائزة" onChange={e => setTxt(t => ({ ...t, an: e.target.value }))} />

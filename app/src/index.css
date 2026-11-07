@@ -1555,3 +1555,9 @@ a.pw:active { transform: scale(.99); }
 .awards li { display: flex; flex-direction: column; padding: 6px 0; border-top: 1px solid var(--line); } .awards li small { font-size: 11.5px; color: var(--muted); }
 .board-side { padding: 12px 14px; text-align: center; font-size: 14px; border-color: rgba(255,196,92,.4); background: rgba(255,196,92,.08); }
 .board-side b { color: #FFC45C; }
+
+.ft-row { font-size: 13px; color: var(--muted); } .ft-row b { color: var(--ink); }
+.golden-alert { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 20px; background: linear-gradient(135deg, #f6c453, #e08a2b); color: #2a1300; box-shadow: 0 10px 30px -12px rgba(246,196,83,.6); }
+.golden-alert > span { font-size: 26px; }
+.golden-alert p { margin: 0; font-weight: 700; font-size: 15px; display: flex; flex-direction: column; }
+.golden-alert small { font-weight: 500; font-size: 11.5px; opacity: .8; }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { cooldownLeft } from '../actions'
+import { cooldownLeft, isImmune } from '../actions'
 import { STICKERS, Sticker } from '../stickers'
 import { useStore, go } from '../store'
 import { playerStats, versus } from '../stats'
@@ -242,15 +242,18 @@ function PlayerPowers({ target }) {
   const [game, setGame] = useState('')
   const run = async (...a) => { setBusy(true); try { await doAction(...a); setOpen(null); setTxt('') } catch { /* toast */ } finally { setBusy(false) } }
   const cd = (k, d) => cooldownLeft(idx, me.id, k, d)
+  const immune = isImmune(idx, target.id)
   const items = [
     { id: 'challenge', icon: '⚔️', label: 'تحدّاه', left: 0 },
+    { id: 'gift', icon: '🎁', label: 'أهدِه 50 XP', left: cd('gift', 7) },
     { id: 'tease', icon: '😭', label: 'ملصق', left: cd('tease', 7) },
     { id: 'baby', icon: '👶', label: 'بيبي', left: cd('baby', 7) },
     { id: 'retitle', icon: '🏷️', label: 'غيّر لقبه', left: cd('retitle', 7) },
-  ].filter(x => can(x.id))
+  ].filter(x => can(x.id) && !(immune && ['tease', 'baby', 'retitle'].includes(x.id)))
   if (!items.length) return null
   return (
     <div className="glass ppow">
+      {immune && <p className="hint">🛡️ {target.name} محصّن هالأسبوع، محد يقدر يطقطق عليه.</p>}
       <div className="ppow-row">
         {items.map(x => <button key={x.id} className={`chip ${open === x.id ? 'on' : ''}`} disabled={x.left > 0} onClick={() => setOpen(open === x.id ? null : x.id)}>{x.icon} {x.label}{x.left ? ` · ${x.left} يوم` : ''}</button>)}
       </div>
@@ -258,6 +261,10 @@ function PlayerPowers({ target }) {
         <select className="input" value={game} onChange={e => setGame(e.target.value)}><option value="">أي لعبة</option>{[...idx.games].sort((a, b) => a.name.localeCompare(b.name)).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select>
         <button className="btn primary small" disabled={busy} onClick={() => run('challenge', { target: target.id, game: game || null }, `⚔️ تحدّيت ${target.name}`)}>أرسل التحدي</button>
         <p className="hint">أول قيم يجمعكم خلال أسبوعين ينحسب.</p>
+      </div>}
+      {open === 'gift' && <div className="ppow-body">
+        <p>{target.name} ياخذ 50 XP هدية منك، وأنت ما تخسر شي.</p>
+        <button className="btn primary small" disabled={busy} onClick={() => run('gift', { target: target.id }, `🎁 وصلت الهدية لـ${target.name}`)}>أرسل الهدية</button>
       </div>}
       {open === 'tease' && <div className="ppow-body">
         <div className="arts">{STICKERS.map(t => <button key={t.id} type="button" className={art === t.id ? 'on' : ''} onClick={() => setArt(t.id)}><Sticker id={t.id} size={30} /></button>)}</div>

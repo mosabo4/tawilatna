@@ -16,7 +16,10 @@ export const XP_RULES = [
   { id: 'cleanup', icon: '🧹', label: 'ترتيب لعبة ثقيلة بعد القيم', xp: 15 },
   { id: 'thanks', icon: '🙏', label: 'أحد يشكرك على التجهيز', xp: 10 },
   { id: 'thankGive', icon: '🤝', label: 'تشكر اللي جهّز اللعبة (ليفل 3)', xp: 3 },
-  { id: 'predict', icon: '🔮', label: 'توقّع صحيح للفايز (ليفل 8)', xp: 15 },
+  { id: 'predict', icon: '🔮', label: 'توقّع صحيح للفايز (ليفل 8، ويصير +30 من ليفل 14)', xp: 15 },
+  { id: 'fullhouse', icon: '👨‍👩‍👦', label: 'جلسة حضرتها الشلة كاملة', xp: 20 },
+  { id: 'gift', icon: '🎁', label: 'هدية من واحد من الشلة', xp: 50 },
+  { id: 'lucky', icon: '🍀', label: 'فوز انحط عليه «بالحظ»: ينقص نص XP القيم', xp: 0 },
 ]
 const XP = Object.fromEntries(XP_RULES.map(r => [r.id, r.xp]))
 
@@ -43,6 +46,7 @@ export const REWARDS = [
   { level: 6, id: 'eleven', icon: '🔥', name: 'تقييم 11 من 10', desc: 'لعبة وحدة من كل تصنيف تعطيها 11' },
   { level: 7, id: 'board', icon: '🎯', name: 'البورد على جهتك', desc: 'جلسة وحدة بالشهر يكون البورد على اتجاهك طول الجلسة' },
   { level: 7, id: 'scene', icon: '🎭', name: 'مشهد الرئيسية', desc: 'مشهد متحرك بينك وبين واحد من الشلة في الرئيسية' },
+  { level: 8, id: 'firstturn', icon: '⏭️', name: 'تجاوز الدور', desc: 'تختار مين يبدأ اللعب في قيم واحد، مرة بالأسبوع' },
   { level: 8, id: 'predict', icon: '🔮', name: 'التوقعات', desc: 'تتوقع الفايز قبل القيم، وإذا صح تاخذ +15 XP' },
   { level: 9, id: 'baby', icon: '👶', name: 'طقطقة البيبي', desc: 'شخصية واحد تصير بيبي يبكي يوم كامل، مرة بالأسبوع' },
   { level: 9, id: 'f-fire', icon: '🔥', name: 'إطار نار', desc: 'إطار يولّع' },
@@ -50,13 +54,17 @@ export const REWARDS = [
   { level: 10, id: 'f-gold', icon: '🥇', name: 'إطار ذهبي', desc: 'ذهبي يلف حول صورتك' },
   { level: 11, id: 'retitle', icon: '🏷️', name: 'تغيير لقب صاحبك', desc: 'تكتب لقب لواحد من الشلة يطلع للكل يوم كامل، مرة بالأسبوع' },
   { level: 12, id: 'bg', icon: '🖼️', name: 'خلفية بطاقتك', desc: 'خلفية خاصة لبطاقتك' },
+  { level: 12, id: 'gift', icon: '🎁', name: 'إهداء XP', desc: 'تهدي واحد من الشلة 50 XP بدون ما تخسر شي، مرة بالأسبوع' },
   { level: 12, id: 'celebrate', icon: '🎉', name: 'احتفال الفوز', desc: 'ورق ملوّن يتطاير مع اسمك في صفحة كل قيم تفوزه' },
   { level: 13, id: 'veto', icon: '🚫', name: 'الفيتو', desc: 'تشيل لعبة من اختيارات الجلسة الجاية، مرة بالشهر' },
-  { level: 14, id: 'lucky', icon: '🍀', name: 'ماسح الفوز', desc: 'تحط «بالحظ 🍀» على فوز واحد من الشلة، مرة بالشهر' },
+  { level: 14, id: 'lucky', icon: '🍀', name: 'ماسح الفوز', desc: 'تحط «بالحظ 🍀» على فوز واحد: الفوز ينحسب بس ياخذ نص الـXP، مرة بالشهر' },
+  { level: 14, id: 'predict2', icon: '🔮', name: 'التوقع المضاعف', desc: 'توقعك الصحيح يعطيك +30 بدال +15' },
   { level: 15, id: 'gold', icon: '🃏', name: 'الكرت الذهبي', desc: 'بطاقتك تصير كرت لاعب ذهبي' },
   { level: 15, id: 'f-diamond', icon: '💎', name: 'إطار ماسي', desc: 'أندر إطار في الطاولة' },
   { level: 16, id: 'opener', icon: '🎬', name: 'لعبة الافتتاح', desc: 'تحدد أول لعبة في الجلسة الجاية، مرة بالشهر' },
   { level: 17, id: 'customTitle', icon: '✍️', name: 'لقب تكتبه بنفسك', desc: 'لقبك أنت تختار كلامه' },
+  { level: 18, id: 'alert', icon: '📢', name: 'التنبيه الذهبي', desc: 'تنبيه يطلع للكل في أعلى الرئيسية يوم كامل، مرة بالأسبوع' },
+  { level: 19, id: 'immune', icon: '🛡️', name: 'الحصانة', desc: 'محد يقدر يطقطق عليك أسبوع كامل، مرة بالشهر' },
   { level: 20, id: 'hall', icon: '🏛️', name: 'قاعة المشاهير', desc: 'صورتك تنحط في الرئيسية كأسطورة' },
   { level: 20, id: 'award', icon: '🛠️', name: 'صانع الجوائز', desc: 'تخترع جائزة تنضاف لقائمة جوائز الشلة' },
 ]
@@ -85,6 +93,8 @@ export function computeLevels(idx) {
   const ax = resolveActions(idx).xp
   const chrono = [...idx.plays].reverse()
   const sessionDays = [...new Set(chrono.map(p => p.played_on))]
+  // أيام حضرها كل الشلة
+  const fullDays = sessionDays.filter(d => { const who = new Set(chrono.filter(p => p.played_on === d).flatMap(p => p.results.map(r => r.player_id))); return idx.players.length > 1 && idx.players.every(pl => who.has(pl.id)) })
   const out = new Map()
   for (const pl of idx.players) {
     const mine = chrono.filter(p => p.results.some(r => r.player_id === pl.id))
@@ -122,6 +132,7 @@ export function computeLevels(idx) {
       session: s.sessions * XP.session, play: s.plays * XP.play, newgame: s.games * XP.newgame, rate: ratings * XP.rate,
       comment: comments * XP.comment, win: wins * XP.win, picks: pickWeeks * XP.picks, post: posts * XP.post, streak: streaks * XP.streak, setup: setups * XP.setup, cleanup: cleanups * XP.cleanup,
       thanks: ax.get(pl.id)?.thanks || 0, thankGive: ax.get(pl.id)?.thankGive || 0, predict: ax.get(pl.id)?.predict || 0,
+      gift: ax.get(pl.id)?.gift || 0, lucky: ax.get(pl.id)?.lucky || 0, fullhouse: fullDays.filter(d => myDays.has(d)).length * XP.fullhouse,
     }
     const achievements = ACHIEVEMENTS.map(a => ({ ...a, done: !!a.test(s), progress: a.prog ? a.prog(s) : null }))
     const achXp = achievements.filter(a => a.done).reduce((t, a) => t + a.xp, 0)

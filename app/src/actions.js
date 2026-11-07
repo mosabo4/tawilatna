@@ -17,13 +17,13 @@ const pos = (p, pid) => p.results.find(r => r.player_id === pid)?.position
 export function resolveActions(idx) {
   const acts = idx.actions || []
   const xp = new Map() // pid -> {predict, bet, thanks}
-  const add = (pid, k, v) => { if (!xp.has(pid)) xp.set(pid, { predict: 0, thanks: 0, thankGive: 0 }); xp.get(pid)[k] += v }
+  const add = (pid, k, v) => { if (!xp.has(pid)) xp.set(pid, { predict: 0, thanks: 0, thankGive: 0, gift: 0, lucky: 0 }); xp.get(pid)[k] += v }
   const predictions = [], challenges = [], rematches = []
   for (const a of acts) {
     if (a.kind === 'predict') {
       const p = after(idx, a.created_at, 2, x => x.game_id === a.game_id)
       const ok = p ? pos(p, a.target) === 1 : null
-      if (ok) add(a.player_id, 'predict', 15)
+      if (ok) add(a.player_id, 'predict', a.data?.double ? 30 : 15)
       predictions.push({ ...a, play: p, ok })
     } else if (a.kind === 'challenge') {
       const p = after(idx, a.created_at, 14, x => (!a.game_id || x.game_id === a.game_id) && x.results.some(r => r.player_id === a.player_id) && x.results.some(r => r.player_id === a.target))
@@ -34,6 +34,13 @@ export function resolveActions(idx) {
       const w = orig?.results.find(r => r.position === 1)?.player_id
       const p = orig ? after(idx, a.created_at, 30, x => x.game_id === orig.game_id && x.results.some(r => r.player_id === a.player_id) && x.results.some(r => r.player_id === w)) : null
       rematches.push({ ...a, orig, rival: w, play: p, done: !!p })
+    } else if (a.kind === 'gift' && a.target) add(a.target, 'gift', 50)
+    else if (a.kind === 'lucky' && a.target && a.play_id) {
+      const p = idx.plays.find(x => x.id === a.play_id)
+      if (p) {
+        const first = !idx.plays.some(x => x.game_id === p.game_id && x.id !== p.id && tsOf(x) < tsOf(p) && x.results.some(r => r.player_id === a.target))
+        add(a.target, 'lucky', -Math.round((10 + 5 + (first ? 15 : 0)) / 2))
+      }
     } else if (a.kind === 'thanks' && a.target) { add(a.target, 'thanks', 10); add(a.player_id, 'thankGive', 3) }
   }
   return { xp, predictions, challenges, rematches }
@@ -44,9 +51,13 @@ export function activeEffects(idx, now = Date.now()) {
   const acts = idx.actions || []
   const live = (a, ms) => now - new Date(a.created_at).getTime() < ms
   const on = new Map()
-  const get = pid => { if (!on.has(pid)) on.set(pid, { teases: [], baby: null, retitle: null }); return on.get(pid) }
+  const get = pid => { if (!on.has(pid)) on.set(pid, { teases: [], baby: null, retitle: null, immune: null }); return on.get(pid) }
+  const IMM = 7 * DAY
+  const immunes = acts.filter(a => a.kind === 'immune')
+  const shielded = (pid, at) => immunes.some(i => i.player_id === pid && new Date(at) >= new Date(i.created_at) && new Date(at) - new Date(i.created_at) < IMM)
+  for (const i of immunes) if (live(i, IMM) && !get(i.player_id).immune) get(i.player_id).immune = i
   for (const a of acts) {
-    if (!a.target) continue
+    if (!a.target || shielded(a.target, a.created_at)) continue
     if (a.kind === 'tease' && live(a, TEASE_MS)) get(a.target).teases.push(a)
     if (a.kind === 'baby' && live(a, BABY_MS) && !get(a.target).baby) get(a.target).baby = a
     if (a.kind === 'retitle' && live(a, RETITLE_MS) && !get(a.target).retitle) get(a.target).retitle = a
@@ -64,3 +75,7 @@ export const cooldownLeft = (idx, pid, kind, days) => {
 
 // البورد على جهة لاعب (ليفل 7): يشتغل 12 ساعة من وقت ما يفعّله
 export const boardSide = (idx, now = Date.now()) => (idx.actions || []).find(a => a.kind === 'board' && now - new Date(a.created_at).getTime() < 12 * 3600e3) || null
+
+// تنبيه ذهبي شغّال (24 ساعة)
+export const goldenAlert = (idx, now = Date.now()) => (idx.actions || []).find(a => a.kind === 'alert' && now - new Date(a.created_at).getTime() < DAY) || null
+export const isImmune = (idx, pid, now = Date.now()) => (idx.actions || []).some(a => a.kind === 'immune' && a.player_id === pid && now - new Date(a.created_at).getTime() < 7 * DAY)

@@ -9,7 +9,7 @@ import { buildEvents, getSeen, timeAgo } from '../events'
 import { api } from '../api'
 import { getLive, livePlays } from '../live'
 import { usePerks } from '../perks'
-import { boardSide } from '../actions'
+import { boardSide, goldenAlert } from '../actions'
 
 export default function Home() {
   const { idx, me } = useStore()
@@ -57,6 +57,7 @@ export default function Home() {
 
   return (
     <div className="page stack home">
+      {goldenAlert(idx) && <div className="golden-alert"><span>📢</span><p>{goldenAlert(idx).data?.text}<small>— {idx.playersById.get(goldenAlert(idx).player_id)?.name}</small></p></div>}
       <Scenes />
 
       {live && boardSide(idx) && <div className="glass board-side">🎯 البورد على اتجاه <b>{idx.playersById.get(boardSide(idx).player_id)?.name}</b> الليلة</div>}

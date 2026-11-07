@@ -115,6 +115,7 @@ export default function Live() {
         </Section>
 
         <BoardSide />
+        <FirstTurn people={people} />
         <Forecast live={live} people={people} />
 
         {plays.length > 0 && <Section title="ترتيب الليلة"><StandingRows rows={table} me={me} /></Section>}
@@ -137,7 +138,7 @@ function Forecast({ live, people }) {
   const run = async (...a) => { setBusy(true); try { await doAction(...a) } catch { /* toast */ } finally { setBusy(false) } }
   const tonight = [...(fx?.predictions || [])].filter(a => a.created_at >= live.start).sort((a, b) => b.created_at.localeCompare(a.created_at))
   const games = [...idx.games].sort((a, b) => a.name.localeCompare(b.name))
-  const status = a => a.ok == null ? <em className="fc-wait">⏳ ينتظر القيم</em> : a.ok ? <em className="fc-ok">✓ +15 XP</em> : <em className="fc-no">✗ غلط</em>
+  const status = a => a.ok == null ? <em className="fc-wait">⏳ ينتظر القيم</em> : a.ok ? <em className="fc-ok">✓ +{a.data?.double ? 30 : 15} XP</em> : <em className="fc-no">✗ غلط</em>
   return (
     <Section title="🔮 قبل القيم الجاي">
       <div className="pad-x pad-b form fc">
@@ -151,7 +152,7 @@ function Forecast({ live, people }) {
               <option value="">مين بيفوز؟</option>
               {people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
-            <button className="btn primary small" disabled={busy || !game || !who} onClick={() => run('predict', { target: who, game }, '🔮 انحفظ توقعك')}>توقّع</button>
+            <button className="btn primary small" disabled={busy || !game || !who} onClick={() => run('predict', { target: who, game, data: can('predict2') ? { double: true } : {} }, '🔮 انحفظ توقعك')}>توقّع</button>
           </div>
         )}
         {tonight.length > 0 && (
@@ -180,4 +181,29 @@ function BoardSide() {
   if (!me || !can('board')) return null
   const left = cooldownLeft(idx, me.id, 'board', 30)
   return <button className="btn ghost wide" disabled={left > 0} onClick={() => doAction('board', {}, '🎯 البورد على جهتك الليلة').catch(() => {})}>🎯 خلّ البورد على جهتي الليلة{left ? ` (بعد ${left} يوم)` : ''}</button>
+}
+
+// تجاوز الدور (ليفل 8): تختار مين يبدأ في قيم، مرة بالأسبوع
+function FirstTurn({ people }) {
+  const { idx, me } = useStore()
+  const { can, doAction } = usePerks()
+  const [game, setGame] = useState('')
+  const [who, setWho] = useState('')
+  const recent = (idx.actions || []).filter(a => a.kind === 'firstturn' && Date.now() - new Date(a.created_at).getTime() < 12 * 3600e3)
+  const left = me ? cooldownLeft(idx, me.id, 'firstturn', 7) : 0
+  if (!recent.length && (!me || !can('firstturn'))) return null
+  return (
+    <Section title="⏭️ تجاوز الدور">
+      <div className="pad-x pad-b form fc">
+        {recent.map(a => <div key={a.id} className="ft-row">⏭️ <b>{idx.playersById.get(a.player_id)?.name}</b> قرر: <b>{idx.playersById.get(a.target)?.name}</b> يبدأ في {idx.gamesById.get(a.game_id)?.name}</div>)}
+        {me && can('firstturn') && (left ? <p className="hint">ترجع لك بعد {left} يوم.</p> : <>
+          <select className="input" value={game} onChange={e => setGame(e.target.value)}><option value="">أي لعبة؟</option>{[...idx.games].sort((a, b) => a.name.localeCompare(b.name)).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select>
+          <div className="fc-row">
+            <select className="input" value={who} onChange={e => setWho(e.target.value)}><option value="">مين يبدأ؟</option>{people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+            <button className="btn primary small" disabled={!game || !who} onClick={() => doAction('firstturn', { target: who, game }, '⏭️ انحفظ').catch(() => {})}>ثبّت</button>
+          </div>
+        </>)}
+      </div>
+    </Section>
+  )
 }
