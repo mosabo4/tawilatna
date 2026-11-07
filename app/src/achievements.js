@@ -8,6 +8,11 @@ export const TIER = [
   { id: 'd', name: 'ماسي', icon: '💎', color: '#7FE3FF' },
 ]
 const TIER_XP = [20, 60, 150, 400]
+// جائزة كل إنجاز سري: شارة تحطها على صورتك وجنب اسمك
+export const SECRET_BADGES = {
+  zero: { icon: '💀', name: 'الجمجمة' }, owl: { icon: '🦉', name: 'البومة' }, tie: { icon: '👯', name: 'التوأم' }, unlucky: { icon: '🫠', name: 'الذايب' },
+  addict: { icon: '♾️', name: 'اللانهاية' }, revenge: { icon: '🗡️', name: 'الخنجر' }, ebaby: { icon: '🍼', name: 'الرضّاعة' }, grave: { icon: '🪦', name: 'شاهد القبر' },
+}
 export const GROUPS = [
   { id: 'tier', name: 'المسيرة' }, { id: 'hard', name: 'صعبة' }, { id: 'crew', name: 'الشلة' }, { id: 'secret', name: 'سرية' }, { id: 'season', name: 'موسمية' },
 ]

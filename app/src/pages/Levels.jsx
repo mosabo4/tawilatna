@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { computeLevels, XP_RULES, TITLES, xpFor } from '../levels'
-import { GROUPS, TIER } from '../achievements'
+import { GROUPS, TIER, SECRET_BADGES } from '../achievements'
 import { Avatar, Section } from '../ui'
 import { TitleBadge } from '../perks'
 
@@ -75,6 +75,7 @@ export function AchList() {
                   {a.group === 'tier' && <em className="ax-tag" style={{ '--c': TIER[Math.min(a.tier, a.tiers - 1)].color }}>{a.maxed ? `${TIER[a.tiers - 1].icon} مكتمل` : `${TIER[a.tier].icon} ${TIER[a.tier].name}`}</em>}
                 </div>
                 <small>{hide ? 'إنجاز سري، ينكشف لما أحد يفتحه' : a.desc}</small>
+                {a.group === 'secret' && <small className="ax-prize">🎁 جائزتها: {hide ? 'شارة سرية' : `شارة ${SECRET_BADGES[a.id]?.icon} ${SECRET_BADGES[a.id]?.name} على صورتك وجنب اسمك`}</small>}
                 {mine && !a.maxed && a.progress && !hide && <span className="pw-bar"><span className="trk"><i style={{ width: `${Math.min(100, (a.progress[0] / a.progress[1]) * 100)}%` }} /></span><em>{Math.min(a.progress[0], a.progress[1])}/{a.progress[1]}</em></span>}
                 <span className="ax-foot">
                   <em className="ax-xp">{a.maxed ? `✓ ${a.xp} XP` : `+${a.nextXp} XP`}{a.group === 'tier' && a.xp > 0 && !a.maxed ? ` · أخذت ${a.xp}` : ''}</em>

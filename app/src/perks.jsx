@@ -6,6 +6,7 @@ import { api } from './api'
 import { computeLevels, levelOfReward } from './levels'
 import { TITLE_DEFS, computeTitles } from './titles'
 import { resolveActions, activeEffects, flagsOn } from './actions'
+import { SECRET_BADGES } from './achievements'
 
 const KEY = 'tw-perks'
 const read = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } }
@@ -25,7 +26,7 @@ export const BGS = [
   { id: 'pitch', name: 'ملعب', css: 'repeating-linear-gradient(90deg, #1f7a3a 0 28px, #22863f 28px 56px)' },
   { id: 'neon', name: 'نيون', css: 'linear-gradient(135deg, #ff2fa0 0%, #6a2cff 50%, #00d4ff 100%)' },
 ]
-const SHARED = ['color', 'title', 'frame', 'pinned', 'bg', 'celebrate', 'gold', 'customTitle', 'nameFx', 'pose', 'fc1', 'fc2']
+const SHARED = ['color', 'title', 'frame', 'pinned', 'bg', 'celebrate', 'gold', 'customTitle', 'nameFx', 'pose', 'fc1', 'fc2', 'badge']
 
 export const TITLE_STYLES = Object.fromEntries(TITLE_DEFS.map(t => [t.name, { icon: t.icon, from: t.from, to: t.to, ring: t.ring, shine: t.rarity === 'legend' }]))
 export function TitleBadge({ title, small, kind }) {
@@ -103,6 +104,7 @@ export function PerksProvider({ children }) {
       title, titleKind,
       frame: d.frame === 'custom' && ok('frame2') && d.fc1 ? 'custom' : fr && lvOf(pid) >= fr.level ? fr.id : null,
       fc: [d.fc1, d.fc2 || d.fc1],
+      badge: d.badge && SECRET_BADGES[d.badge] && (pid === me?.id && test || levels?.get(pid)?.achievements.find(a => a.id === d.badge)?.done) ? SECRET_BADGES[d.badge] : null,
       nameFx: ok('nameFx') && !!d.nameFx, pose: ok('pose') ? d.pose || null : null,
       caption: eff.caption, immune: eff.immune, flag: flaggers.length ? flaggers : null,
       pin: ok('pin') ? d.pinned || null : null,

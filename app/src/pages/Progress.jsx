@@ -8,6 +8,7 @@ import { usePerks, PALETTE, FRAMES, BGS, TITLE_STYLES, TitleBadge } from '../per
 import { REWARDS, xpFor, levelOfReward } from '../levels'
 import { CATEGORIES } from '../categories'
 import { cooldownLeft, isImmune } from '../actions'
+import { SECRET_BADGES } from '../achievements'
 import { computeTitles } from '../titles'
 import { useLevels, AchList, XpHow, CrewLevels } from './Levels'
 import { TitlesList } from './Titles'
@@ -74,6 +75,7 @@ function Main() {
     { id: 'gold', label: 'الكرت الذهبي', val: perks.gold ? 'شغّال' : 'مطفي' },
     { id: 'celebrate', label: 'احتفال الفوز', val: perks.celebrate ? 'شغّال' : 'مطفي' },
     { id: 'customTitle', label: 'لقبك الخاص', val: perks.customTitle || 'اكتبه' },
+    { id: 'badge', label: 'شارة سرية', val: active.badge ? active.badge.icon : (lv.achievements.some(a => a.group === 'secret' && a.done) ? 'اختر' : '🔒 سرية'), need: 'color' },
     { id: 'pose', label: 'وضعية شخصيتك', val: POSES.find(p => p[0] === perks.pose)?.[1] || 'العادية' },
     { id: 'nameFx', label: 'اسم متحرك', val: perks.nameFx ? 'شغّال' : 'مطفي' },
     { id: 'frame2', label: 'إطار بألوانك', val: perks.frame === 'custom' ? <><i className="sw-dot" style={{ background: perks.fc1 }} /><i className="sw-dot" style={{ background: perks.fc2 || perks.fc1 }} /></> : 'اختر' },
@@ -144,6 +146,13 @@ function Main() {
     </div>,
     pose: <div className="title-pick">{POSES.map(([k, n]) => <button key={k} className={`chip ${(perks.pose || 'idle') === k ? 'on' : ''}`} onClick={() => set({ pose: k === 'idle' ? null : k })}>{n}</button>)}
       <div className="pose-prev"><Character player={me} pose="idle" size={110} /></div></div>,
+    badge: (() => {
+      const got = Object.entries(SECRET_BADGES).filter(([k]) => test || lv.achievements.find(a => a.id === k)?.done)
+      return got.length ? <div className="title-pick">
+        <button className={`chip ${!perks.badge ? 'on' : ''}`} onClick={() => set({ badge: null })}>بدون</button>
+        {got.map(([k, b]) => <button key={k} className={`chip ${perks.badge === k ? 'on' : ''}`} onClick={() => set({ badge: k })}>{b.icon} {b.name}</button>)}
+      </div> : <p className="muted">كل إنجاز سري تفتحه يعطيك شارة لها علاقة فيه، تحطها على صورتك وجنب اسمك.</p>
+    })(),
     nameFx: <label className="switch"><input type="checkbox" checked={!!perks.nameFx} onChange={e => set({ nameFx: e.target.checked })} /><span>اسمك يتلوّن ويتحرك في كل مكان</span></label>,
     frame2: <div className="form">
       <div className="fc-row"><span>اللون الأول</span><input type="color" value={perks.fc1 || '#FFC45C'} onChange={e => set({ fc1: e.target.value, frame: 'custom' })} /></div>

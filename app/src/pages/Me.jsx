@@ -126,16 +126,15 @@ const SUBS = { char: ['شخصيتي', CharacterEditor], games: ['ألعابي و
 
 export default function Me({ sub }) {
   const { me, idx, logout } = useStore()
-  const { active } = usePerks()
   const levels = useLevels()
   if (!me) return <div className="page"><TopBar title="أنا" /><Empty title="ما دخلت" text="ادخل باسمك عشان تشوف ليفلك وجوائزك." /></div>
   if (sub === 'closet') return <Progress />
+  if (sub === 'cards') return <AllCards />
   if (sub && SUBS[sub]) {
     const [title, C] = SUBS[sub]
     return <div className="page"><TopBar title={title} backTo="/me" /><div className="stack"><C /></div></div>
   }
   const lv = levels.get(me.id)
-  const st = playerStats(idx, me.id)
   const unrated = (() => {
     const played = new Set(idx.plays.filter(p => p.results.some(r => r.player_id === me.id)).map(p => p.game_id))
     const rated = new Set(idx.ratings.filter(r => r.player_id === me.id).map(r => r.game_id))
@@ -146,29 +145,7 @@ export default function Me({ sub }) {
     <div className="page">
       <header className="sec-head"><div className="sec-top"><h1>أنا</h1></div></header>
       <div className="stack">
-        <a className={`me-card ${active.gold ? 'gold-card' : ''}`} href="#/progress" style={{ '--c': active.color || me.color, ...(active.bg ? { background: active.bg.css } : {}) }}>
-          <div className="mc-body">
-            <span className="mc-chr"><Character player={me} custom={active.char} size={150} /></span>
-            <div className="mc-mid">
-              <b className={`mc-nm ${active.nameFx ? 'name-fx' : ''}`}>{me.name}</b>
-              {active.title ? <TitleBadge title={active.title} kind={active.titleKind} small /> : <span className="mc-tb">{lv.title}</span>}
-              <span className="mc-lv"><span className="mc-lvn">{lv.level}</span>ليفل · <bdi>{lv.xp} XP</bdi></span>
-            </div>
-            <div className="mc-left">
-              <div className="mc-big"><bdi>{st.points ?? '—'}{st.points != null && <em>%</em>}</bdi></div>
-              <small className="mc-cap">المستوى</small>
-              <div className="mc-chips">
-                <span>🏆 <b><bdi>{st.wins}/{st.plays}</bdi></b> فوز</span>
-                <span>🎲 <b>{lv.stats.games}</b> {lv.stats.games === 1 ? 'لعبة' : 'ألعاب'}</span>
-                <span>🔥 <b>{lv.stats.bestWinStreak}</b> سلسلة</span>
-              </div>
-            </div>
-          </div>
-          <div className="mc-xp">
-            <div className="mc-xprow"><span>باقي <bdi>{lv.need - lv.into} XP</bdi> على ليفل {lv.level + 1}</span><bdi>{Math.round(lv.progress * 100)}%</bdi></div>
-            <div className="mc-bar"><i style={{ width: `${Math.max(3, lv.progress * 100)}%` }} /></div>
-          </div>
-        </a>
+        <PlayerCard pid={me.id} href="#/me/cards" />
 
         <div className="me-prog">
           <a href="#/progress" className="mp-main">
@@ -215,5 +192,56 @@ function RecentUnlocks({ pid }) {
       </ul>
       {list.length > 5 && <button className="link-btn unl-more" onClick={() => setAll(v => !v)}>{all ? 'أقل' : `شوف الكل (${Math.min(list.length, 20)})`}</button>}
     </section>
+  )
+}
+
+// بطاقة لاعب (نفس شكل بطاقة «أنا»)
+export function PlayerCard({ pid, href }) {
+  const { idx } = useStore()
+  const { look } = usePerks()
+  const levels = useLevels()
+  const p = idx.playersById.get(pid); const lv = levels.get(pid)
+  if (!p || !lv) return null
+  const st = playerStats(idx, pid)
+  const lk = look(pid)
+  return (
+    <a className={`me-card ${lk.gold ? 'gold-card' : ''}`} href={href} style={{ '--c': lk.color || p.color, ...(lk.bg ? { background: lk.bg.css } : {}) }}>
+      <div className="mc-body">
+        <span className="mc-chr"><Character player={p} size={150} /></span>
+        <div className="mc-mid">
+          <b className={`mc-nm ${lk.nameFx ? 'name-fx' : ''}`}>{p.name}{lk.badge && <i className="nm-badge">{lk.badge.icon}</i>}</b>
+          {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <span className="mc-tb">{lv.title}</span>}
+          <span className="mc-lv"><span className="mc-lvn">{lv.level}</span>ليفل · <bdi>{lv.xp} XP</bdi></span>
+        </div>
+        <div className="mc-left">
+          <div className="mc-big"><bdi>{st.points ?? '—'}{st.points != null && <em>%</em>}</bdi></div>
+          <small className="mc-cap">المستوى</small>
+          <div className="mc-chips">
+            <span>🏆 <b><bdi>{st.wins}/{st.plays}</bdi></b> فوز</span>
+            <span>🎲 <b>{lv.stats.games}</b> {lv.stats.games === 1 ? 'لعبة' : 'ألعاب'}</span>
+            <span>🔥 <b>{lv.stats.bestWinStreak}</b> سلسلة</span>
+          </div>
+        </div>
+      </div>
+      <div className="mc-xp">
+        <div className="mc-xprow"><span>باقي <bdi>{lv.need - lv.into} XP</bdi> على ليفل {lv.level + 1}</span><bdi>{Math.round(lv.progress * 100)}%</bdi></div>
+        <div className="mc-bar"><i style={{ width: `${Math.max(3, lv.progress * 100)}%` }} /></div>
+      </div>
+    </a>
+  )
+}
+
+// بطاقات الشلة كلها، الأعلى ليفل أول
+function AllCards() {
+  const { me } = useStore()
+  const levels = useLevels()
+  const list = [...levels.values()].sort((a, b) => b.xp - a.xp)
+  return (
+    <div className="page">
+      <TopBar title="بطاقات الشلة" backTo="/me" />
+      <div className="stack">
+        {list.map(l => <PlayerCard key={l.player.id} pid={l.player.id} href={l.player.id === me?.id ? '#/progress' : `#/player/${l.player.id}`} />)}
+      </div>
+    </div>
   )
 }
