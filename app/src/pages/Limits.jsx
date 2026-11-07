@@ -31,21 +31,27 @@ export function LimitsList() {
   const ready = cards.filter(c => c.state === 'ready').length
   const order = { ready: 0, wait: 1, lock: 2 }
   const group = d => cards.filter(c => c.days === d).sort((a, b) => order[a.state] - order[b.state] || a.level - b.level)
+  const COL = { 7: ['#12466b', '#1f9ec9', '#8fd8ff'], 30: ['#4a2670', '#b04fd1', '#e3a6ff'] }
   const block = (title, d) => (
     <section className="lim-sec">
       <h3>{title}</h3>
-      <div className="lim-grid">{group(d).map(c => (
-        <div key={c.id} className={`lim ${c.state}`}>
-          <div className="lim-top"><span className="lim-ic">{c.icon}</span><b>{c.name}</b></div>
-          <p>{c.desc.replace(/[،,]? ?مرة (بالأسبوع|بالشهر)\.?$/, '')}</p>
-          <div className="lim-st">
-            {c.state === 'ready' && <span className="ok">✅ {c.active ? 'شغّالة الحين' : 'جاهزة'}</span>}
-            {c.state === 'wait' && <span className="wt">⏳ تتجدد بعد {fmt(c.left)}</span>}
-            {c.state === 'lock' && <span className="lk">🔒 تفتح بليفل {c.level}</span>}
-            <small>{c.state === 'ready' ? c.where : `مرة ${c.days === 7 ? 'بالأسبوع' : 'بالشهر'}`}</small>
+      <div className="tlist">{group(d).map(c => {
+        const [f, t, r] = COL[c.days]
+        const pct = c.state === 'wait' ? Math.max(4, 100 - (c.left / (c.days * DAY)) * 100) : 0
+        return (
+          <div key={c.id} className={`tcard ${c.state === 'lock' ? 'locked' : ''}`} style={{ '--f': f, '--t': t, '--r': r }}>
+            <span className="tc-icon">{c.icon}</span>
+            <div className="tc-body">
+              <div className="tc-top"><b>{c.name}</b>
+                <span className="tc-rar">{c.state === 'ready' ? (c.active ? '✅ شغّالة' : '✅ جاهزة') : c.state === 'wait' ? '⏳ منتظرة' : `🔒 ليفل ${c.level}`}</span>
+              </div>
+              <p>{c.desc.replace(/[،,]? ?مرة (بالأسبوع|بالشهر)\.?/, '').trim()}</p>
+              {c.state === 'wait' && <div className="tc-prog"><span className="tc-bar"><span style={{ width: `${pct}%` }} /></span><small>تتجدد بعد {fmt(c.left)}</small></div>}
+              <div className="tc-foot"><small>مرة {c.days === 7 ? 'بالأسبوع' : 'بالشهر'}</small>{c.state === 'ready' && <small>من: {c.where}</small>}{c.state === 'lock' && <small>تفتح بليفل {c.level}</small>}</div>
+            </div>
           </div>
-        </div>
-      ))}</div>
+        )
+      })}</div>
     </section>
   )
   return (
