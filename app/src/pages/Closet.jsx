@@ -1,12 +1,14 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { api } from '../api'
-import { useStore } from '../store'
+import { useStore, go } from '../store'
+import { computeTitles } from '../titles'
+import { TitlesList } from './Titles'
 import { Avatar, Section } from '../ui'
 import { usePerks, PALETTE, FRAMES, TITLE_STYLES, TitleBadge } from '../perks'
 import { STICKERS, Sticker } from '../stickers'
 import { Character, CUSTOM, OPTION_NAMES, ACTIONS, Stage, IMG_CHARS, imgSrc, idleFile } from '../characters'
 import { REWARDS, xpFor } from '../levels'
-import { useLevels } from './Levels'
+import { useLevels, AchList, XpHow, CrewLevels } from './Levels'
 
 // شخصيتك + تعديلها
 export function CharacterEditor() {
@@ -81,12 +83,15 @@ const PERKS = [
   { id: 'legend', icon: '🌌', name: 'بروفايل أسطوري', level: 10, tone: '#6B5CFF' },
 ]
 
-export default function Closet() {
+export default function Closet({ tab = 'rewards' }) {
   const { idx, me, act } = useStore()
   const { perks, set, level: L, realLevel, test, titleOk, active } = usePerks()
   const levels = useLevels()
   const lv = levels.get(me.id)
   const [open, setOpen] = useState(null)
+  const levelList = [...levels.values()]
+  const titleCount = useMemo(() => { const t = computeTitles(idx, levels).get(me.id) || []; return [t.filter(x => x.done).length, t.length] }, [idx, levels, me.id])
+  const achs = lv?.achievements || []
   const myPosts = (idx.posts || []).filter(p => p.player_id === me.id)
   const tease = perks.tease && perks.tease.until > Date.now() ? perks.tease : null
   const weekLeft = perks.teaseAt && Date.now() - perks.teaseAt < 7 * 864e5 && !test
@@ -129,7 +134,7 @@ export default function Closet() {
             <button key={t} className={`tp ${perks.title === t ? 'on' : ''}`} onClick={() => set({ title: t })}><TitleBadge title={t} /></button>
           ))}
         </div>
-        <a className="more" href="#/titles">كل الألقاب وكيف تفتح الباقي ←</a>
+        <a className="more" href="#/progress/titles" onClick={() => setOpen(null)}>كل الألقاب وكيف تفتح الباقي ←</a>
       </>
     ),
     frame: (
@@ -183,11 +188,12 @@ export default function Closet() {
           <div className="cl-id">
             <b className="cl-name">{me.name}</b>
             {active.title ? <TitleBadge title={active.title} small /> : <small className="muted">بدون لقب</small>}
-            <span className="cl-lvl">ليفل {realLevel}{test && <em className="tag test-tag">🧪 تجربة</em>}</span>
+            <span className="cl-lvl">ليفل {realLevel} · {lv?.xp || 0} XP{test && <em className="tag test-tag">🧪 تجربة</em>}</span>
           </div>
           <div className="cl-count"><strong>{gotReal}</strong><small>من {allReal.length}<br />جائزة</small></div>
         </div>
-        {next ? (
+        <div className="cl-lvbar"><span>{realLevel}</span><div className="cl-bar thin"><i style={{ width: `${Math.max(3, (lv?.progress || 0) * 100)}%` }} /></div><span>{realLevel + 1}</span><small>باقي {lv ? lv.need - lv.into : 0} XP</small></div>
+        {tab !== 'rewards' ? null : next ? (
           <div className="cl-next">
             <div className="cl-next-top"><span className="cl-next-ic">{next.icon}</span><span><small>الجائزة الجاية · ليفل {next.level}</small><b>{next.name}</b></span><em>باقي {nextXp} XP</em></div>
             <div className="cl-bar"><i style={{ width: `${nextPct}%` }} /></div>
@@ -196,13 +202,16 @@ export default function Closet() {
         <p className="cl-hint">هذا شكلك عند الشلة</p>
       </div>
 
-      {me.is_admin && (
-        <label className="switch test-switch glass">
-          <input type="checkbox" checked={!!perks.test} onChange={e => set({ test: e.target.checked })} />
-          <span>🧪 وضع التجربة: افتح كل الجوائز لي بس</span>
-        </label>
-      )}
+      <div className="seg prog-tabs" role="tablist">
+        {[['rewards', '🎁', 'الجوائز', `${gotReal}/${allReal.length}`], ['titles', '🏷️', 'الألقاب', `${titleCount[0]}/${titleCount[1]}`], ['ach', '🏅', 'الإنجازات', `${achs.filter(a => a.done).length}/${achs.length}`], ['crew', '📈', 'الشلة', '']].map(([k, ic, t, n]) => (
+          <button key={k} role="tab" aria-selected={tab === k} className={tab === k ? 'on' : ''} onClick={() => go(`/progress/${k}`)}><span>{ic} {t}</span>{n && <small>{n}</small>}</button>
+        ))}
+      </div>
 
+      {tab === 'titles' && <TitlesList />}
+      {tab === 'ach' && <><AchList /><XpHow /></>}
+      {tab === 'crew' && <CrewLevels />}
+      {tab === 'rewards' && <>
       <h2 className="h-sec">جوائزك <small>اضغط على أي وحدة وغيّرها</small></h2>
       {unlocked.length ? (
         <div className="perk-grid">
@@ -236,7 +245,7 @@ export default function Closet() {
             <li key={g.l} className={`road-step ${st}`}>
               <span className="road-node">{st === 'done' ? '✓' : g.l}</span>
               <div className="road-body">
-                <small>ليفل {g.l}{st === 'next' ? ' · الجاية' : ''}</small>
+                <div className="road-top"><small>ليفل {g.l}{st === 'next' ? ` · باقي ${Math.max(0, xpFor(g.l) - (lv?.xp || 0))} XP` : ''}</small>{(() => { const who = levelList.filter(x => x.level >= g.l); return who.length ? <span className="lr-avs">{who.map(x => <Avatar key={x.player.id} player={x.player} size={18} />)}</span> : null })()}</div>
                 {g.items.map(r => (
                   <div key={r.name} className="road-item">
                     <span className="ri-ic">{r.icon}</span>
@@ -249,6 +258,14 @@ export default function Closet() {
         })}
       </ol>
       <p className="hint pad-x">اللون واللقب والإطار والطقطقة تبان حالياً على جهازك بس. المشهد يشوفه الكل.</p>
+      {me.is_admin && (
+        <label className="switch test-switch glass">
+          <input type="checkbox" checked={!!perks.test} onChange={e => set({ test: e.target.checked })} />
+          <span>🧪 وضع التجربة: افتح كل الجوائز لي بس</span>
+        </label>
+      )}
+
+      </>}
 
       {open && (
         <div className="sheet-backdrop" onClick={() => setOpen(null)}>

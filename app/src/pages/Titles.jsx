@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { computeTitles, RARITY } from '../titles'
-import { Avatar, TopBar } from '../ui'
+import { Avatar } from '../ui'
 import { useLevels } from './Levels'
 import { usePerks } from '../perks'
 
-export default function Titles() {
+export function TitlesList() {
   const { idx, me } = useStore()
   const levels = useLevels()
   const { perks, set, realLevel } = usePerks()
@@ -15,9 +15,7 @@ export default function Titles() {
   const owners = id => idx.players.filter(p => all.get(p.id).find(t => t.id === id)?.done)
   const list = mine.filter(t => r === 'all' || t.rarity === r).sort((a, b) => (b.done - a.done) || RARITY[b.rarity].order - RARITY[a.rarity].order)
   return (
-    <div className="page">
-      <TopBar title="الألقاب" backTo="/me" right={me && <span className="muted small">فتحت {mine.filter(t => t.done).length} من {mine.length}</span>} />
-      <div className="stack">
+    <div className="stack">
         <div className="chips-scroll">
           <button className={`chip ${r === 'all' ? 'on' : ''}`} onClick={() => setR('all')}>الكل</button>
           {Object.entries(RARITY).reverse().map(([k, v]) => <button key={k} className={`chip ${r === k ? 'on' : ''}`} onClick={() => setR(k)}><i className="dot" style={{ background: v.dot }} />{v.name}</button>)}
@@ -41,7 +39,6 @@ export default function Titles() {
           )
         })}
         {me && realLevel < 3 && <p className="hint pad-x">تقدر تلبس لقب جنب اسمك من ليفل 3.</p>}
-      </div>
     </div>
   )
 }

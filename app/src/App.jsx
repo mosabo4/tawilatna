@@ -1,5 +1,5 @@
 import { useStore, useRoute } from './store'
-import { Avatar, Toast } from './ui'
+import { Avatar, Toast, TopBar } from './ui'
 import Login from './pages/Login'
 import Home from './pages/Home'
 import Games, { GameView, GameForm } from './pages/Games'
@@ -10,10 +10,9 @@ import Me from './pages/Me'
 import { Friday, Board } from './pages/Social'
 import Ranking from './pages/Ranking'
 import Recap from './pages/Recap'
-import Levels from './pages/Levels'
 import Styles from './pages/Styles'
 import Live from './pages/Live'
-import Titles from './pages/Titles'
+import Closet from './pages/Closet'
 import { Search, Alerts } from './pages/Search'
 import { unread } from './events'
 import { DEMO } from './api'
@@ -36,7 +35,7 @@ const SECTIONS = {
   shilla: { title: 'الشلة', tabs: [['rank', 'الترتيب'], ['players', 'اللاعبين'], ['board', 'اللوحة'], ['history', 'السجل']] },
 }
 const SECTION_OF = { games: 'games', friday: 'games', rank: 'shilla', players: 'shilla', board: 'shilla', history: 'shilla' }
-const NAV_OF = { ...SECTION_OF, game: 'games', play: 'shilla', vs: 'shilla', player: 'shilla', me: 'me', levels: 'me', titles: 'me' }
+const NAV_OF = { ...SECTION_OF, progress: 'me', game: 'games', play: 'shilla', vs: 'shilla', player: 'shilla', me: 'me', levels: 'me', titles: 'me' }
 
 function SectionHead({ at }) {
   const { idx, me } = useStore()
@@ -94,12 +93,13 @@ function Main({ r }) {
     case 'vs': return <VersusView a={b} b={c} />
     case 'me': return <Me sub={b} key={b || 'hub'} />
     case 'live': return <Live />
-    case 'titles': return <Titles />
+    case 'titles': return <ProgressPage tab="titles" />
+    case 'progress': return <ProgressPage tab={b || 'rewards'} key={b || 'rewards'} />
     case 'search': return <Search />
     case 'alerts': return <Alerts />
     case 'friday': return <Friday />
     case 'board': return <Board />
-    case 'levels': return <Levels />
+    case 'levels': return <ProgressPage tab="crew" />
     default: return <Home />
   }
 }
@@ -145,4 +145,10 @@ export default function App() {
       <Toast />
     </div>
   )
+}
+
+function ProgressPage({ tab }) {
+  const { me } = useStore()
+  if (!me) return <div className="page"><TopBar title="تقدّمك" backTo="/me" /><p className="muted pad">ادخل باسمك عشان تشوف تقدّمك.</p></div>
+  return <div className="page"><TopBar title="تقدّمك" backTo="/me" /><div className="stack"><Closet tab={tab} /></div></div>
 }

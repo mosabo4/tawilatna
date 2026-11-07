@@ -134,6 +134,7 @@ export default function Me({ sub }) {
     return <div className="page"><TopBar title={title} backTo="/me" /><div className="stack"><C /></div></div>
   }
   const lv = levels.get(me.id)
+  const rankOf = [...levels.values()].sort((a, b) => b.xp - a.xp).findIndex(l => l.player.id === me.id) + 1
   const st = playerStats(idx, me.id)
   const unrated = (() => {
     const played = new Set(idx.plays.filter(p => p.results.some(r => r.player_id === me.id)).map(p => p.game_id))
@@ -143,9 +144,9 @@ export default function Me({ sub }) {
   const link = (icon, label, href, note, cls = '') => <a className={`me-link ${cls}`} href={href}><span>{icon}</span><b>{label}</b><em>{note}</em><i aria-hidden="true">‹</i></a>
   return (
     <div className="page">
-      <header className="sec-head"><div className="sec-top"><h1>أنا</h1><a className="more" href={`#/player/${me.id}`}>صفحتي العامة</a></div></header>
+      <header className="sec-head"><div className="sec-top"><h1>أنا</h1></div></header>
       <div className="stack">
-        <div className={`me-hero ${active.legend ? 'legend' : ''}`} style={{ '--c': active.color || me.color }}>
+        <a className={`me-hero ${active.legend ? 'legend' : ''}`} href="#/progress/rewards" style={{ '--c': active.color || me.color }}>
           <span className="me-char"><Character player={me} custom={active.char} size={110} /></span>
           <div className="me-info">
             <b className={active.legend ? 'legend-name' : ''}>{me.name}</b>
@@ -154,21 +155,35 @@ export default function Me({ sub }) {
             <span className="lv-bar"><span style={{ width: `${Math.max(3, lv.progress * 100)}%`, '--c': active.color || me.color }} /></span>
             <small className="muted">باقي {lv.need - lv.into} XP على ليفل {lv.level + 1}</small>
           </div>
+        </a>
+
+        <div className="me-prog">
+          <a href="#/progress/rewards" className="mp-main">
+            <span className="mp-ic">🎁</span>
+            <span className="mp-txt"><b>جوائزك وتقدّمك</b><small>{lv.nextReward ? `الجاية: ${lv.nextReward.icon} ${lv.nextReward.name} · ليفل ${lv.nextReward.level}` : 'فتحت كل شي 👑'}</small></span>
+            <i aria-hidden="true">‹</i>
+          </a>
+          <div className="mp-row">
+            <a href="#/progress/titles"><b>{titles.filter(t => t.done).length}<small>/{titles.length}</small></b><span>🏷️ ألقاب</span></a>
+            <a href="#/progress/ach"><b>{lv.achievements.filter(a => a.done).length}<small>/{lv.achievements.length}</small></b><span>🏅 إنجازات</span></a>
+            <a href="#/progress/crew"><b>{rankOf}<small>/{idx.players.length}</small></b><span>📈 بين الشلة</span></a>
+          </div>
         </div>
-        <div className="me-stats">
+
+        <h2 className="h-sec">أرقامك</h2>
+        <div className="me-stats compact">
           <div><b>{st.points ?? '—'}{st.points != null && <small>%</small>}</b><span>المستوى</span></div>
           <div><b>{st.wins}<small>/{st.plays}</small></b><span>فوز من أقيام</span></div>
           <div><b>{lv.stats.games}</b><span>لعبة تعرفها</span></div>
           <div><b>{lv.stats.bestWinStreak}</b><span>أطول سلسلة فوز</span></div>
         </div>
-        <nav className="me-links">
-          {link('📈', 'ليفلي والإنجازات', '#/levels', `ليفل ${lv.level}`)}
-          {link('🏷️', 'ألقابي', '#/titles', `${titles.filter(t => t.done).length} من ${titles.length}`)}
-          {link('🎁', 'خزانة الجوائز', '#/me/closet', 'ألوان، إطارات، طقطقة')}
+
+        <nav className="me-links slim">
           {link('🧍', 'شخصيتي', '#/me/char', 'وضعياتها')}
           {link('🎲', 'ألعابي وتقييماتي', '#/me/games', unrated ? `${unrated} بدون تقييم` : 'كلها مقيّمة', unrated ? 'warn' : '')}
-          {me.is_admin && link('🛠️', 'أدوات المسؤول', '#/me/admin', 'الملخص، القفل، اللاعبين', 'admin')}
+          {link('🌐', 'صفحتي العامة', `#/player/${me.id}`, 'كيف يشوفني الباقين')}
         </nav>
+        {me.is_admin && <nav className="me-links">{link('🛠️', 'أدوات المسؤول', '#/me/admin', 'الملخص، القفل، اللاعبين، الشخصيات', 'admin')}</nav>}
         <p className="hint pad-x">رمزك ثابت. لو نسيته، المسؤول يقدر يعطيك رمز جديد.</p>
         <button className="btn danger-link" onClick={() => { logout(); go('/') }}>اطلع من الحساب</button>
       </div>
