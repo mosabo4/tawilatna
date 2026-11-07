@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { api } from '../api'
 import { usePerks } from '../perks'
+import { cooldownLeft } from '../actions'
 import { Avatar, Section, Empty, Cover, Confirm, playersText, fmtDate } from '../ui'
 
 // ---------- الجلسة الجاية ----------
@@ -54,10 +55,21 @@ export function Friday() {
   const { idx, me } = useStore()
   const { picks, byGame, mine, toggle, busy } = useFriday()
   const [q, setQ] = useState('')
+  const { can, doAction, undoAction } = usePerks()
+  const { week } = useFriday()
+  const acts = (idx.actions || []).filter(a => a.data?.week === week)
+  const vetoes = new Map(acts.filter(a => a.kind === 'veto').map(a => [a.game_id, a]))
+  const opener = acts.find(a => a.kind === 'opener')
+  const weightOf = p => (p && can('vote2', p.id) ? 2 : 1)
   const ranked = useMemo(() => [...byGame.entries()]
     .map(([id, ps]) => ({ game: idx.gamesById.get(id), ps: ps.filter(Boolean) }))
     .filter(x => x.game)
-    .sort((a, b) => b.ps.length - a.ps.length || a.game.name.localeCompare(b.game.name)), [byGame, idx])
+    .map(x => ({ ...x, votes: x.ps.reduce((t, p) => t + weightOf(p), 0), veto: vetoes.get(x.game.id) }))
+    .sort((a, b) => (!!a.veto - !!b.veto) || (opener ? (b.game.id === opener.game_id) - (a.game.id === opener.game_id) : 0) || b.votes - a.votes || a.game.name.localeCompare(b.game.name)), [byGame, idx, vetoes, opener]) // eslint-disable-line react-hooks/exhaustive-deps
+  const vetoLeft = me ? cooldownLeft(idx, me.id, 'veto', 30) : 0
+  const openLeft = me ? cooldownLeft(idx, me.id, 'opener', 30) : 0
+  const [busyA, setBusyA] = useState(false)
+  const run = async (...a) => { setBusyA(true); try { await doAction(...a) } catch { /* toast */ } finally { setBusyA(false) } }
   const pickers = new Set(picks.map(p => p.player_id)).size
   const list = idx.games
     .filter(g => !q || g.name.toLowerCase().includes(q.toLowerCase()))
@@ -66,18 +78,31 @@ export function Friday() {
   return (
     <div className="page">
       <div className="stack">
+        {opener && idx.gamesById.get(opener.game_id) && (
+          <div className="glass opener">
+            <Cover game={idx.gamesById.get(opener.game_id)} className="xs" />
+            <span><small>🎬 لعبة الافتتاح</small><b>{idx.gamesById.get(opener.game_id).name}</b><small>اختارها {idx.playersById.get(opener.player_id)?.name}</small></span>
+            {me && (opener.player_id === me.id || me.is_admin) && <button className="link-btn" onClick={() => undoAction(opener.id, 'انشالت')}>شيلها</button>}
+          </div>
+        )}
         <Section title="وش ودّ الشلة يجربون" action={<span className="muted small">{pickers ? `${pickers} اختاروا` : ''}</span>}>
           {ranked.length ? (
             <ol className="friday-rank">
-              {ranked.map(({ game, ps }, i) => (
-                <li key={game.id}>
+              {ranked.map(({ game, ps, votes, veto }, i) => (
+                <li key={game.id} className={veto ? 'vetoed' : ''}>
                   <a href={`#/game/${game.id}`}>
-                    <span className="rk">{i + 1}</span>
+                    <span className="rk">{veto ? '🚫' : i + 1}</span>
                     <Cover game={game} className="xs" />
-                    <span className="nm">{game.name}<small>{playersText(game)}</small></span>
+                    <span className="nm">{game.name}<small>{veto ? `فيتو من ${idx.playersById.get(veto.player_id)?.name}` : playersText(game)}</small></span>
                     <span className="avs">{ps.slice(0, 5).map(p => <Avatar key={p.id} player={p} size={24} />)}</span>
-                    <b className="votes">{ps.length}</b>
+                    <b className="votes" title={votes !== ps.length ? 'فيه أصوات مضاعفة' : ''}>{votes}</b>
                   </a>
+                  {me && !veto && (can('veto') || can('opener')) && (
+                    <div className="fr-acts">
+                      {can('veto') && <button className="chip" disabled={busyA || vetoLeft > 0} onClick={() => run('veto', { game: game.id, data: { week } }, '🚫 انشالت من الجلسة')}>🚫 فيتو{vetoLeft ? ` (${vetoLeft} يوم)` : ''}</button>}
+                      {can('opener') && !opener && <button className="chip" disabled={busyA || openLeft > 0} onClick={() => run('opener', { game: game.id, data: { week } }, '🎬 صارت لعبة الافتتاح')}>🎬 افتتح بها{openLeft ? ` (${openLeft} يوم)` : ''}</button>}
+                    </div>
+                  )}
                 </li>
               ))}
             </ol>
@@ -101,6 +126,7 @@ export function Friday() {
                 )
               })}
             </ul>
+            {can('vote2') && <p className="hint pad-x">🗳️ صوتك ينحسب صوتين (جائزة ليفل 5).</p>}
             <p className="hint pad-x pad-b">الاختيارات تتصفّر لحالها أول ما تسجلون أقيام الجلسة.</p>
           </Section>
         ) : <Empty title="ادخل باسمك" text="عشان تختار الألعاب اللي ودك تجربها." />}
@@ -173,9 +199,16 @@ export function Board() {
   const [busy, setBusy] = useState(false)
   const [del, setDel] = useState(null)
   useEffect(() => { const t = setInterval(reload, 30000); return () => clearInterval(t) }, [reload])
-  const { active, perks, set } = usePerks()
+  const { active, look, doAction, undoAction } = usePerks()
   const [reactFor, setReactFor] = useState(null)
-  const posts = [...(idx.posts || [])].sort((a, b) => (a.id === active.pin ? -1 : b.id === active.pin ? 1 : 0) || b.created_at.localeCompare(a.created_at))
+  const pins = new Set(idx.players.map(p => look(p.id).pin).filter(Boolean))
+  const reactsOf = id => (idx.actions || []).filter(a => a.kind === 'react' && a.data?.post === id)
+  const react = async (postId, e) => {
+    setReactFor(null)
+    const mineR = reactsOf(postId).find(a => a.player_id === me.id)
+    try { if (mineR) await undoAction(mineR.id); if (!mineR || mineR.data?.e !== e) await doAction('react', { data: { post: postId, e } }) } catch { /* toast */ }
+  }
+  const posts = [...(idx.posts || [])].sort((a, b) => (pins.has(b.id) - pins.has(a.id)) || b.created_at.localeCompare(a.created_at))
   const post = async e => {
     e.preventDefault()
     setBusy(true)
@@ -201,20 +234,25 @@ export function Board() {
                 const who = idx.playersById.get(p.player_id)
                 const can = me && (me.id === p.player_id || me.is_admin)
                 return (
-                  <li key={p.id} className={`post ${me?.id === p.player_id ? 'mine' : ''} ${p.id === active.pin ? 'pinned' : ''}`}>
+                  <li key={p.id} className={`post ${me?.id === p.player_id ? 'mine' : ''} ${pins.has(p.id) ? 'pinned' : ''}`}>
                     <Avatar player={who} size={34} />
                     <div className="post-body">
                       <div className="c-head"><b>{who?.name || '—'}</b><small>{when(p.created_at)}</small>{can && <button className="link-btn danger" onClick={() => setDel(p.id)}>احذف</button>}</div>
-                      {p.id === active.pin && <span className="pin-tag">📌 مثبّتة</span>}
+                      {pins.has(p.id) && <span className="pin-tag">📌 مثبّتة</span>}
                       <p>{p.body}</p>
-                      {active.reacts && (
-                        <div className="reacts">
-                          {perks.reacts?.[p.id] && <span className="react-on">{perks.reacts[p.id]}</span>}
-                          {reactFor === p.id
-                            ? ['😂', '🔥', '👏', '😭', '🤡', '💀'].map(e => <button key={e} onClick={() => { set({ reacts: { ...(perks.reacts || {}), [p.id]: perks.reacts?.[p.id] === e ? undefined : e } }); setReactFor(null) }}>{e}</button>)
-                            : <button className="react-add" onClick={() => setReactFor(p.id)}>+😀</button>}
-                        </div>
-                      )}
+                      {(() => {
+                        const rs = reactsOf(p.id)
+                        const groups = [...new Set(rs.map(x => x.data?.e))].map(e => ({ e, who: rs.filter(x => x.data?.e === e) }))
+                        if (!groups.length && !active.reacts) return null
+                        return (
+                          <div className="reacts">
+                            {groups.map(g => <button key={g.e} className={`react-on ${g.who.some(x => x.player_id === me?.id) ? 'mine' : ''}`} disabled={!active.reacts} onClick={() => react(p.id, g.e)} title={g.who.map(x => idx.playersById.get(x.player_id)?.name).join('، ')}>{g.e} <small>{g.who.length}</small></button>)}
+                            {active.reacts && (reactFor === p.id
+                              ? ['😂', '🔥', '👏', '😭', '🤡', '💀'].map(e => <button key={e} onClick={() => react(p.id, e)}>{e}</button>)
+                              : <button className="react-add" onClick={() => setReactFor(p.id)}>+😀</button>)}
+                          </div>
+                        )
+                      })()}
                     </div>
                   </li>
                 )

@@ -3,9 +3,13 @@ import { ExpTags } from './Expansions'
 import { durationText } from '../scoring'
 import { useStore, go } from '../store'
 import { Avatar, Empty, Cover, fmtDate, fmtMonth, TopBar } from '../ui'
+import { usePerks } from '../perks'
+import { cooldownLeft } from '../actions'
 
+export const luckyOf = (idx, playId) => (idx.actions || []).find(a => a.kind === 'lucky' && a.play_id === playId) || null
 export function PlayCard({ play, showGame = true, focus }) {
   const { idx } = useStore()
+  const lucky = luckyOf(idx, play.id)
   const game = idx.gamesById.get(play.game_id)
   const n = play.results.length
   return (
@@ -24,7 +28,7 @@ export function PlayCard({ play, showGame = true, focus }) {
             return (
               <li key={r.player_id} className={`${win ? 'win' : ''} ${focus && !focus.includes(r.player_id) ? 'dim' : ''}`}>
                 <Avatar player={p} size={18} />
-                <span className="nm">{r.position}. {p?.name || 'محذوف'}</span>
+                <span className="nm">{r.position}. {p?.name || 'محذوف'}{win && lucky && <em className="lucky">🍀 بالحظ</em>}</span>
                 {r.score != null && <span className="sc">{r.score}</span>}
               </li>
             )
@@ -83,6 +87,8 @@ export function PlayView({ id }) {
   const game = idx.gamesById.get(play.game_id)
   const creator = idx.playersById.get(play.created_by)
   const canEdit = me && (me.is_admin || me.id === play.created_by)
+  const lucky = luckyOf(idx, play.id)
+  const winners = play.results.filter(r => r.position === 1 && play.results.length > 1).map(r => r.player_id)
   return (
     <div className="page">
       <TopBar title={game?.name} backTo="/history" right={canEdit && <button className="btn small ghost" onClick={() => go(`/log/${play.id}`)}>تعديل</button>} />
@@ -99,13 +105,14 @@ export function PlayView({ id }) {
                 <li key={r.player_id} className={r.position === 1 && play.results.length > 1 ? 'win' : ''}>
                   <span className="pos">{r.position}</span>
                   <Avatar player={p} size={34} />
-                  <a href={`#/player/${r.player_id}`} className="nm">{p?.name || 'محذوف'}</a>
+                  <a href={`#/player/${r.player_id}`} className="nm">{p?.name || 'محذوف'}{r.position === 1 && lucky && <em className="lucky">🍀 بالحظ · {idx.playersById.get(lucky.player_id)?.name}</em>}</a>
                   {r.score != null && <span className="sc">{r.score} نقطة</span>}
                 </li>
               )
             })}
           </ol>
           {play.notes && <p className="pc-note big">{play.notes}</p>}
+          <Confetti play={play} winners={winners} />
           {(durationText(play) || play.setup_by?.length > 0 || play.cleanup_by?.length > 0) && (
             <div className="play-extra">
               {durationText(play) && <span>⏱️ {durationText(play)}</span>}
@@ -114,7 +121,48 @@ export function PlayView({ id }) {
             </div>
           )}
         </div>
+        {me && <PlayPowers play={play} winners={winners} lucky={lucky} />}
       </div>
     </div>
   )
+}
+
+// احتفال الفوز (ليفل 12)
+function Confetti({ winners }) {
+  const { idx } = useStore()
+  const { look } = usePerks()
+  const who = winners.find(w => look(w).celebrate)
+  if (!who) return null
+  const p = idx.playersById.get(who)
+  const bits = Array.from({ length: 26 }, (_, i) => i)
+  return (
+    <div className="confetti" aria-hidden="true">
+      {bits.map(i => <i key={i} style={{ '--x': `${(i * 37) % 100}%`, '--d': `${(i % 7) * 0.18}s`, '--c': ['#FFC45C', '#FF5F7A', '#5B7CFF', '#3ED6A0', '#C38BFF'][i % 5] }} />)}
+      <span className="cf-name">🎉 {p?.name} فاز!</span>
+    </div>
+  )
+}
+
+// أزرار الجوائز داخل القيم: شكر المجهّز، ريماتش، ماسح الفوز
+function PlayPowers({ play, winners, lucky }) {
+  const { idx, me } = useStore()
+  const { can, doAction } = usePerks()
+  const [busy, setBusy] = useState(false)
+  const run = async (...a) => { setBusy(true); try { await doAction(...a) } catch { /* toast */ } finally { setBusy(false) } }
+  const acts = idx.actions || []
+  const inPlay = play.results.some(r => r.player_id === me.id)
+  const lost = inPlay && !winners.includes(me.id) && winners.length > 0
+  const setup = (play.setup_by || []).filter(x => x !== me.id)
+  const thanked = acts.some(a => a.kind === 'thanks' && a.play_id === play.id && a.player_id === me.id)
+  const asked = acts.find(a => a.kind === 'rematch' && a.play_id === play.id && a.player_id === me.id)
+  const luckyLeft = cooldownLeft(idx, me.id, 'lucky', 30)
+  const rows = []
+  if (setup.length && inPlay && can('thanks')) rows.push(thanked ? <span key="t" className="pp-done">🙏 شكرت {setup.map(x => idx.playersById.get(x)?.name).join(' و')}</span>
+    : <button key="t" className="btn ghost small" disabled={busy} onClick={() => run('thanks', { target: setup[0], play: play.id }, `وصل الشكر لـ${idx.playersById.get(setup[0])?.name} 🙏`)}>🙏 اشكر {idx.playersById.get(setup[0])?.name} على التجهيز</button>)
+  if (lost && can('rematch')) rows.push(asked ? <span key="r" className="pp-done">🔁 طلبت ريماتش من {idx.playersById.get(winners[0])?.name}</span>
+    : <button key="r" className="btn ghost small" disabled={busy} onClick={() => run('rematch', { target: winners[0], play: play.id }, 'انرسل طلب الريماتش 🔁')}>🔁 أطلب ريماتش</button>)
+  if (winners.length && !winners.includes(me.id) && !lucky && can('lucky')) rows.push(luckyLeft ? <span key="l" className="pp-done muted">🍀 ماسح الفوز يرجع بعد {luckyLeft} يوم</span>
+    : <button key="l" className="btn ghost small" disabled={busy} onClick={() => run('lucky', { target: winners[0], play: play.id }, '🍀 انحط عليه «بالحظ»')}>🍀 فوزه بالحظ</button>)
+  if (!rows.length) return null
+  return <div className="glass play-powers">{rows}</div>
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { usePerks } from './perks'
 // شخصيات الشلة الكرتونية (رسم أصلي بـ SVG) — كل وحدة تشبه صاحبها، وتتعدّل مع الليفلات
 /* eslint-disable react/prop-types */
 
@@ -122,12 +123,19 @@ export const idleFile = sty => { const p = sty.poses.idle; return Array.isArray(
 export const imgSrc = (slug, style, pose) => `${import.meta.env.BASE_URL}chars/${slug}/${style}/${pose}.webp`
 
 // pose: idle | punch | hit | dance | laugh | cry | cheer
-export function Character({ player, custom, pose = 'idle', size = 120, flip, variant = 'flat' }) {
+export function Character({ player, custom, pose: pose0 = 'idle', size = 120, flip, variant = 'flat' }) {
   const [cardPick] = useState(() => Math.floor(Math.random() * 4))
+  const { look: pk } = usePerks()
+  const baby = player && pk(player.id).baby
+  const pose = baby && ['idle', 'cheer', 'dance', 'jump'].includes(pose0) ? 'baby' : pose0
   const ic = IMG_CHARS[player?.name?.trim()]
   const st = (ic && ic.styles[player?.char_style] ? player.char_style : null) ?? ic?.def
   if (ic && st && st !== 'svg' && ic.styles[st]) {
     const sty = ic.styles[st]
+    if (pose === 'baby' && !sty.poses.baby) {
+      const c = sty.poses.cry || sty.poses.idle; const [f2] = Array.isArray(c) ? c : [c]
+      return <span className="chr-baby" style={{ height: size * 4 / 3 }}><img className="chr chr-img pose-cry" src={imgSrc(ic.slug, st, f2)} alt={player.name} style={{ height: size * 4 / 3 }} draggable="false" /><i aria-hidden="true">🍼</i></span>
+    }
     const p = (pose === 'idle' && sty.cards ? sty.cards[cardPick % sty.cards.length] : null) || sty.poses[pose] || (pose === 'dice' && st === 'k' ? ['dice', 'r'] : ic.styles[st].poses.punch) || ic.styles[st].poses.idle
     const [file, dir] = Array.isArray(p) ? p : [p, null]
     const want = flip ? 'l' : 'r'

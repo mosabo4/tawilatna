@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { cooldownLeft } from '../actions'
+import { STICKERS, Sticker } from '../stickers'
 import { useStore, go } from '../store'
 import { playerStats, versus } from '../stats'
 import { Avatar, Donut, TopBar, Section, Empty, Cover, fmtDate, fmtScore, ScoreBadge } from '../ui'
@@ -14,7 +16,8 @@ export function PlayerView({ id }) {
   const player = idx.playersById.get(id)
   const st = useMemo(() => (player ? playerStats(idx, id) : null), [idx, id, player])
   const levels = useLevels()
-  const { active } = usePerks()
+  const { look } = usePerks()
+  const lk = look(id)
   const mine = me?.id === id
   if (!player) return <div className="page"><TopBar title="لاعب" backTo="/players" /><Empty title="هذا اللاعب غير موجود" /></div>
   const ratings = idx.ratings.filter(r => r.player_id === id).sort((x, y) => y.score - x.score)
@@ -27,11 +30,11 @@ export function PlayerView({ id }) {
     <div className="page">
       <TopBar title={player.name} backTo="/rank" right={me?.id === id && <button className="btn small ghost" onClick={() => go('/me')}>حسابي</button>} />
       <div className="stack">
-        <div className={`glass lead ${mine && active.legend ? 'legend' : ''}`}>
+        <div className={`glass lead ${lk.gold ? 'gold-card' : ''}`} style={lk.bg ? { background: lk.bg.css } : null}>
           <Donut value={(st.points ?? 0) / 100}><Avatar player={player} size={56} /></Donut>
           <div className="lead-info">
-            <small>{mine && active.title ? `🏷️ ${active.title}` : 'المستوى'}</small>
-            <strong className={mine && active.legend ? 'legend-name' : ''}>{player.name}</strong>
+            {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <small>المستوى</small>}
+            <strong>{player.name}</strong>
             <p>{st.plays ? `المستوى ${st.points ?? '—'} · فاز ${st.wins} من ${st.plays} قيم` : 'ما لعب للحين'}</p>
           </div>
         </div>
@@ -44,6 +47,8 @@ export function PlayerView({ id }) {
             </span>
           </a>
         )}
+        {!mine && me && <PlayerPowers target={player} />}
+        <Challenges pid={id} />
         <div className="row3">
           <div><b>{st.wins}</b><span>فوز</span></div>
           <div><b>{st.plays}</b><span>قيم</span></div>
@@ -150,7 +155,7 @@ export function VersusView({ a, b }) {
 // قائمة الشلة بشخصياتهم
 export default function PlayersList() {
   const { idx, me } = useStore()
-  const { active } = usePerks()
+  const { look } = usePerks()
   const levels = useLevels()
   const list = [...idx.players].sort((a, b) => (levels.get(b.id)?.xp || 0) - (levels.get(a.id)?.xp || 0))
   return (
@@ -159,12 +164,12 @@ export default function PlayersList() {
         <div className="crew">
           {list.map(p => {
             const lv = levels.get(p.id)
-            const mine = p.id === me?.id
+            const lk = look(p.id)
             return (
-              <a key={p.id} className={`glass crew-card ${mine && active.legend ? 'legend' : ''}`} href={`#/player/${p.id}`} style={{ '--c': (mine && active.color) || p.color }}>
-                <span className="crew-char"><Character player={p} custom={mine ? active.char : undefined} size={92} /></span>
+              <a key={p.id} className={`glass crew-card ${lk.gold ? 'gold-card' : ''} ${p.id === me?.id ? 'is-me' : ''}`} href={`#/player/${p.id}`} style={{ '--c': lk.color || p.color, ...(lk.bg ? { background: lk.bg.css } : {}) }}>
+                <span className="crew-char"><Character player={p} size={92} /></span>
                 <b>{p.name}</b>
-                {mine && active.title ? <TitleBadge title={active.title} small /> : <small>{lv?.title}</small>}
+                {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <small>{lv?.title}</small>}
                 {lv && <span className="crew-lv"><LevelPill level={lv.level} /> ليفل</span>}
               </a>
             )
@@ -222,6 +227,72 @@ function XpBreakdown({ lv, log }) {
         </ul>
         {log.length > 8 && <button className="link-btn pad-x pad-b" onClick={() => setMore(m => !m)}>{more ? 'أقل' : 'شوف أكثر'}</button>}
       </>}
+    </Section>
+  )
+}
+
+// أشياء تسويها مع لاعب ثاني من صفحته (حسب ليفلك)
+function PlayerPowers({ target }) {
+  const { idx, me } = useStore()
+  const { can, doAction } = usePerks()
+  const [open, setOpen] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [txt, setTxt] = useState('')
+  const [art, setArt] = useState('cry')
+  const [game, setGame] = useState('')
+  const run = async (...a) => { setBusy(true); try { await doAction(...a); setOpen(null); setTxt('') } catch { /* toast */ } finally { setBusy(false) } }
+  const cd = (k, d) => cooldownLeft(idx, me.id, k, d)
+  const items = [
+    { id: 'challenge', icon: '⚔️', label: 'تحدّاه', left: 0 },
+    { id: 'tease', icon: '😭', label: 'ملصق', left: cd('tease', 7) },
+    { id: 'baby', icon: '👶', label: 'بيبي', left: cd('baby', 7) },
+    { id: 'retitle', icon: '🏷️', label: 'غيّر لقبه', left: cd('retitle', 7) },
+  ].filter(x => can(x.id))
+  if (!items.length) return null
+  return (
+    <div className="glass ppow">
+      <div className="ppow-row">
+        {items.map(x => <button key={x.id} className={`chip ${open === x.id ? 'on' : ''}`} disabled={x.left > 0} onClick={() => setOpen(open === x.id ? null : x.id)}>{x.icon} {x.label}{x.left ? ` · ${x.left} يوم` : ''}</button>)}
+      </div>
+      {open === 'challenge' && <div className="ppow-body">
+        <select className="input" value={game} onChange={e => setGame(e.target.value)}><option value="">أي لعبة</option>{[...idx.games].sort((a, b) => a.name.localeCompare(b.name)).map(g => <option key={g.id} value={g.id}>{g.name}</option>)}</select>
+        <button className="btn primary small" disabled={busy} onClick={() => run('challenge', { target: target.id, game: game || null }, `⚔️ تحدّيت ${target.name}`)}>أرسل التحدي</button>
+        <p className="hint">أول قيم يجمعكم خلال أسبوعين ينحسب.</p>
+      </div>}
+      {open === 'tease' && <div className="ppow-body">
+        <div className="arts">{STICKERS.map(t => <button key={t.id} type="button" className={art === t.id ? 'on' : ''} onClick={() => setArt(t.id)}><Sticker id={t.id} size={30} /></button>)}</div>
+        <button className="btn primary small" disabled={busy} onClick={() => run('tease', { target: target.id, data: { art } }, '😈 انلزق 3 أيام')}>لزّقه 3 أيام</button>
+      </div>}
+      {open === 'baby' && <div className="ppow-body">
+        <p>{target.name} بيصير بيبي يبكي 🍼 في كل التطبيق يوم كامل.</p>
+        <button className="btn primary small" disabled={busy} onClick={() => run('baby', { target: target.id }, '👶 صار بيبي')}>سوّه بيبي</button>
+      </div>}
+      {open === 'retitle' && <div className="ppow-body">
+        <input className="input" maxLength={22} value={txt} onChange={e => setTxt(e.target.value)} placeholder="اللقب الجديد (يوم كامل)" />
+        <button className="btn primary small" disabled={busy || !txt.trim()} onClick={() => run('retitle', { target: target.id, data: { title: txt.trim() } }, '🏷️ تغيّر لقبه')}>غيّر</button>
+      </div>}
+    </div>
+  )
+}
+
+// سجل التحديات الرسمية
+function Challenges({ pid }) {
+  const { idx } = useStore()
+  const { fx } = usePerks()
+  const list = (fx?.challenges || []).filter(c => c.player_id === pid || c.target === pid)
+  if (!list.length) return null
+  const nm = id => idx.playersById.get(id)?.name
+  const won = list.filter(c => c.winner === pid).length, lost = list.filter(c => c.winner && c.winner !== pid).length
+  return (
+    <Section title="⚔️ التحديات الرسمية" action={<span className="muted small">{won} فوز · {lost} خسارة</span>}>
+      <ul className="chal">
+        {list.slice(0, 8).map(c => (
+          <li key={c.id}>
+            <span className="ch-vs"><b>{nm(c.player_id)}</b> ⚔️ <b>{nm(c.target)}</b>{c.game_id && <small> · {idx.gamesById.get(c.game_id)?.name}</small>}</span>
+            {c.play ? (c.winner ? <em className={c.winner === pid ? 'w' : 'l'}>🏆 {nm(c.winner)}</em> : <em>تعادل</em>) : <em className="p">⏳ ينتظر</em>}
+          </li>
+        ))}
+      </ul>
     </Section>
   )
 }

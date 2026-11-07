@@ -8,6 +8,7 @@ import { Stage, Character } from '../characters'
 import { buildEvents, getSeen, timeAgo } from '../events'
 import { api } from '../api'
 import { getLive, livePlays } from '../live'
+import { usePerks } from '../perks'
 
 export default function Home() {
   const { idx, me } = useStore()
@@ -24,7 +25,8 @@ export default function Home() {
     const rated = new Set(idx.ratings.filter(r => r.player_id === me.id).map(r => r.game_id))
     return [...played].filter(id => !rated.has(id)).map(id => idx.gamesById.get(id)).filter(Boolean)
   }, [idx, me])
-  const newPosts = events.filter(e => e.post && e.at > seen && e.by !== me?.id).length
+  const newPosts = useMemo(() => buildEvents(idx).filter(e => e.post && e.at > seen && e.by !== me?.id).length, [idx, seen, me])
+  const { fx, levels } = usePerks()
 
   if (!idx.games.length) {
     return (
@@ -41,6 +43,15 @@ export default function Home() {
   if (me && unrated.length) needs.push({ icon: '⭐', title: unrated.length === 1 ? `قيّم ${unrated[0].name}` : `قيّم ${unrated.length} ألعاب`, sub: unrated.slice(0, 3).map(g => g.name).join('، '), href: `#/game/${unrated[0].id}`, btn: 'قيّم', hot: true })
   if (me && !mine.size) needs.push({ icon: '🎲', title: 'اختر ألعاب الجلسة', sub: 'وش ودك تلعب المرة الجاية؟', href: '#/friday', btn: 'اختر' })
   if (newPosts) needs.push({ icon: '💬', title: `${newPosts} كتابات جديدة`, sub: 'في لوحة الشلة', href: '#/board', btn: 'افتح' })
+  if (me && fx) {
+    const nm = id => idx.playersById.get(id)?.name
+    for (const c of fx.challenges.filter(c => c.target === me.id && !c.play).slice(0, 2)) needs.push({ icon: '⚔️', title: `${nm(c.player_id)} يتحداك`, sub: c.game_id ? `في ${idx.gamesById.get(c.game_id)?.name}` : 'أول قيم يجمعكم ينحسب', href: `#/player/${c.player_id}`, btn: 'شوف', hot: true })
+    for (const m of fx.rematches.filter(m => m.rival === me.id && !m.done).slice(0, 2)) needs.push({ icon: '🔁', title: `${nm(m.player_id)} يطلب ريماتش`, sub: idx.gamesById.get(m.orig?.game_id)?.name || '', href: `#/play/${m.play_id}`, btn: 'شوف', hot: true })
+    const lv = levels?.get(me.id)
+    const near = lv?.achievements.filter(a => !a.done && a.progress).sort((a, b) => b.progress[0] / b.progress[1] - a.progress[0] / a.progress[1])[0]
+    if (near && near.progress[0] / near.progress[1] >= 0.5) needs.push({ icon: near.icon, title: `قرّبت من «${near.name}»`, sub: `${near.desc} · ${Math.min(...near.progress)}/${near.progress[1]}`, href: '#/progress/ach', btn: `+${near.xp} XP` })
+  }
+  const legends = levels ? [...levels.values()].filter(l => l.level >= 20) : []
   const tonight = live ? livePlays(idx, live).length : 0
 
   return (
@@ -67,6 +78,13 @@ export default function Home() {
             <button className="btn ghost" onClick={() => go('/friday')}>{mine.size ? `اخترت ${mine.size}` : 'اختر ألعابك'}</button>
           </div>
         </div>
+      )}
+
+      {legends.length > 0 && (
+        <a className="glass hall" href="#/progress/crew">
+          <b>🏛️ قاعة المشاهير</b>
+          <div className="hall-row">{legends.map(l => <span key={l.player.id}><Character player={l.player} size={56} /><small>{l.player.name}</small></span>)}</div>
+        </a>
       )}
 
       {needs.length > 0 && (

@@ -6,6 +6,7 @@ import { getLive, setLive, livePlays, todayStr } from '../live'
 import { TopBar, Section, Cover } from '../ui'
 import { StandingRows } from './Ranking'
 import { Character } from '../characters'
+import { usePerks } from '../perks'
 
 const dur = ms => { const m = Math.max(0, Math.floor(ms / 60000)); return m < 60 ? `${m} دقيقة` : `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} ساعة` }
 
@@ -112,11 +113,66 @@ export default function Live() {
           ) : <p className="muted pad">ما سجلتوا شي للحين. اضغط الزر تحت بعد أول قيم.</p>}
         </Section>
 
+        <Forecast live={live} people={people} />
+
         {plays.length > 0 && <Section title="ترتيب الليلة"><StandingRows rows={table} me={me} /></Section>}
 
         <button className="btn ghost wide" onClick={() => { setDone({ ...live, plays, table, end: Date.now(), xp: xpSince(idx, live.start) }); save(null) }}>🏁 خلّص الجلسة وشوف الملخص</button>
       </div>
       <div className="action-bar"><button className="btn primary wide" onClick={() => go('/log?live=1')}>+ سجّل قيم بالحضور</button></div>
     </div>
+  )
+}
+
+// التوقعات (ليفل 8) والرهان (ليفل 16) قبل القيم الجاي
+function Forecast({ live, people }) {
+  const { idx, me } = useStore()
+  const { can, doAction, fx } = usePerks()
+  const [game, setGame] = useState('')
+  const [who, setWho] = useState('')
+  const [amt, setAmt] = useState(30)
+  const [busy, setBusy] = useState(false)
+  if (!me || (!can('predict') && !can('bet'))) return null
+  const run = async (...a) => { setBusy(true); try { await doAction(...a) } catch { /* toast */ } finally { setBusy(false) } }
+  const tonight = [...(fx?.predictions || []), ...(fx?.bets || [])].filter(a => a.created_at >= live.start).sort((a, b) => b.created_at.localeCompare(a.created_at))
+  const games = [...idx.games].sort((a, b) => a.name.localeCompare(b.name))
+  const status = a => a.ok == null ? <em className="fc-wait">⏳ ينتظر القيم</em> : a.ok ? <em className="fc-ok">✓ {a.kind === 'bet' ? `+${a.amount}` : '+15'} XP</em> : <em className="fc-no">✗ {a.kind === 'bet' ? `-${a.amount} XP` : 'غلط'}</em>
+  return (
+    <Section title="🔮 قبل القيم الجاي">
+      <div className="pad-x pad-b form fc">
+        <select className="input" value={game} onChange={e => setGame(e.target.value)}>
+          <option value="">وش اللعبة الجاية؟</option>
+          {games.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+        </select>
+        {can('predict') && (
+          <div className="fc-row">
+            <select className="input" value={who} onChange={e => setWho(e.target.value)}>
+              <option value="">مين بيفوز؟</option>
+              {people.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+            <button className="btn primary small" disabled={busy || !game || !who} onClick={() => run('predict', { target: who, game }, '🔮 انحفظ توقعك')}>توقّع</button>
+          </div>
+        )}
+        {can('bet') && (
+          <div className="fc-row">
+            <span className="fc-amt">💰 أراهن على فوزي بـ <b>{amt}</b> XP</span>
+            <input type="range" min="10" max="100" step="10" value={amt} onChange={e => setAmt(+e.target.value)} />
+            <button className="btn ghost small" disabled={busy || !game} onClick={() => run('bet', { game, data: { amount: amt } }, '💰 انحفظ الرهان')}>راهن</button>
+          </div>
+        )}
+        {tonight.length > 0 && (
+          <ul className="fc-list">
+            {tonight.map(a => (
+              <li key={a.id}>
+                <span>{a.kind === 'bet' ? '💰' : '🔮'}</span>
+                <span className="fc-t"><b>{idx.playersById.get(a.player_id)?.name}</b> {a.kind === 'bet' ? `راهن بـ${a.amount} على فوزه في` : `يتوقع ${idx.playersById.get(a.target)?.name} يفوز في`} {idx.gamesById.get(a.game_id)?.name}</span>
+                {status(a)}
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className="hint">ينحسب على أول قيم تسجّلونه من هاللعبة خلال يومين.</p>
+      </div>
+    </Section>
   )
 }

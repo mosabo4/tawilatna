@@ -45,15 +45,16 @@ const PHOTOS = { 'مصعب': 'musab', 'هاني': 'hani', 'محمدي': 'mohamma
 export const photoOf = p => (p && PHOTOS[p.name.trim()] ? `${import.meta.env.BASE_URL}players/${PHOTOS[p.name.trim()]}.webp` : null)
 
 export function Avatar({ player, size = 28, ring, frame: forced }) {
-  const { idx, me } = useStore()
-  const { active } = usePerks()
+  const { idx } = useStore()
+  const { look } = usePerks()
   const src = photoOf(player)
-  const mine = player && me && player.id === me.id
-  const color = (mine && active.color) || player?.color || '#5A6088'
-  const fr = forced !== undefined ? forced : (mine && active.frame)
+  const lk = player ? look(player.id) : {}
+  const color = lk.color || player?.color || '#5A6088'
+  const fr = forced !== undefined ? forced : lk.frame
   const frame = fr ? ` f-${fr}` : ''
-  const tease = active.tease && player && active.tease.target === player.id
-    ? <span className="tease" style={{ '--s': `${size}px` }}><Sticker id={active.tease.art} size={Math.max(14, Math.round(size * 0.5))} /></span> : null
+  const st0 = Math.max(14, Math.round(size * 0.5))
+  const tease = lk.baby ? <span className="tease" style={{ '--s': `${size}px` }}><span className="baby-st" style={{ fontSize: st0 * 0.8 }}>🍼</span></span>
+    : lk.teases?.length ? <span className="tease" style={{ '--s': `${size}px` }}><Sticker id={lk.teases[0].data?.art || 'cry'} size={st0} /></span> : null
   const crown = fr === 'crown' ? <span className="av-crown" aria-hidden="true">👑</span> : null
   if (src) {
     return (

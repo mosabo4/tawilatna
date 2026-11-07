@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import { go } from '../store'
+import { go, useStore } from '../store'
 import { Cover, range } from '../ui'
 import { launch, shelfMemory } from '../table'
 
@@ -39,9 +39,12 @@ function Shelf({ c, games, isDim, index, onPick, pickedId }) {
     return () => el.removeEventListener('scroll', on)
   }, [c.id])
   const lit = games.filter(g => !isDim(g)).length
+  const { idx } = useStore()
+  const sa = (idx.actions || []).find(a => a.kind === 'shelf' && a.data?.cat === c.id)
+  const shelfName = sa?.data?.name
   return (
     <section className="shelf" id={`shelf-${c.id}`} style={{ '--t': c.tone, '--i': index }} aria-label={c.name}>
-      <div className="shelf-sign"><span className="plate"><i className="dot" />{c.name}<small>{lit === games.length ? games.length : `${lit} من ${games.length}`}</small></span><span className="sign-hint">{c.hint}</span></div>
+      <div className="shelf-sign"><span className="plate"><i className="dot" />{c.name}{shelfName && <em className="shelf-owner">· {shelfName}</em>}<small>{lit === games.length ? games.length : `${lit} من ${games.length}`}</small></span><span className="sign-hint">{c.hint}</span></div>
       <div className="plank" aria-hidden="true" />
       <div className="shelf-row" ref={ref}>
         {games.map(g => <Box key={g.game.id} g={g} dim={isDim(g)} onPick={onPick} picked={pickedId === g.game.id} />)}

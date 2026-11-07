@@ -1,5 +1,6 @@
 // نظام الليفلات: يقيس التفاعل والحضور (مو المهارة). كل شي يتحسب من البيانات المسجلة.
 import { counts } from './stats'
+import { resolveActions } from './actions'
 
 export const XP_RULES = [
   { id: 'session', icon: '📅', label: 'حضور جلسة (كل يوم لعب)', xp: 30 },
@@ -13,12 +14,14 @@ export const XP_RULES = [
   { id: 'streak', icon: '🔥', label: 'كل 3 جلسات ورا بعض', xp: 50 },
   { id: 'setup', icon: '🧱', label: 'تجهيز لعبة ثقيلة', xp: 20 },
   { id: 'cleanup', icon: '🧹', label: 'ترتيب لعبة ثقيلة بعد القيم', xp: 15 },
+  { id: 'thanks', icon: '🙏', label: 'أحد يشكرك على التجهيز', xp: 5 },
+  { id: 'predict', icon: '🔮', label: 'توقّع صحيح للفايز (ليفل 8)', xp: 15 },
+  { id: 'bet', icon: '💰', label: 'رهان على فوزك: تكسبه أو تخسره (ليفل 16)', xp: 0 },
 ]
 const XP = Object.fromEntries(XP_RULES.map(r => [r.id, r.xp]))
 
-// XP المطلوب للوصول لليفل L (تراكمي): 150، 600، 1350، 2400، 3750...
-// جلسة عادية تعطي حوالي 100–150، يعني ليفل 5 يبي قرابة 20 جلسة، وليفل 10 أكثر من 100
-export const xpFor = L => 150 * (L - 1) ** 2
+// XP المطلوب للوصول لليفل L (تراكمي): 300، 900، 1800، 3000، 4500...
+export const xpFor = L => 150 * (L - 1) ** 2 + 150 * (L - 1)
 export const levelFromXp = xp => { let L = 1; while (xpFor(L + 1) <= xp) L++; return L }
 
 export const TITLES = [
@@ -28,29 +31,37 @@ export const titleOf = L => TITLES.filter(([l]) => l <= L).at(-1)[1]
 
 // الجوائز (أكثر من وحدة ممكن تكون في نفس الليفل)
 export const REWARDS = [
-  { level: 2, icon: '🎨', name: 'الألوان', desc: 'تختار لون حسابك ولون لبس شخصيتك' },
-  { level: 3, icon: '🏷️', name: 'لقب جنب اسمك', desc: 'شارة لقب بتصميم خاص تطلع جنب اسمك' },
-  { level: 3, icon: '🕶️', name: 'نظارات للشخصية', desc: 'شمسية أو طبية' },
-  { level: 4, icon: '🥈', name: 'إطار فضي', desc: 'أول إطار لصورتك' },
-  { level: 4, icon: '😂', name: 'ردود فعل', desc: 'إيموجي على كتابات اللوحة' },
-  { level: 5, icon: '📌', name: 'تثبيت كتابة', desc: 'كتابة وحدة لك فوق اللوحة' },
-  { level: 5, icon: '🎩', name: 'قبعات للشخصية', desc: 'كاوبوي، برنيطة، كاب، شماغ' },
-  { level: 5, icon: '💡', name: 'إطار نيون', desc: 'إطار يتوهج ويتنفس' },
-  { level: 6, icon: '🔥', name: 'تقييم 11 من 10', desc: 'تعطي لعبة وحدة من كل تصنيف 11 من 10، كأنها المفضلة عندك فيه' },
-  { level: 6, icon: '😭', name: 'الطقطقة', desc: 'تلزّق ملصق على صورة واحد من الشلة 3 أيام، مرة بالأسبوع' },
-  { level: 6, icon: '🔥', name: 'إطار نار', desc: 'إطار يولّع' },
-  { level: 7, icon: '🎭', name: 'مسرح الرئيسية', desc: 'تحط مشهد متحرك في الرئيسية: شخصيتك تضرب أو تطقطق أو ترقص مع واحد من الشلة' },
-  { level: 7, icon: '🥇', name: 'إطار ذهبي', desc: 'ذهبي يلف حول صورتك' },
-  { level: 8, icon: '⚔️', name: 'تحدي رسمي', desc: 'قيم واحد ضد واحد ينحفظ في سجل التحديات' },
-  { level: 8, icon: '✨', name: 'هالة للشخصية', desc: 'نار أو كهرباء أو ذهب حول شخصيتك' },
-  { level: 8, icon: '⚡', name: 'إطار كهرباء', desc: 'شرارات حول صورتك' },
-  { level: 9, icon: '🎯', name: 'اقتراح مميز', desc: 'مرة بالشهر تثبّت لعبة فوق اختيارات الجلسة' },
-  { level: 9, icon: '🌈', name: 'إطار قوس قزح', desc: 'ألوان تدور حول صورتك' },
-  { level: 10, icon: '🌌', name: 'بروفايل أسطوري', desc: 'خلفية متحركة لصفحتك واسمك بتدرّج' },
-  { level: 10, icon: '👑', name: 'التاج', desc: 'تاج فوق صورتك، وتاج لشخصيتك' },
-  { level: 12, icon: '💎', name: 'إطار ماسي', desc: 'أندر إطار في الطاولة' },
-  { level: 15, icon: '🏛️', name: 'صانع الجوائز', desc: 'تخترع جائزة تنضاف لملخص الشهر الجاي' },
+  { level: 2, id: 'color', icon: '🎨', name: 'لون حسابك', desc: 'لون يطلع لك في صورتك وبطاقتك، والكل يشوفه' },
+  { level: 3, id: 'title', icon: '🏷️', name: 'لقب جنب اسمك', desc: 'تلبس واحد من الألقاب اللي فتحتها' },
+  { level: 3, id: 'thanks', icon: '🙏', name: 'شكر المجهّز', desc: 'تشكر اللي جهّز اللعبة الثقيلة وتعطيه +5 XP' },
+  { level: 4, id: 'reacts', icon: '😂', name: 'ردود فعل', desc: 'إيموجي على كتابات اللوحة' },
+  { level: 4, id: 'f-silver', icon: '🥈', name: 'إطار فضي', desc: 'أول إطار لصورتك' },
+  { level: 5, id: 'vote2', icon: '🗳️', name: 'صوت مضاعف', desc: 'اختياراتك للجلسة الجاية تنحسب صوتين' },
+  { level: 5, id: 'rematch', icon: '🔁', name: 'ريماتش رسمي', desc: 'بعد ما تخسر تطلب إعادة، ويطلع للفايز تنبيه' },
+  { level: 5, id: 'pin', icon: '📌', name: 'تثبيت كتابة', desc: 'كتابة وحدة لك فوق اللوحة' },
+  { level: 6, id: 'tease', icon: '😭', name: 'الطقطقة', desc: 'ملصق على صورة واحد من الشلة 3 أيام، مرة بالأسبوع' },
+  { level: 6, id: 'eleven', icon: '🔥', name: 'تقييم 11 من 10', desc: 'لعبة وحدة من كل تصنيف تعطيها 11' },
+  { level: 7, id: 'scene', icon: '🎭', name: 'مشهد الرئيسية', desc: 'مشهد متحرك بينك وبين واحد من الشلة في الرئيسية' },
+  { level: 8, id: 'predict', icon: '🔮', name: 'التوقعات', desc: 'تتوقع الفايز قبل القيم، وإذا صح تاخذ +15 XP' },
+  { level: 9, id: 'baby', icon: '👶', name: 'طقطقة البيبي', desc: 'شخصية واحد تصير بيبي يبكي يوم كامل، مرة بالأسبوع' },
+  { level: 9, id: 'f-fire', icon: '🔥', name: 'إطار نار', desc: 'إطار يولّع' },
+  { level: 10, id: 'challenge', icon: '⚔️', name: 'تحدي رسمي', desc: 'تتحدى واحد، وأول قيم بينكم ينحسب في سجل التحديات' },
+  { level: 10, id: 'f-gold', icon: '🥇', name: 'إطار ذهبي', desc: 'ذهبي يلف حول صورتك' },
+  { level: 11, id: 'retitle', icon: '🏷️', name: 'تغيير لقب صاحبك', desc: 'تكتب لقب لواحد من الشلة يطلع للكل يوم كامل، مرة بالأسبوع' },
+  { level: 12, id: 'bg', icon: '🖼️', name: 'خلفية بطاقتك', desc: 'خلفية خاصة لبطاقتك' },
+  { level: 12, id: 'celebrate', icon: '🎉', name: 'احتفال الفوز', desc: 'كونفيتي باسمك في كل قيم تفوزه' },
+  { level: 13, id: 'veto', icon: '🚫', name: 'الفيتو', desc: 'تشيل لعبة من اختيارات الجلسة الجاية، مرة بالشهر' },
+  { level: 14, id: 'lucky', icon: '🍀', name: 'ماسح الفوز', desc: 'تحط «بالحظ 🍀» على فوز واحد من الشلة، مرة بالشهر' },
+  { level: 15, id: 'gold', icon: '🃏', name: 'الكرت الذهبي', desc: 'بطاقتك تصير كرت لاعب ذهبي' },
+  { level: 15, id: 'f-diamond', icon: '💎', name: 'إطار ماسي', desc: 'أندر إطار في الطاولة' },
+  { level: 16, id: 'opener', icon: '🎬', name: 'لعبة الافتتاح', desc: 'تحدد أول لعبة في الجلسة الجاية، مرة بالشهر' },
+  { level: 16, id: 'bet', icon: '💰', name: 'الرهان', desc: 'تراهن بـ10 إلى 100 XP على فوزك في القيم الجاي' },
+  { level: 17, id: 'customTitle', icon: '✍️', name: 'لقب تكتبه بنفسك', desc: 'لقبك أنت تختار كلامه' },
+  { level: 18, id: 'shelf', icon: '🗄️', name: 'رف باسمك', desc: 'تسمّي رف في الدولاب' },
+  { level: 20, id: 'hall', icon: '🏛️', name: 'قاعة المشاهير', desc: 'صورتك تنحط في الرئيسية كأسطورة' },
+  { level: 20, id: 'award', icon: '🛠️', name: 'صانع الجوائز', desc: 'تخترع جائزة تنضاف لقائمة جوائز الشلة' },
 ]
+export const levelOfReward = id => REWARDS.find(r => r.id === id)?.level ?? 99
 
 export const ACHIEVEMENTS = [
   { id: 'first', icon: '🎲', name: 'البداية', desc: 'لعبت أول قيم', xp: 10, test: s => s.plays >= 1 },
@@ -72,6 +83,7 @@ export const ACHIEVEMENTS = [
 
 export function computeLevels(idx) {
   const G = idx.gamesById
+  const ax = resolveActions(idx).xp
   const chrono = [...idx.plays].reverse()
   const sessionDays = [...new Set(chrono.map(p => p.played_on))]
   const out = new Map()
@@ -110,10 +122,11 @@ export function computeLevels(idx) {
     const parts = {
       session: s.sessions * XP.session, play: s.plays * XP.play, newgame: s.games * XP.newgame, rate: ratings * XP.rate,
       comment: comments * XP.comment, win: wins * XP.win, picks: pickWeeks * XP.picks, post: posts * XP.post, streak: streaks * XP.streak, setup: setups * XP.setup, cleanup: cleanups * XP.cleanup,
+      thanks: ax.get(pl.id)?.thanks || 0, predict: ax.get(pl.id)?.predict || 0, bet: ax.get(pl.id)?.bet || 0,
     }
     const achievements = ACHIEVEMENTS.map(a => ({ ...a, done: !!a.test(s), progress: a.prog ? a.prog(s) : null }))
     const achXp = achievements.filter(a => a.done).reduce((t, a) => t + a.xp, 0)
-    const xp = Object.values(parts).reduce((a, b) => a + b, 0) + achXp
+    const xp = Math.max(0, Object.values(parts).reduce((a, b) => a + b, 0) + achXp)
     const level = levelFromXp(xp)
     const cur = xpFor(level), next = xpFor(level + 1)
     out.set(pl.id, {
@@ -135,6 +148,7 @@ export function idxBefore(idx, iso) {
     comments: (idx.comments || []).filter(c => !c.updated_at || c.updated_at < iso),
     posts: (idx.posts || []).filter(p => p.created_at < iso),
     picks: (idx.picks || []).filter(p => !p.created_at || p.created_at < iso),
+    actions: (idx.actions || []).filter(a => a.created_at < iso),
   }
 }
 
