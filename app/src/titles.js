@@ -5,7 +5,7 @@ import { achContext } from './achievements'
 import { resolveActions } from './actions'
 
 export const RARITY = {
-  fun: { name: 'فكاهي', dot: '#FF8FB1', order: 0 },
+  rare: { name: 'نادر', dot: '#6FB7FF', order: 0 },
   epic: { name: 'ملحمي', dot: '#C38BFF', order: 1 },
   legend: { name: 'أسطوري', dot: '#FFD25A', order: 2 },
 }
@@ -22,15 +22,15 @@ export const TITLE_DEFS = [
   T('general', 'الجنرال', '🎖️', 'epic', 'فز 15 مرة في ألعاب الاستراتيجية', '#1e3a2a', '#2e9e5b', '#7be3a6', s => [s.stratWins, 15]),
   T('wolf', 'الذئب', '🐺', 'epic', 'فز 10 مرات في ألعاب الخداع', '#2a1f3d', '#6b4dd8', '#c3b5ff', s => [s.bluffWins, 10]),
   T('teacher', 'المعلّم', '🧑‍🏫', 'epic', 'كن أول واحد يلعب لعبة جديدة ويفوز فيها، في 10 ألعاب', '#3d2a10', '#ee7a2b', '#ffc08a', s => [s.taught, 10]),
-  T('kingmaker', 'خاطف التيجان', '🫅', 'epic', 'اخطف تاج «ملك اللعبة» من غيرك 3 مرات', '#4a3a0f', '#c9a227', '#ffe08a', s => [s.crownSteals, 3]),
+  T('kingmaker', 'خاطف التيجان', '🫅', 'rare', 'اخطف تاج «ملك اللعبة» من غيرك 3 مرات', '#4a3a0f', '#c9a227', '#ffe08a', s => [s.crownSteals, 3]),
   T('giantslayer', 'قاتل العمالقة', '🗡️', 'epic', 'اغلب المتصدر وهو متصدر 10 مرات', '#3a1010', '#d93a3a', '#ff9a9a', s => [s.slay, 10]),
   // فكاهية
-  T('s67', '67 يرجال', '6️⃣', 'fun', 'خلّص قيم ونقاطك 67 بالضبط', '#3a1f4a', '#d6458f', '#ffb3d9', s => B(s.has67)),
-  T('s99', 'ناقص واحد', '💯', 'fun', 'خلّص قيم ونقاطك 99', '#3a2a10', '#e9b425', '#ffe08a', s => B(s.has99)),
-  T('luckson', 'ابن الحظ', '🍀', 'fun', 'ينحط «بالحظ» على فوزك 3 مرات في نفس اللعبة', '#1e3a2a', '#3ed6a0', '#a6f0d4', s => [s.luckyMax, 3]),
-  T('runnerup', 'عاشق الثانية', '🥈', 'fun', 'تجي الثاني 5 مرات متتابعة', '#2b2f3a', '#9aa4c0', '#e3e7f5', s => [s.bestSecond, 5]),
-  T('jinx', 'نحس', '🐈‍⬛', 'fun', 'تجي الأخير في نفس اللعبة 5 مرات متتابعة', '#1a1a1a', '#4b4f58', '#a0a4b0', s => [s.jinx, 5]),
-  T('loyal', 'الصديق الوفي', '🫂', 'fun', 'العب مع نفس الشخص 50 قيم', '#3a1f2a', '#d6458f', '#ffb3d9', s => [s.maxMate, 50]),
+  T('s67', '67 يرجال', '6️⃣', 'rare', 'خلّص قيم ونقاطك 67 بالضبط', '#3a1f4a', '#d6458f', '#ffb3d9', s => B(s.has67)),
+  T('s99', 'ناقص واحد', '💯', 'rare', 'خلّص قيم ونقاطك 99', '#3a2a10', '#e9b425', '#ffe08a', s => B(s.has99)),
+  T('luckson', 'ابن الحظ', '🍀', 'rare', 'ينحط «بالحظ» على فوزك 3 مرات في نفس اللعبة', '#1e3a2a', '#3ed6a0', '#a6f0d4', s => [s.luckyMax, 3]),
+  T('runnerup', 'عاشق الثانية', '🥈', 'rare', 'تجي الثاني 5 مرات متتابعة', '#2b2f3a', '#9aa4c0', '#e3e7f5', s => [s.bestSecond, 5]),
+  T('jinx', 'نحس', '🐈‍⬛', 'rare', 'تجي الأخير في نفس اللعبة 5 مرات متتابعة', '#1a1a1a', '#4b4f58', '#a0a4b0', s => [s.jinx, 5]),
+  T('loyal', 'الصديق الوفي', '🫂', 'epic', 'العب مع نفس الشخص 50 قيم', '#3a1f2a', '#d6458f', '#ffb3d9', s => [s.maxMate, 50]),
 ]
 export const TITLE_BY_NAME = Object.fromEntries(TITLE_DEFS.map(t => [t.name, t]))
 
