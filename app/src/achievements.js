@@ -76,7 +76,7 @@ function defs(ctx) {
     tiered('talk', '💬', 'صاحب رأي', 'تعليق', [10, 25, 50], s => s.comments),
     tiered('cats', '🌈', 'متعدد المواهب', 'تصنيف فزت فيه', [3, Math.min(5, cats), cats].filter((x, i, a) => a.indexOf(x) === i), s => s.winCats),
     tiered('setup', '🧱', 'المجهّز', 'لعبة ثقيلة جهزتها', [5, 15, 40], s => s.setups),
-    tiered('oracle', '🔮', 'العرّاف', 'توقع صحيح', [5, 15, 30], s => s.predOk),
+    tiered('oracle', '🔮', 'المحنك', 'توقع صحيح', [5, 15, 30], s => s.predOk),
     tiered('duelist', '⚔️', 'المتحدي', 'تحدي رسمي فزته', [3, 10, 25], s => s.chalWon),
     tiered('daily', '🎯', 'المواظب', 'يوم ورا بعض في تحدي اليوم', [7, 30, 100], s => s.dailyStreak),
 

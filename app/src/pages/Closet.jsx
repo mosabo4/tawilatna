@@ -13,6 +13,7 @@ export function CharacterEditor() {
   const ch = perks.char || {}
   const setCh = (k, v) => set({ char: { ...ch, [k]: v } })
   const ic = IMG_CHARS[(me.realName || me.name).trim()]
+  if (me.is_admin) return <AllPoses />
   if (ic) {
     const st = ic.styles[me.char_style] ? me.char_style : ic.def
     const sty = ic.styles[st]
@@ -103,5 +104,28 @@ export function StyleAdmin() {
         )
       })}
     </Section>
+  )
+}
+
+// للمسؤول: وضعيات كل الشلة، ويقدر يتنقل بين الأساليب
+function AllPoses() {
+  const { idx } = useStore()
+  const [pick, setPick] = useState({})
+  return (
+    <>
+      {idx.players.map(pl => {
+        const ic = IMG_CHARS[(pl.realName || pl.name).trim()]; if (!ic) return null
+        const cur = ic.styles[pl.char_style] ? pl.char_style : ic.def
+        const st = pick[pl.id] || cur
+        const sty = ic.styles[st]
+        return (
+          <Section key={pl.id} title={pl.name} action={<span className="muted small">الحالي: {ic.styles[cur].name}</span>}>
+            <div className="pad-x title-pick">{Object.entries(ic.styles).map(([k, v]) => <button key={k} className={`chip ${st === k ? 'on' : ''}`} onClick={() => setPick(p => ({ ...p, [pl.id]: k }))}>{v.name}</button>)}</div>
+            <div className="pose-strip">{sty.gallery.map(g => <img key={g} src={imgSrc(ic.slug, st, g)} alt="" loading="lazy" />)}</div>
+          </Section>
+        )
+      })}
+      <p className="hint pad-x">تغيير أسلوب كل واحد من «أدوات المسؤول».</p>
+    </>
   )
 }

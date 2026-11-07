@@ -103,6 +103,7 @@ export const K_POSES = ['idle', 'bust', 'punch', 'hit', 'laugh', 'cry', 'dance',
 const N = { name: 'الجديد', cards: ['card1', 'card2', 'card3', 'card4'], poses: { idle: 'card1', punch: ['punch', 'r'], dice: ['dice', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: 'cheer', jump: 'jump', flag: 'flag', crown: 'crown' }, gallery: ['card1', 'card2', 'card3', 'card4', 'cheer', 'fight', 'dance', 'jump', 'punch', 'hit', 'laugh', 'cry', 'dice', 'flag', 'crown'] }
 const E = { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'r'], dice: ['throw', 'r'], hit: 'three', laugh: 'cards', cry: 'back', dance: 'jump', cheer: 'jump', jump: 'jump' }, gallery: ['idle', 'front', 'three', 'side', 'back', 'cross', 'cards', 'jump', 'throw'] }
 const K = { name: 'كرتون', poses: { idle: 'idle', punch: ['punch', 'r'], hit: ['hit', 'l'], laugh: ['laugh', 'r'], cry: 'cry', dance: 'dance', cheer: 'fight' }, gallery: ['idle', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown'] }
+const V = { name: 'سينمائي', cards: ['idle', 'idle2'], poses: { idle: 'idle', punch: ['punch', 'l'], dice: ['throw', 'l'], hit: ['hit', 'l'], laugh: ['laugh', 'l'], cry: 'sad', dance: 'dance', cheer: 'cheer', jump: 'cheer', flag: 'wave', crown: 'crown', baby: 'baby', cards: 'cards', wave: 'wave', sleepy: 'sleepy' }, gallery: ['idle', 'idle2', 'wave', 'cheer', 'sad', 'dance', 'crown', 'throw', 'punch', 'hit', 'laugh', 'cards', 'sleepy', 'baby', 'f1', 'f2', 'f3', 'f4', 'f5', 'f6'] }
 export const IMG_CHARS = {
   'مصعب': { slug: 'musab', def: 'n', styles: {
     n: N,
@@ -112,12 +113,13 @@ export const IMG_CHARS = {
     c: { name: 'مجسّم', poses: { idle: 'idle', punch: ['point', 'l'], hit: 'front', laugh: 'sit', cry: 'front', dance: ['run', 'l'], cheer: 'sit' }, gallery: ['idle', 'front', 'point', 'run', 'sit'] },
     d: { name: 'تشيبي', poses: { idle: 'idle', punch: ['throw', 'l'], hit: 'shock', laugh: 'laugh', cry: 'shock', dance: 'cheer', cheer: 'cheer' }, gallery: ['idle', 'three', 'throw', 'laugh', 'shock', 'cheer'] },
     e: { ...E, poses: { ...E.poses, punch: ['throw', 'l'], dice: ['throw', 'l'] } },
+    v: V,
   } },
   'هاني': { slug: 'hani', def: 'n', styles: { n: N, e: E, k: K } },
-  'محمدي': { slug: 'mohammadi', def: 'n', styles: { n: N, e: E, k: K } },
+  'محمدي': { slug: 'mohammadi', def: 'n', styles: { n: N, e: E, k: K, v: V } },
   'معتز': { slug: 'muataz', def: 'n', styles: { n: N, e: E, k: K } },
   'فارس': { slug: 'fares', def: 'n', styles: { n: N, e: E, k: K } },
-  'اياد': { slug: 'eyad', def: 'n', styles: { n: N, e: E, k: K } },
+  'اياد': { slug: 'eyad', def: 'n', styles: { n: N, e: E, k: K, v: V } },
 }
 export const idleFile = sty => { const p = sty.poses.idle; return Array.isArray(p) ? p[0] : p }
 export const imgSrc = (slug, style, pose) => `${import.meta.env.BASE_URL}chars/${slug}/${style}/${pose}.webp`
