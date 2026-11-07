@@ -16,7 +16,7 @@ export const FRAMES = [
   { id: 'silver', name: 'فضي', level: 4 },
   { id: 'fire', name: 'نار', level: 9 },
   { id: 'gold', name: 'ذهبي', level: 10 },
-  { id: 'diamond', name: 'ماسي', level: 15 },
+  { id: 'diamond', name: 'ماسي', level: 16 },
 ]
 export const BGS = [
   { id: 'table', name: 'طاولة لعب', css: 'radial-gradient(120% 90% at 80% 20%, #6b3f1d 0%, #3a2312 45%, #1b120a 100%)' },
