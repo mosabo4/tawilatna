@@ -1,61 +1,122 @@
 // الألقاب: كل لقب له ندرة وطريقة فتح وتقدّم
 import { computeLevels, idxBefore, REWARDS } from './levels'
-import { standings, counts } from './stats'
+import { counts } from './stats'
+import { achContext } from './achievements'
+import { resolveActions } from './actions'
 
 export const RARITY = {
-  common: { name: 'عادي', dot: '#C9CEE8', order: 0 },
-  rare: { name: 'نادر', dot: '#5FB2FF', order: 1 },
-  epic: { name: 'ملحمي', dot: '#C38BFF', order: 2 },
-  legend: { name: 'أسطوري', dot: '#FFD25A', order: 3 },
+  fun: { name: 'فكاهي', dot: '#FF8FB1', order: 0 },
+  epic: { name: 'ملحمي', dot: '#C38BFF', order: 1 },
+  legend: { name: 'أسطوري', dot: '#FFD25A', order: 2 },
 }
 
 const T = (id, name, icon, rarity, desc, from, to, ring, test) => ({ id, name, icon, rarity, desc, from, to, ring, test })
+const B = v => [v ? 1 : 0, 1]
 export const TITLE_DEFS = [
-  T('visitor', 'زائر الطاولة', '🚪', 'common', 'أول ما تنضم للشلة', '#4B5578', '#2E3550', '#8C96BC', () => [1, 1]),
-  T('lucky', 'المبتدئ المحظوظ', '🍀', 'common', 'فز في أول قيم لك', '#3E8B4A', '#1F5E3A', '#A6F0C2', s => [Math.min(s.wins, 1), 1]),
-  T('crew', 'من الشلة', '🤝', 'common', 'وصل ليفل 3', '#2F6FDB', '#5B3FD8', '#9DB4FF', s => [Math.min(s.level, 3), 3]),
-  T('critic', 'الناقد', '📝', 'common', 'قيّم 10 ألعاب', '#5A6B88', '#2E3A55', '#B9C6DA', s => [s.ratings, 10]),
-  T('present', 'صاحب حضور', '📅', 'rare', 'احضر 10 جلسات', '#1BA6A6', '#16606B', '#8FF0E6', s => [s.sessions, 10]),
-  T('shark', 'القرش', '🦈', 'rare', 'فز 3 أقيام ورا بعض', '#FF6A3D', '#B5172C', '#FFC08A', s => [s.bestWinStreak, 3]),
-  T('fox', 'الثعلب', '🦊', 'rare', 'فز 3 مرات في ألعاب الخداع', '#E07A2E', '#8A3B12', '#FFCF8A', s => [s.bluffWins, 3]),
-  T('brain', 'العقل المدبّر', '🧠', 'rare', 'فز 5 مرات في ألعاب ثقيلة (صعوبة 3 وفوق)', '#3D4FCF', '#1B2A7A', '#AFC0FF', s => [s.heavyWins, 5]),
-  T('party', 'ملك الحفلات', '🎉', 'rare', 'فز في قيم فيه 5 لاعبين أو أكثر', '#D6458F', '#7A1F5C', '#FFB3D9', s => [s.bigWins, 1]),
-  T('explorer', 'المستكشف', '🧭', 'rare', 'العب 15 لعبة مختلفة', '#2E9E5B', '#16553A', '#A6F0C2', s => [s.games, 15]),
-  T('steady', 'لاعب ثابت', '🛡️', 'rare', 'وصل ليفل 5', '#1BA6A6', '#2E7D4F', '#8FF0D6', s => [Math.min(s.level, 5), 5]),
-  T('friend', 'صديق الكل', '🫂', 'rare', 'العب مع كل واحد في الشلة', '#8A6BFF', '#4B3BA8', '#D2C6FF', s => [s.mates, s.matesNeeded]),
-  T('unbeaten', 'لا يُقهر', '⚔️', 'epic', 'خلّص قدّام كل واحد في الشلة مرة على الأقل', '#2E9E5B', '#0F3D2A', '#A6F0C2', s => [s.beatPlayers, s.matesNeeded]),
-  T('nomad', 'ملك متنقل', '🌍', 'epic', 'فز في 4 تصانيف مختلفة', '#8A4FD8', '#D6458F', '#F2B8FF', s => [s.winCats, 4]),
-  T('keeper', 'خبير الدولاب', '🗝️', 'epic', 'وصل ليفل 8', '#B8781F', '#7A3E12', '#FFD36E', s => [Math.min(s.level, 8), 8]),
-  T('home', 'ساكن الطاولة', '🏠', 'epic', 'احضر 30 جلسة', '#2E9E5B', '#1F5E3A', '#A6F0C2', s => [s.sessions, 30]),
-  T('sultan', 'سلطان الطاولة', '👑', 'legend', 'تصدّر الترتيب العام وعندك 10 أقيام أو أكثر', '#C9A227', '#8A4FD8', '#FFE59A', s => [s.isLeader ? 1 : 0, 1]),
-  T('legend', 'أسطورة الطاولة', '🌟', 'legend', 'وصل ليفل 10', '#C9A227', '#B5172C', '#FFE59A', s => [Math.min(s.level, 10), 10]),
+  // أسطورية
+  T('sultan', 'سلطان الطاولة', '👑', 'legend', 'ابقَ المتصدر في الترتيب 60 يوم متواصل', '#7a5a12', '#e9b425', '#ffe08a', s => [s.leadDays, 60]),
+  T('kingofkings', 'ملك الملوك', '🏰', 'legend', 'كن ملك 3 ألعاب من 3 تصانيف مختلفة', '#6b4a10', '#d4a017', '#ffd56b', s => [s.kingCats, 3]),
+  T('conqueror', 'القاهر', '⚔️', 'legend', 'اغلب كل واحد في الشلة 10 مرات', '#5a0f1f', '#c2185b', '#ff8fb1', s => [s.minBeat, 10]),
+  T('nemesis', 'عقدة الجميع', '🧿', 'legend', 'كل واحد لعبت معه 10 أقيام على الأقل يكون خسر قدّامك أكثر ما فاز عليك', '#1f2a6b', '#5b7cff', '#a9b8ff', s => [s.nemesisOk, s.others]),
+  T('legend', 'الأسطورة', '🌟', 'legend', 'وصّل ليفل 20', '#3b1f7a', '#8a4fd8', '#d7b8ff', s => [s.level, 20]),
+  // ملحمية
+  T('general', 'الجنرال', '🎖️', 'epic', 'فز 15 مرة في ألعاب الاستراتيجية', '#1e3a2a', '#2e9e5b', '#7be3a6', s => [s.stratWins, 15]),
+  T('wolf', 'الذئب', '🐺', 'epic', 'فز 10 مرات في ألعاب الخداع', '#2a1f3d', '#6b4dd8', '#c3b5ff', s => [s.bluffWins, 10]),
+  T('fortress', 'الحصن', '🛡️', 'epic', 'لا تجي الأخير في 40 قيم متتابع', '#1f3340', '#1ba6a6', '#8fe8e8', s => [s.bestNotLast, 40]),
+  T('teacher', 'المعلّم', '🧑‍🏫', 'epic', 'كن أول واحد يلعب لعبة جديدة ويفوز فيها، في 10 ألعاب', '#3d2a10', '#ee7a2b', '#ffc08a', s => [s.taught, 10]),
+  T('emperor', 'الإمبراطور', '🏛️', 'epic', 'فز في 5 ألعاب مختلفة بنفس الجلسة', '#40210f', '#b85c1e', '#f5a46b', s => [s.bestDayGames, 5]),
+  T('kingmaker', 'خاطف التيجان', '🫅', 'epic', 'اخطف تاج «ملك اللعبة» من غيرك 3 مرات', '#4a3a0f', '#c9a227', '#ffe08a', s => [s.crownSteals, 3]),
+  T('machine', 'الماكينة', '⚙️', 'epic', 'فز 50 مرة', '#2b2f3a', '#5f6b80', '#c9cee8', s => [s.wins, 50]),
+  T('landlord', 'صاحب الأرض', '🗺️', 'epic', 'كن ملك 10 ألعاب في نفس الوقت', '#203a1a', '#6b7a2e', '#cfe08a', s => [s.kingOf, 10]),
+  T('ironman', 'رجل الجلسات', '🗓️', 'epic', 'احضر 30 جلسة متتابعة بدون غياب', '#1a2a4a', '#2f6fdb', '#9cc0ff', s => [s.bestAttendRun, 30]),
+  T('giantslayer', 'قاتل العمالقة', '🗡️', 'epic', 'اغلب المتصدر وهو متصدر 10 مرات', '#3a1010', '#d93a3a', '#ff9a9a', s => [s.slay, 10]),
+  // فكاهية
+  T('s67', '67 يرجال', '6️⃣', 'fun', 'خلّص قيم ونقاطك 67 بالضبط', '#3a1f4a', '#d6458f', '#ffb3d9', s => B(s.has67)),
+  T('s69', '69', '😏', 'fun', 'خلّص قيم ونقاطك 69 بالضبط', '#3a1f4a', '#ff5fa2', '#ffc2dc', s => B(s.has69)),
+  T('s99', 'ناقص واحد', '💯', 'fun', 'خلّص قيم ونقاطك 99', '#3a2a10', '#e9b425', '#ffe08a', s => B(s.has99)),
+  T('copy', 'طبق الأصل', '🪞', 'fun', 'جيب نفس النقاط بالضبط في قيمين متتابعين', '#1f3340', '#00b3ff', '#9ce4ff', s => B(s.copy)),
+  T('luckson', 'ابن الحظ', '🍀', 'fun', 'ينحط «بالحظ» على فوزك 3 مرات في نفس اللعبة', '#1e3a2a', '#3ed6a0', '#a6f0d4', s => [s.luckyMax, 3]),
+  T('runnerup', 'عاشق الثانية', '🥈', 'fun', 'تجي الثاني 5 مرات متتابعة', '#2b2f3a', '#9aa4c0', '#e3e7f5', s => [s.bestSecond, 5]),
+  T('night', 'ساعة الحظ', '🌙', 'fun', 'فز بعد الساعة 2 الفجر 5 مرات', '#141a3a', '#3b4ba8', '#9aa8ff', s => [s.nightWins, 5]),
+  T('zeros', 'أبو صفر', '0️⃣', 'fun', 'خلّص قيم ونقاطك صفر 3 مرات', '#2a2a2a', '#6b6b6b', '#d0d0d0', s => [s.zeros, 3]),
+  T('flip', 'قلب الطاولة', '🔄', 'fun', 'فز مباشرة بعد ما جيت الأخير، 5 مرات', '#3d2a10', '#ee7a2b', '#ffc08a', s => [s.flips, 5]),
+  T('jinx', 'نحس', '🐈‍⬛', 'fun', 'تجي الأخير في نفس اللعبة 5 مرات متتابعة', '#1a1a1a', '#4b4f58', '#a0a4b0', s => [s.jinx, 5]),
+  T('double', 'الدبل', '✖️', 'fun', 'فز ونقاطك ضعف نقاط الثاني بالضبط', '#203a1a', '#2e9e5b', '#7be3a6', s => B(s.double)),
+  T('loyal', 'الصديق الوفي', '🫂', 'fun', 'العب مع نفس الشخص 50 قيم', '#3a1f2a', '#d6458f', '#ffb3d9', s => [s.maxMate, 50]),
+  T('runaway', 'الهارب', '🏃', 'fun', 'تصدّر الترتيب وبعدها اختفِ أسبوعين ما تلعب', '#1f2a3a', '#5fb2ff', '#bfe2ff', s => B(s.runaway)),
 ]
 export const TITLE_BY_NAME = Object.fromEntries(TITLE_DEFS.map(t => [t.name, t]))
 
+const tsOf = p => p.created_at || `${p.played_on}T12:00:00`
 export function computeTitles(idx, levels = computeLevels(idx)) {
   const G = idx.gamesById
-  const board = standings(idx).filter(r => r.plays > 0)
-  const leaderId = board[0] && board[0].plays >= 10 ? board[0].player.id : null
+  const ctx = achContext(idx, resolveActions(idx))
+  const chrono = ctx.chrono
+  // خطف التيجان: نتتبع ملك كل لعبة قيم بقيم
+  const steals = new Map(), wins = new Map(), king = new Map()
+  for (const p of chrono) {
+    if (p.results.length < 2) continue
+    const w = wins.get(p.game_id) || new Map(); wins.set(p.game_id, w)
+    for (const r of p.results) if (r.position === 1) w.set(r.player_id, (w.get(r.player_id) || 0) + 1)
+    const s = [...w.entries()].sort((a, b) => b[1] - a[1])
+    const k = s[0] && s[0][1] >= 3 && (!s[1] || s[1][1] < s[0][1]) ? s[0][0] : (king.get(p.game_id) || null)
+    const prev = king.get(p.game_id) || null
+    if (k && prev && k !== prev) steals.set(k, (steals.get(k) || 0) + 1)
+    king.set(p.game_id, k)
+  }
+  const firstPlay = new Map(); for (const p of chrono) if (!firstPlay.has(p.game_id)) firstPlay.set(p.game_id, p)
+  const lastDay = d => { const i = ctx.days.indexOf(d); return i > 0 ? ctx.leaderByDay.get(ctx.days[i - 1]) : null }
+  const luckyActs = (idx.actions || []).filter(a => a.kind === 'lucky')
   const out = new Map()
   for (const pl of idx.players) {
-    const lv = levels.get(pl.id)
-    let bluffWins = 0, heavyWins = 0, bigWins = 0
-    const beat = new Set()
-    for (const p of idx.plays) {
-      const r = p.results.find(x => x.player_id === pl.id); if (!r) continue
-      const g = G.get(p.game_id); if (!counts(p, g)) continue
-      for (const o of p.results) if (o.position > r.position) beat.add(o.player_id)
-      if (r.position !== 1) continue
-      if (g?.category === 'bluff') bluffWins++
-      if (Number(g?.weight) >= 3) heavyWins++
-      if (p.results.length >= 5) bigWins++
+    const id = pl.id, lv = levels.get(id)
+    const mine = chrono.filter(p => p.results.some(r => r.player_id === id))
+    const comp = mine.filter(p => counts(p, G.get(p.game_id)))
+    const rOf = p => p.results.find(r => r.player_id === id)
+    const won = p => p.results.length > 1 && rOf(p)?.position === 1
+    const last = p => { const r = rOf(p); return p.results.length > 1 && r.position === Math.max(...p.results.map(x => x.position)) && p.results.some(x => x.position < r.position) }
+    const sc = mine.map(p => ({ p, s: rOf(p)?.score })).filter(x => x.s != null && ['points', 'low'].includes(G.get(x.p.game_id)?.scoring))
+    let notLast = 0, bestNotLast = 0, second = 0, bestSecond = 0, flips = 0
+    comp.forEach((p, i) => {
+      if (last(p)) notLast = 0; else { notLast++; bestNotLast = Math.max(bestNotLast, notLast) }
+      if (rOf(p).position === 2) { second++; bestSecond = Math.max(bestSecond, second) } else second = 0
+      if (i > 0 && won(p) && last(comp[i - 1])) flips++
+    })
+    const ahead = new Map(), behind = new Map(), shared = new Map()
+    for (const p of comp) { const r = rOf(p); for (const o of p.results) if (o.player_id !== id) { shared.set(o.player_id, (shared.get(o.player_id) || 0) + 1); if (r.position < o.position) ahead.set(o.player_id, (ahead.get(o.player_id) || 0) + 1); else if (r.position > o.position) behind.set(o.player_id, (behind.get(o.player_id) || 0) + 1) } }
+    const others = idx.players.filter(o => o.id !== id)
+    const allShared = new Map(); for (const p of mine) for (const o of p.results) if (o.player_id !== id) allShared.set(o.player_id, (allShared.get(o.player_id) || 0) + 1)
+    const byDay = new Map(); for (const p of comp) if (won(p)) { if (!byDay.has(p.played_on)) byDay.set(p.played_on, new Set()); byDay.get(p.played_on).add(p.game_id) }
+    const myDays = new Set(mine.map(p => p.played_on))
+    let run = 0, bestRun = 0; for (const d of ctx.days) { if (myDays.has(d)) { run++; bestRun = Math.max(bestRun, run) } else run = 0 }
+    const kingGames = [...ctx.kings.entries()].filter(([, k]) => k === id).map(([g]) => g)
+    const lastPerGame = new Map(); let jinx = 0
+    for (const p of comp) { const n = last(p) ? (lastPerGame.get(p.game_id) || 0) + 1 : 0; lastPerGame.set(p.game_id, n); jinx = Math.max(jinx, n) }
+    const luckyBy = new Map(); for (const a of luckyActs.filter(a => a.target === id)) { const g = idx.plays.find(p => p.id === a.play_id)?.game_id; if (g) luckyBy.set(g, (luckyBy.get(g) || 0) + 1) }
+    const hourOf = p => new Date(p.ended_at || p.created_at || tsOf(p)).getHours()
+    const leaderDays = [...ctx.leaderByDay.entries()].filter(([, l]) => l === id).map(([d]) => d)
+    const runaway = leaderDays.some(d => { const next = mine.find(p => p.played_on > d); const gap = ((next ? new Date(next.played_on) : new Date()) - new Date(d)) / 864e5; return gap >= 14 })
+    const s = {
+      level: lv.level, wins: lv.stats.wins, leadDays: ctx.leaderDays.get(id) || 0,
+      kingCats: new Set(kingGames.map(g => G.get(g)?.category).filter(Boolean)).size, kingOf: kingGames.length,
+      minBeat: others.length ? Math.min(...others.map(o => ahead.get(o.id) || 0)) : 0,
+      nemesisOk: others.filter(o => (shared.get(o.id) || 0) >= 10 && (ahead.get(o.id) || 0) > (behind.get(o.id) || 0)).length, others: others.length,
+      stratWins: comp.filter(p => won(p) && G.get(p.game_id)?.category === 'strategy').length,
+      bluffWins: comp.filter(p => won(p) && G.get(p.game_id)?.category === 'bluff').length,
+      bestNotLast, taught: [...firstPlay.values()].filter(p => won(p)).length,
+      bestDayGames: Math.max(0, ...[...byDay.values()].map(x => x.size)), crownSteals: steals.get(id) || 0,
+      bestAttendRun: bestRun, slay: comp.filter(p => { const l = lastDay(p.played_on); return l && l !== id && p.results.some(r => r.player_id === l) && rOf(p).position < p.results.find(r => r.player_id === l).position }).length,
+      has67: sc.some(x => x.s === 67), has69: sc.some(x => x.s === 69), has99: sc.some(x => x.s === 99),
+      copy: sc.some((x, i) => i > 0 && x.s > 0 && x.s === sc[i - 1].s), luckyMax: Math.max(0, ...luckyBy.values()),
+      bestSecond, nightWins: comp.filter(p => won(p) && hourOf(p) >= 2 && hourOf(p) < 6).length, zeros: sc.filter(x => x.s === 0).length,
+      flips, jinx, maxMate: Math.max(0, ...allShared.values()), runaway,
+      double: sc.some(x => { const p = x.p; if (!won(p) || G.get(p.game_id)?.scoring !== 'points') return false; const sec = p.results.find(r => r.position === 2)?.score; return sec > 0 && x.s === sec * 2 }),
     }
-    const s = { ...lv.stats, level: lv.level, bluffWins, heavyWins, bigWins, beatPlayers: beat.size, isLeader: leaderId === pl.id }
     const list = TITLE_DEFS.map(t => {
       const [cur, target] = t.test(s)
       return { ...t, cur: Math.min(cur, target), target, done: target > 0 && cur >= target }
     })
-    out.set(pl.id, list)
+    out.set(id, list)
   }
   return out
 }

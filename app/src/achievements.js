@@ -28,7 +28,7 @@ export function achContext(idx, rx) {
   const kings = new Map(idx.games.map(g => [g.id, kingOf(idx, g.id)?.player?.id || null]))
   const days = [...new Set(chrono.map(p => p.played_on))]
   // المتصدر بعد كل يوم لعب (نفس منطق الترتيب: نقطة لكل خصم تغلبه)
-  const acc = new Map(), leaderDays = new Map()
+  const acc = new Map(), leaderDays = new Map(), leaderByDay = new Map()
   let leader = null, since = null
   for (const d of days) {
     for (const p of chrono.filter(x => x.played_on === d)) {
@@ -41,6 +41,7 @@ export function achContext(idx, rx) {
     }
     const top = [...acc.entries()].filter(([, s]) => s.f >= 10).sort((a, b) => b[1].b / b[1].f - a[1].b / a[1].f)[0]?.[0] || null
     if (top !== leader) { leader = top; since = d }
+    leaderByDay.set(d, top)
     if (leader) {
       const len = Math.round((new Date(d) - new Date(since)) / 864e5) + 1
       leaderDays.set(leader, Math.max(leaderDays.get(leader) || 0, len))
@@ -63,7 +64,7 @@ export function achContext(idx, rx) {
     const s = [...w.entries()].sort((a, b) => b[1] - a[1])
     if (s[0] && (!s[1] || s[1][1] < s[0][1])) monthChamps.set(s[0][0], (monthChamps.get(s[0][0]) || 0) + 1)
   }
-  return { chrono, kings, days, leaderDays, scoringTypes, compCats, monthChamps, rx, totalGames: idx.games.length }
+  return { chrono, kings, days, leaderDays, leaderByDay, scoringTypes, compCats, monthChamps, rx, totalGames: idx.games.length }
 }
 
 const tiered = (id, icon, name, text, steps, value) => ({ id, icon, name, group: 'tier', text, steps, value })
