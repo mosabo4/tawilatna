@@ -1,5 +1,5 @@
 // الألقاب: كل لقب له ندرة وطريقة فتح وتقدّم
-import { computeLevels } from './levels'
+import { computeLevels, idxBefore, REWARDS } from './levels'
 import { standings, counts } from './stats'
 
 export const RARITY = {
@@ -58,4 +58,32 @@ export function computeTitles(idx, levels = computeLevels(idx)) {
     out.set(pl.id, list)
   }
   return out
+}
+
+// متى فتح اللاعب كل شي: نعيد حساب الوضع يوم بيوم ونشوف وش انفتح جديد
+export function unlockHistory(idx, pid) {
+  const days = new Set()
+  for (const p of idx.plays) days.add((p.created_at || p.played_on).slice(0, 10))
+  for (const r of idx.ratings) if (r.updated_at) days.add(r.updated_at.slice(0, 10))
+  for (const c of idx.comments || []) if (c.updated_at) days.add(c.updated_at.slice(0, 10))
+  for (const p of idx.posts || []) days.add(p.created_at.slice(0, 10))
+  const out = []
+  let prev = { level: 1, ach: new Set(), titles: new Set() }
+  for (const d of [...days].sort()) {
+    const snap = idxBefore(idx, `${d}T23:59:59.999Z`)
+    const levels = computeLevels(snap)
+    const lv = levels.get(pid); if (!lv) continue
+    const ts = computeTitles(snap, levels).get(pid) || []
+    const ach = new Set(lv.achievements.filter(a => a.done).map(a => a.id))
+    const titles = new Set(ts.filter(t => t.done).map(t => t.id))
+    if (lv.level > prev.level) {
+      out.push({ at: d, kind: 'level', icon: '⬆️', name: `وصلت ليفل ${lv.level}`, desc: lv.title })
+      for (const r of REWARDS.filter(r => r.level > prev.level && r.level <= lv.level)) out.push({ at: d, kind: 'reward', icon: r.icon, name: r.name, desc: r.desc })
+    }
+    for (const a of lv.achievements) if (ach.has(a.id) && !prev.ach.has(a.id)) out.push({ at: d, kind: 'ach', icon: a.icon, name: a.name, desc: `${a.desc} · +${a.xp} XP` })
+    for (const t of ts) if (titles.has(t.id) && !prev.titles.has(t.id) && t.id !== 'visitor') out.push({ at: d, kind: 'title', icon: t.icon, name: t.name, desc: t.desc })
+    prev = { level: lv.level, ach: new Set([...prev.ach, ...ach]), titles: new Set([...prev.titles, ...titles]) }
+  }
+  const order = { level: 0, reward: 1, title: 2, ach: 3 }
+  return out.sort((a, b) => b.at.localeCompare(a.at) || order[a.kind] - order[b.kind])
 }

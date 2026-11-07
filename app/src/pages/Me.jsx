@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { api, DEMO } from '../api'
 import { availableMonths, monthName } from '../recap'
@@ -8,6 +8,7 @@ import { CharacterEditor, StyleAdmin } from './Closet'
 import Progress from './Progress'
 import { MyGames } from './Players'
 import { usePerks, TitleBadge } from '../perks'
+import { unlockHistory } from '../titles'
 import { useLevels } from './Levels'
 import { Avatar, TopBar, Section, Field, Empty } from '../ui'
 
@@ -177,6 +178,8 @@ export default function Me({ sub }) {
           </a>
         </div>
 
+        <RecentUnlocks pid={me.id} />
+
         <nav className="me-links slim">
           {link('🧍', 'شخصيتي', '#/me/char', 'وضعياتها')}
           {link('🎲', 'ألعابي وتقييماتي', '#/me/games', unrated ? `${unrated} بدون تقييم` : 'كلها مقيّمة', unrated ? 'warn' : '')}
@@ -187,5 +190,30 @@ export default function Me({ sub }) {
         <button className="btn danger-link" onClick={() => { logout(); go('/') }}>اطلع من الحساب</button>
       </div>
     </div>
+  )
+}
+
+const KIND = { level: ['ليفل', '#FF7A59'], reward: ['جائزة', '#E9B425'], title: ['لقب', '#8A4FD8'], ach: ['إنجاز', '#2E9E5B'] }
+const dayText = d => { const n = Math.round((new Date(new Date().toISOString().slice(0, 10)) - new Date(d)) / 864e5); return n <= 0 ? 'اليوم' : n === 1 ? 'أمس' : n < 7 ? `قبل ${n} أيام` : new Date(d).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short' }) }
+function RecentUnlocks({ pid }) {
+  const { idx } = useStore()
+  const list = useMemo(() => unlockHistory(idx, pid), [idx, pid])
+  const [all, setAll] = useState(false)
+  if (!list.length) return null
+  const shown = list.slice(0, all ? 20 : 5)
+  return (
+    <section className="glass unl">
+      <div className="unl-h"><b>🎉 آخر اللي فتحته</b><a className="more" href="#/progress">تقدّمي</a></div>
+      <ul>
+        {shown.map((u, i) => (
+          <li key={i}>
+            <span className="unl-ic" style={{ '--k': KIND[u.kind][1] }}>{u.icon}</span>
+            <span className="unl-t"><b>{u.name}</b><small>{u.desc}</small></span>
+            <span className="unl-m"><em style={{ '--k': KIND[u.kind][1] }}>{KIND[u.kind][0]}</em><small>{dayText(u.at)}</small></span>
+          </li>
+        ))}
+      </ul>
+      {list.length > 5 && <button className="link-btn unl-more" onClick={() => setAll(v => !v)}>{all ? 'أقل' : `شوف الكل (${Math.min(list.length, 20)})`}</button>}
+    </section>
   )
 }
