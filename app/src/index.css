@@ -1621,3 +1621,9 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .ax-xp { font-style: normal; font-size: 11.5px; color: #FFC45C; }
 .ax-who { display: flex; align-items: center; gap: 6px; } .ax-who small { font-size: 10.5px; color: var(--muted-2); white-space: nowrap; }
 .ax-tag { margin-inline-start: auto; font-style: normal; font-size: 10.5px; padding: 2px 7px; border-radius: 8px; color: var(--c); background: color-mix(in srgb, var(--c) 14%, transparent); border: 1px solid color-mix(in srgb, var(--c) 35%, transparent); white-space: nowrap; }
+.pose-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 4px 12px 14px; }
+.pose-grid figure { margin: 0; display: flex; flex-direction: column; gap: 6px; padding: 8px; border-radius: 14px; background: rgba(255,255,255,.04); border: 1px solid var(--line); }
+.pose-grid img { width: 100%; height: 150px; object-fit: contain; }
+.pose-grid figcaption ul { margin: 0; padding: 0 14px 0 0; font-size: 11px; line-height: 1.6; color: var(--ink); }
+.pose-grid figcaption span { font-size: 11px; color: var(--muted-2); }
+.pose-grid figure.unused { opacity: .55; }
