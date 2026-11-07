@@ -1,5 +1,5 @@
 import { useStore, useRoute } from './store'
-import { Avatar, Toast, TopBar } from './ui'
+import { Avatar, Toast } from './ui'
 import Login from './pages/Login'
 import Home from './pages/Home'
 import Games, { GameView, GameForm } from './pages/Games'
@@ -12,7 +12,7 @@ import Ranking from './pages/Ranking'
 import Recap from './pages/Recap'
 import Styles from './pages/Styles'
 import Live from './pages/Live'
-import Closet from './pages/Closet'
+import Progress from './pages/Progress'
 import { Search, Alerts } from './pages/Search'
 import { unread } from './events'
 import { DEMO } from './api'
@@ -93,13 +93,13 @@ function Main({ r }) {
     case 'vs': return <VersusView a={b} b={c} />
     case 'me': return <Me sub={b} key={b || 'hub'} />
     case 'live': return <Live />
-    case 'titles': return <ProgressPage tab="titles" />
-    case 'progress': return <ProgressPage tab={b || 'rewards'} key={b || 'rewards'} />
+    case 'titles': return <Progress sub="titles" />
+    case 'progress': return <Progress sub={b === 'rewards' ? undefined : b} key={b || 'main'} />
     case 'search': return <Search />
     case 'alerts': return <Alerts />
     case 'friday': return <Friday />
     case 'board': return <Board />
-    case 'levels': return <ProgressPage tab="crew" />
+    case 'levels': return <Progress sub="crew" />
     default: return <Home />
   }
 }
@@ -147,8 +147,3 @@ export default function App() {
   )
 }
 
-function ProgressPage({ tab }) {
-  const { me } = useStore()
-  if (!me) return <div className="page"><TopBar title="تقدّمك" backTo="/me" /><p className="muted pad">ادخل باسمك عشان تشوف تقدّمك.</p></div>
-  return <div className="page"><TopBar title="تقدّمك" backTo="/me" /><div className="stack"><Closet tab={tab} /></div></div>
-}

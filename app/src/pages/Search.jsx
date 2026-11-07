@@ -4,7 +4,7 @@ import { buildEvents, getSeen, markSeen, timeAgo } from '../events'
 import { Avatar, Cover, TopBar, ScoreBadge } from '../ui'
 import { gameStats } from '../stats'
 
-const SHORTCUTS = [['🎲', 'الجلسة الجاية', '#/friday'], ['▶', 'ابدأ جلسة', '#/live'], ['🏆', 'الترتيب', '#/rank'], ['🎁', 'الجوائز والتقدّم', '#/progress/rewards'], ['🏷️', 'الألقاب', '#/progress/titles'], ['📜', 'السجل', '#/history'], ['💬', 'اللوحة', '#/board'], ['🗄️', 'الدولاب', '#/games']]
+const SHORTCUTS = [['🎲', 'الجلسة الجاية', '#/friday'], ['▶', 'ابدأ جلسة', '#/live'], ['🏆', 'الترتيب', '#/rank'], ['🎁', 'الجوائز والتقدّم', '#/progress'], ['🏷️', 'الألقاب', '#/progress/titles'], ['📜', 'السجل', '#/history'], ['💬', 'اللوحة', '#/board'], ['🗄️', 'الدولاب', '#/games']]
 
 export function Search() {
   const { idx } = useStore()

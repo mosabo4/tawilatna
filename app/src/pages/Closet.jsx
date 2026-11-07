@@ -55,7 +55,7 @@ export function CharacterEditor() {
   )
 }
 
-function TeasePicker({ onPick }) {
+export function TeasePicker({ onPick }) {
   const { idx, me } = useStore()
   const [who, setWho] = useState('')
   const [art, setArt] = useState('cry')

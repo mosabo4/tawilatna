@@ -2,10 +2,10 @@ import { useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { api, DEMO } from '../api'
 import { availableMonths, monthName } from '../recap'
-import { computeTitles } from '../titles'
 import { playerStats } from '../stats'
 import { Character } from '../characters'
-import Closet, { CharacterEditor, StyleAdmin } from './Closet'
+import { CharacterEditor, StyleAdmin } from './Closet'
+import Progress from './Progress'
 import { MyGames } from './Players'
 import { usePerks, TitleBadge } from '../perks'
 import { useLevels } from './Levels'
@@ -121,20 +121,19 @@ function Admin() {
   )
 }
 
-const SUBS = { char: ['شخصيتي', CharacterEditor], closet: ['خزانة الجوائز', Closet], games: ['ألعابي وتقييماتي', MyGames], admin: ['أدوات المسؤول', Admin] }
+const SUBS = { char: ['شخصيتي', CharacterEditor], games: ['ألعابي وتقييماتي', MyGames], admin: ['أدوات المسؤول', Admin] }
 
 export default function Me({ sub }) {
   const { me, idx, logout } = useStore()
   const { active } = usePerks()
   const levels = useLevels()
-  const titles = useMemo(() => (me ? computeTitles(idx, levels).get(me.id) : []), [idx, levels, me])
   if (!me) return <div className="page"><TopBar title="أنا" /><Empty title="ما دخلت" text="ادخل باسمك عشان تشوف ليفلك وجوائزك." /></div>
+  if (sub === 'closet') return <Progress />
   if (sub && SUBS[sub]) {
     const [title, C] = SUBS[sub]
     return <div className="page"><TopBar title={title} backTo="/me" /><div className="stack"><C /></div></div>
   }
   const lv = levels.get(me.id)
-  const rankOf = [...levels.values()].sort((a, b) => b.xp - a.xp).findIndex(l => l.player.id === me.id) + 1
   const st = playerStats(idx, me.id)
   const unrated = (() => {
     const played = new Set(idx.plays.filter(p => p.results.some(r => r.player_id === me.id)).map(p => p.game_id))
@@ -146,7 +145,7 @@ export default function Me({ sub }) {
     <div className="page">
       <header className="sec-head"><div className="sec-top"><h1>أنا</h1></div></header>
       <div className="stack">
-        <a className={`me-hero ${active.legend ? 'legend' : ''}`} href="#/progress/rewards" style={{ '--c': active.color || me.color }}>
+        <a className={`me-hero ${active.legend ? 'legend' : ''}`} href="#/progress" style={{ '--c': active.color || me.color }}>
           <span className="me-char"><Character player={me} custom={active.char} size={110} /></span>
           <div className="me-info">
             <b className={active.legend ? 'legend-name' : ''}>{me.name}</b>
@@ -158,16 +157,11 @@ export default function Me({ sub }) {
         </a>
 
         <div className="me-prog">
-          <a href="#/progress/rewards" className="mp-main">
+          <a href="#/progress" className="mp-main">
             <span className="mp-ic">🎁</span>
-            <span className="mp-txt"><b>جوائزك وتقدّمك</b><small>{lv.nextReward ? `الجاية: ${lv.nextReward.icon} ${lv.nextReward.name} · ليفل ${lv.nextReward.level}` : 'فتحت كل شي 👑'}</small></span>
+            <span className="mp-txt"><b>تقدّمي وجوائزي</b><small>{lv.nextReward ? `الجاية: ${lv.nextReward.icon} ${lv.nextReward.name} · ليفل ${lv.nextReward.level}` : 'فتحت كل شي 👑'}</small></span>
             <i aria-hidden="true">‹</i>
           </a>
-          <div className="mp-row">
-            <a href="#/progress/titles"><b>{titles.filter(t => t.done).length}<small>/{titles.length}</small></b><span>🏷️ ألقاب</span></a>
-            <a href="#/progress/ach"><b>{lv.achievements.filter(a => a.done).length}<small>/{lv.achievements.length}</small></b><span>🏅 إنجازات</span></a>
-            <a href="#/progress/crew"><b>{rankOf}<small>/{idx.players.length}</small></b><span>📈 بين الشلة</span></a>
-          </div>
         </div>
 
         <h2 className="h-sec">أرقامك</h2>

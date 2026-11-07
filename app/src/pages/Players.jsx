@@ -36,7 +36,7 @@ export function PlayerView({ id }) {
           </div>
         </div>
         {lv && (
-          <a className="glass lv-home" href={mine ? "#/progress/rewards" : "#/progress/crew"}>
+          <a className="glass lv-home" href={mine ? "#/progress" : "#/progress/crew"}>
             <span className="lv-main">
               <span className="lv-top"><b>ليفل {lv.level} · {lv.title}</b><small>{lv.xp} XP</small></span>
               <span className="lv-bar"><span style={{ width: `${Math.max(3, lv.progress * 100)}%`, '--c': player.color }} /></span>
