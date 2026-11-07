@@ -50,8 +50,8 @@ export default function Home() {
     for (const c of fx.challenges.filter(c => c.target === me.id && !c.play).slice(0, 2)) needs.push({ icon: '⚔️', title: `${nm(c.player_id)} يتحداك`, sub: c.game_id ? `في ${idx.gamesById.get(c.game_id)?.name}` : 'أول قيم يجمعكم ينحسب', href: `#/player/${c.player_id}`, btn: 'شوف', hot: true })
     for (const m of fx.rematches.filter(m => m.rival === me.id && !m.done).slice(0, 2)) needs.push({ icon: '🔁', title: `${nm(m.player_id)} يطلب ريماتش`, sub: idx.gamesById.get(m.orig?.game_id)?.name || '', href: `#/play/${m.play_id}`, btn: 'شوف', hot: true })
     const lv = levels?.get(me.id)
-    const near = lv?.achievements.filter(a => !a.done && a.progress).sort((a, b) => b.progress[0] / b.progress[1] - a.progress[0] / a.progress[1])[0]
-    if (near && near.progress[0] / near.progress[1] >= 0.5) needs.push({ icon: near.icon, title: `قرّبت من «${near.name}»`, sub: `${near.desc} · ${Math.min(...near.progress)}/${near.progress[1]}`, href: '#/progress/ach', btn: `+${near.xp} XP` })
+    const near = lv?.achievements.filter(a => !a.maxed && a.progress && a.group !== 'secret').sort((a, b) => b.progress[0] / b.progress[1] - a.progress[0] / a.progress[1])[0]
+    if (near && near.progress[0] / near.progress[1] >= 0.5) needs.push({ icon: near.icon, title: `قرّبت من «${near.name}»`, sub: `${near.desc} · ${Math.min(...near.progress)}/${near.progress[1]}`, href: '#/progress/ach', btn: `+${near.nextXp} XP` })
   }
   const legends = levels ? [...levels.values()].filter(l => l.level >= 20) : []
   if (me) {

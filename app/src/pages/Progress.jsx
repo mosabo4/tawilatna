@@ -57,7 +57,7 @@ function Main() {
   useEffect(() => { const el = roadRef.current?.querySelector('.lv-col.cur'); if (el) el.scrollIntoView({ inline: 'center', block: 'nearest' }) }, [])
 
   const nearTitle = titles.filter(t => !t.done && t.target > 1).sort((a, b) => b.cur / b.target - a.cur / a.target)[0]
-  const nearAch = lv.achievements.filter(a => !a.done && a.progress).sort((a, b) => b.progress[0] / b.progress[1] - a.progress[0] / a.progress[1])[0]
+  const nearAch = lv.achievements.filter(a => !a.maxed && a.progress && a.group !== 'secret').sort((a, b) => b.progress[0] / b.progress[1] - a.progress[0] / a.progress[1])[0]
   const scene = active.scene || {}
   const saveScene = async v => { const n = { ...scene, ...v }; try { await act((p, pin) => api.setScene(p, pin, n.target || null, n.action || 'punch'), n.target ? 'انحفظ المشهد، يشوفه الكل' : 'انشال المشهد') } catch { /* toast */ } }
   const myPosts = (idx.posts || []).filter(p => p.player_id === me.id)

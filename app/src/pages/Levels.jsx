@@ -1,6 +1,7 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { computeLevels, XP_RULES, TITLES, xpFor } from '../levels'
+import { GROUPS, TIER } from '../achievements'
 import { Avatar, Section } from '../ui'
 import { TitleBadge } from '../perks'
 
@@ -46,24 +47,43 @@ export function AchList() {
   const levels = useLevels()
   const list = [...levels.values()]
   const mine = me ? levels.get(me.id) : null
-  const achs = (mine ? mine.achievements : list[0]?.achievements || [])
-  const done = achs.filter(a => mine && a.done).length
+  const achs = mine ? mine.achievements : list[0]?.achievements || []
+  const [tab, setTab] = useState('near')
+  const doneCount = id => list.filter(l => l.achievements.find(x => x.id === id)?.done).length
+  const revealed = a => a.group !== 'secret' || doneCount(a.id) > 0
+  const near = achs.filter(a => !a.maxed && a.progress && a.group !== 'secret' && a.group !== 'season').sort((a, b) => b.progress[0] / b.progress[1] - a.progress[0] / a.progress[1]).slice(0, 6)
+  const shown = tab === 'near' ? near : achs.filter(a => a.group === tab)
+  const totalXp = achs.reduce((t, a) => t + a.xp, 0)
+  const doneN = achs.filter(a => a.done).length
   return (
-    <Section title="الإنجازات" action={mine && <span className="muted small">{done} من {achs.length}</span>}>
-      <div className="ach-grid">
-        {[...achs].sort((a, b) => (mine ? (b.done - a.done) : 0)).map(a => {
+    <Section title="الإنجازات" action={mine && <span className="muted small">{doneN} من {achs.length} · <bdi>{totalXp} XP</bdi></span>}>
+      <div className="seg ach-tabs pad-x">
+        {[['near', 'الأقرب لك'], ...GROUPS.map(g => [g.id, g.name])].map(([k, n]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{n}</button>)}
+      </div>
+      <div className="ach-list">
+        {shown.map(a => {
           const who = list.filter(l => l.achievements.find(x => x.id === a.id)?.done)
+          const hide = !revealed(a)
           return (
-            <div key={a.id} className={`ach ${mine && a.done ? 'done' : ''}`}>
-              <span className="ach-icon">{a.icon}</span>
-              <b>{a.name}</b>
-              <small>{a.desc}</small>
-              <em>+{a.xp} XP</em>
-              {mine && !a.done && a.progress && <span className="ach-prog"><Bar value={a.progress[0] / a.progress[1]} color={me.color} /><small>{Math.min(a.progress[0], a.progress[1])}/{a.progress[1]}</small></span>}
-              {who.length > 0 && <span className="lr-avs">{who.map(l => <Avatar key={l.player.id} player={l.player} size={20} />)}</span>}
+            <div key={a.id} className={`achx ${a.done ? 'done' : ''} ${a.maxed ? 'maxed' : ''} g-${a.group}`} style={a.tierInfo ? { '--tc': a.tierInfo.color } : null}>
+              <span className="ax-ic">{hide ? '❓' : a.icon}{a.tierInfo && <i>{a.tierInfo.icon}</i>}</span>
+              <div className="ax-main">
+                <div className="ax-top">
+                  <b>{hide ? '؟؟؟' : a.name}</b>
+                  {a.group === 'tier' && <span className="ax-tiers">{Array.from({ length: a.tiers }, (_, i) => <i key={i} className={i < a.tier ? 'on' : ''} style={{ '--c': TIER[i].color }} />)}</span>}
+                  {a.group === 'season' && a.times > 0 && <em className="ax-times">×{a.times}</em>}
+                </div>
+                <small>{hide ? 'إنجاز سري، ينكشف لما أحد يفتحه' : a.group === 'tier' && !a.maxed ? `الدرجة الجاية (${TIER[a.tier].name}): ${a.desc}` : a.desc}</small>
+                {mine && !a.maxed && a.progress && !hide && <span className="pw-bar"><span className="trk"><i style={{ width: `${Math.min(100, (a.progress[0] / a.progress[1]) * 100)}%` }} /></span><em>{Math.min(a.progress[0], a.progress[1])}/{a.progress[1]}</em></span>}
+                <span className="ax-foot">
+                  <em className="ax-xp">{a.maxed ? `✓ ${a.xp} XP` : `+${a.nextXp} XP`}{a.group === 'tier' && a.xp > 0 && !a.maxed ? ` · أخذت ${a.xp}` : ''}</em>
+                  <span className="ax-who">{who.length > 0 && <span className="lr-avs">{who.map(l => <Avatar key={l.player.id} player={l.player} size={18} />)}</span>}<small>{who.length} من {list.length}</small></span>
+                </span>
+              </div>
             </div>
           )
         })}
+        {!shown.length && <p className="muted pad-x">ما فيه شي هنا للحين.</p>}
       </div>
     </Section>
   )

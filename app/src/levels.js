@@ -1,6 +1,7 @@
 // نظام الليفلات: يقيس التفاعل والحضور (مو المهارة). كل شي يتحسب من البيانات المسجلة.
 import { counts } from './stats'
 import { resolveActions } from './actions'
+import { achContext, achStats, evalAchievements } from './achievements'
 
 export const XP_RULES = [
   { id: 'session', icon: '📅', label: 'حضور جلسة (كل يوم لعب)', xp: 30 },
@@ -98,27 +99,12 @@ export const REWARDS = [
 ]
 export const levelOfReward = id => REWARDS.find(r => r.id === id)?.level ?? 99
 
-export const ACHIEVEMENTS = [
-  { id: 'first', icon: '🎲', name: 'البداية', desc: 'لعبت أول قيم', xp: 10, test: s => s.plays >= 1 },
-  { id: 'firstwin', icon: '🏆', name: 'أول انتصار', desc: 'فزت لأول مرة', xp: 10, test: s => s.wins >= 1 },
-  { id: 'g5', icon: '📗', name: 'فضولي', desc: 'جربت 10 ألعاب مختلفة', xp: 40, test: s => s.games >= 10, prog: s => [s.games, 10] },
-  { id: 'g10', icon: '📘', name: 'مستكشف', desc: 'جربت 20 لعبة مختلفة', xp: 80, test: s => s.games >= 20, prog: s => [s.games, 20] },
-  { id: 'g20', icon: '📚', name: 'موسوعة', desc: 'جربت 35 لعبة مختلفة', xp: 150, test: s => s.games >= 35, prog: s => [s.games, 35] },
-  { id: 's5', icon: '📅', name: 'حاضر', desc: 'حضرت 10 جلسات', xp: 50, test: s => s.sessions >= 10, prog: s => [s.sessions, 10] },
-  { id: 's15', icon: '🗓️', name: 'ما يفوّت', desc: 'حضرت 25 جلسة', xp: 120, test: s => s.sessions >= 25, prog: s => [s.sessions, 25] },
-  { id: 's30', icon: '🏠', name: 'ساكن الطاولة', desc: 'حضرت 50 جلسة', xp: 250, test: s => s.sessions >= 50, prog: s => [s.sessions, 50] },
-  { id: 'streak3', icon: '🔥', name: 'على النار', desc: 'فزت 4 أقيام ورا بعض', xp: 80, test: s => s.bestWinStreak >= 4, prog: s => [s.bestWinStreak, 4] },
-  { id: 'cats4', icon: '🌈', name: 'متعدد المواهب', desc: 'لعبت من 5 تصانيف مختلفة', xp: 50, test: s => s.cats >= 5, prog: s => [s.cats, 5] },
-  { id: 'catwins', icon: '👑', name: 'ملك متنقل', desc: 'فزت في 4 تصانيف مختلفة', xp: 80, test: s => s.winCats >= 4, prog: s => [s.winCats, 4] },
-  { id: 'rate10', icon: '⭐', name: 'الناقد', desc: 'قيّمت 20 لعبة', xp: 40, test: s => s.ratings >= 20, prog: s => [s.ratings, 20] },
-  { id: 'comm5', icon: '💬', name: 'صاحب رأي', desc: 'علّقت على 10 ألعاب', xp: 30, test: s => s.comments >= 10, prog: s => [s.comments, 10] },
-  { id: 'everyone', icon: '🫂', name: 'صديق الكل', desc: 'لعبت مع كل واحد في الشلة', xp: 30, test: s => s.matesAll, prog: s => [s.mates, s.matesNeeded] },
-  { id: 'big', icon: '🏟️', name: 'قيم كبير', desc: 'فزت في قيم فيه 5 لاعبين أو أكثر', xp: 30, test: s => s.bigWin },
-]
 
 export function computeLevels(idx) {
   const G = idx.gamesById
-  const ax = resolveActions(idx).xp
+  const rx = resolveActions(idx)
+  const ax = rx.xp
+  const pre = []
   const chrono = [...idx.plays].reverse()
   const sessionDays = [...new Set(chrono.map(p => p.played_on))]
   // أيام حضرها كل الشلة
@@ -151,6 +137,7 @@ export function computeLevels(idx) {
     for (const p of (idx.posts || []).filter(p => p.player_id === pl.id)) { const d = p.created_at.slice(0, 10); postsByDay.set(d, (postsByDay.get(d) || 0) + 1) }
     const posts = [...postsByDay.values()].reduce((s, n) => s + Math.min(n, 3), 0)
     const others = idx.players.filter(o => o.id !== pl.id).length
+    const dailyDays = dailyDone(idx, pl.id)
 
     const s = {
       plays: mine.length, wins, games: seen.size, sessions: myDays.size, cats: cats.size, winCats: winCats.size,
@@ -161,11 +148,18 @@ export function computeLevels(idx) {
       comment: comments * XP.comment, win: wins * XP.win, picks: pickWeeks * XP.picks, post: posts * XP.post, streak: streaks * XP.streak, setup: setups * XP.setup, cleanup: cleanups * XP.cleanup,
       thanks: ax.get(pl.id)?.thanks || 0, thankGive: ax.get(pl.id)?.thankGive || 0, predict: ax.get(pl.id)?.predict || 0,
       gift: ax.get(pl.id)?.gift || 0, lucky: ax.get(pl.id)?.lucky || 0, luckbox: ax.get(pl.id)?.luckbox || 0, risk: ax.get(pl.id)?.risk || 0,
-      godfather: ax.get(pl.id)?.godfather || 0, box: ax.get(pl.id)?.box || 0, guarantee: ax.get(pl.id)?.guarantee || 0, daily: dailyDone(idx, pl.id).length * XP.daily, fullhouse: fullDays.filter(d => myDays.has(d)).length * XP.fullhouse,
+      godfather: ax.get(pl.id)?.godfather || 0, box: ax.get(pl.id)?.box || 0, guarantee: ax.get(pl.id)?.guarantee || 0, daily: dailyDays.length * XP.daily, fullhouse: fullDays.filter(d => myDays.has(d)).length * XP.fullhouse,
     }
-    const achievements = ACHIEVEMENTS.map(a => ({ ...a, done: !!a.test(s), progress: a.prog ? a.prog(s) : null }))
-    const achXp = achievements.filter(a => a.done).reduce((t, a) => t + a.xp, 0)
-    const xp = Math.max(0, Object.values(parts).reduce((a, b) => a + b, 0) + achXp)
+    s.dailyDays = dailyDays
+    pre.push({ pl, s, parts, base: Math.max(0, Object.values(parts).reduce((a, b) => a + b, 0)) })
+  }
+  // الإنجازات (تحتاج ليفلات الكل بدون الإنجازات عشان «العرّاب الناجح»)
+  const ctx = achContext(idx, rx)
+  const baseLv = new Map(pre.map(x => [x.pl.id, levelFromXp(x.base)]))
+  for (const { pl, s, parts, base } of pre) {
+    const achievements = evalAchievements(ctx, achStats(idx, pl, ctx, { ...s, levelOf: pid => baseLv.get(pid) || 1 }))
+    const achXp = achievements.reduce((t, a) => t + a.xp, 0)
+    const xp = Math.max(0, base + achXp)
     const level = levelFromXp(xp)
     const cur = xpFor(level), next = xpFor(level + 1)
     out.set(pl.id, {
@@ -237,26 +231,5 @@ export function xpLog(idx, pid) {
   return ev.filter(e => e.at).map(e => ({ ...e, icon: icon[e.type] })).sort((a, b) => b.at.localeCompare(a.at))
 }
 
-// تحدي اليوم: مهمة صغيرة تتغير كل يوم (للكل)
-export const MISSION_START = '2026-11-07'
-const day = iso => (iso || '').slice(0, 10)
-export const MISSIONS = [
-  { id: 'rate', icon: '⭐', text: 'قيّم لعبة أو عدّل تقييمك', test: (idx, pid, d) => idx.ratings.some(r => r.player_id === pid && day(r.updated_at) === d) },
-  { id: 'comment', icon: '💬', text: 'علّق على لعبة', test: (idx, pid, d) => (idx.comments || []).some(c => c.player_id === pid && day(c.updated_at) === d) },
-  { id: 'post', icon: '📝', text: 'اكتب شي في اللوحة', test: (idx, pid, d) => (idx.posts || []).some(p => p.player_id === pid && day(p.created_at) === d) },
-  { id: 'pick', icon: '🎲', text: 'اختر لعبة للجلسة الجاية', test: (idx, pid, d) => (idx.picks || []).some(p => p.player_id === pid && day(p.created_at) === d) },
-  { id: 'play', icon: '🎮', text: 'العب قيم', test: (idx, pid, d) => idx.plays.some(p => p.played_on === d && p.results.some(r => r.player_id === pid)) },
-  { id: 'react', icon: '😂', text: 'رد على كتابة في اللوحة', test: (idx, pid, d) => (idx.actions || []).some(a => a.kind === 'react' && a.player_id === pid && day(a.created_at) === d) },
-]
-const hashDay = d => [...d].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
-export const missionOf = d => MISSIONS[hashDay(d) % MISSIONS.length]
-export const todayKey = () => new Date().toISOString().slice(0, 10)
-export function dailyDone(idx, pid) {
-  const out = []
-  const end = todayKey()
-  for (let t = new Date(MISSION_START + 'T00:00:00Z'); t.toISOString().slice(0, 10) <= end; t = new Date(t.getTime() + 864e5)) {
-    const d = t.toISOString().slice(0, 10)
-    if (missionOf(d).test(idx, pid, d)) out.push(d)
-  }
-  return out
-}
+export { MISSION_START, MISSIONS, missionOf, todayKey, dailyDone } from './missions'
+import { dailyDone } from './missions'

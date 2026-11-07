@@ -74,13 +74,16 @@ export function unlockHistory(idx, pid) {
     const levels = computeLevels(snap)
     const lv = levels.get(pid); if (!lv) continue
     const ts = computeTitles(snap, levels).get(pid) || []
-    const ach = new Set(lv.achievements.filter(a => a.done).map(a => a.id))
+    const ach = new Set(lv.achievements.flatMap(a => a.keys || []))
     const titles = new Set(ts.filter(t => t.done).map(t => t.id))
     if (lv.level > prev.level) {
       out.push({ at: d, kind: 'level', icon: '⬆️', name: `وصلت ليفل ${lv.level}`, desc: lv.title })
       for (const r of REWARDS.filter(r => r.level > prev.level && r.level <= lv.level)) out.push({ at: d, kind: 'reward', icon: r.icon, name: r.name, desc: r.desc })
     }
-    for (const a of lv.achievements) if (ach.has(a.id) && !prev.ach.has(a.id)) out.push({ at: d, kind: 'ach', icon: a.icon, name: a.name, desc: `${a.desc} · +${a.xp} XP` })
+    for (const a of lv.achievements) for (const k of a.keys || []) if (!prev.ach.has(k)) {
+      const t = a.group === 'tier' ? ` ${['🥉 برونزي', '🥈 فضي', '🥇 ذهبي', '💎 ماسي'][+k.split(':')[1]]}` : a.group === 'season' ? ' (مرة جديدة)' : ''
+      out.push({ at: d, kind: 'ach', icon: a.icon, name: a.name + t, desc: a.group === 'tier' ? `وصلت ${a.steps[+k.split(':')[1]]} ${a.unit}` : a.desc })
+    }
     for (const t of ts) if (titles.has(t.id) && !prev.titles.has(t.id) && t.id !== 'visitor') out.push({ at: d, kind: 'title', icon: t.icon, name: t.name, desc: t.desc })
     prev = { level: lv.level, ach: new Set([...prev.ach, ...ach]), titles: new Set([...prev.titles, ...titles]) }
   }

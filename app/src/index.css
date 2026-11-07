@@ -1600,3 +1600,23 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .king { display: flex; align-items: center; gap: 10px; padding: 10px 14px; color: inherit; text-decoration: none; border-color: rgba(255,196,92,.4); background: linear-gradient(135deg, rgba(255,196,92,.15), rgba(255,255,255,.03)); }
 .king > span { flex: 1; display: flex; flex-direction: column; } .king small { font-size: 11px; color: #FFC45C; } .king em { font-style: normal; font-size: 11.5px; color: var(--muted); }
 .box-king { position: absolute; top: -8px; right: -4px; font-size: 15px; z-index: 3; filter: drop-shadow(0 1px 2px #000a); }
+
+/* الإنجازات */
+.ach-tabs { display: flex; overflow-x: auto; gap: 4px; scrollbar-width: none; margin-bottom: 8px; }
+.ach-tabs button { flex: none; padding: 7px 12px; font-size: 12.5px; }
+.ach-list { display: flex; flex-direction: column; gap: 8px; padding: 0 12px 12px; }
+.achx { display: flex; gap: 12px; padding: 12px; border-radius: 16px; background: rgba(255,255,255,.03); border: 1px solid var(--line); }
+.achx.done { border-color: color-mix(in srgb, var(--tc, #7BE3A6) 50%, transparent); background: linear-gradient(160deg, color-mix(in srgb, var(--tc, #7BE3A6) 12%, transparent), rgba(255,255,255,.02)); }
+.achx.g-secret:not(.done) { border-style: dashed; }
+.ax-ic { position: relative; width: 44px; height: 44px; flex: none; border-radius: 14px; display: grid; place-items: center; font-size: 22px; background: rgba(255,255,255,.06); }
+.achx:not(.done) .ax-ic { filter: grayscale(.7); opacity: .75; }
+.ax-ic i { position: absolute; bottom: -6px; left: -6px; font-style: normal; font-size: 16px; }
+.ax-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ax-top { display: flex; align-items: center; gap: 8px; } .ax-top b { font-size: 14px; }
+.ax-tiers { display: flex; gap: 3px; } .ax-tiers i { width: 9px; height: 9px; border-radius: 50%; background: rgba(255,255,255,.12); }
+.ax-tiers i.on { background: var(--c); box-shadow: 0 0 6px var(--c); }
+.ax-times { font-style: normal; font-size: 11px; padding: 1px 6px; border-radius: 6px; background: rgba(255,196,92,.18); color: #FFC45C; }
+.ax-main > small { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.ax-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 2px; }
+.ax-xp { font-style: normal; font-size: 11.5px; color: #FFC45C; }
+.ax-who { display: flex; align-items: center; gap: 6px; } .ax-who small { font-size: 10.5px; color: var(--muted-2); white-space: nowrap; }
