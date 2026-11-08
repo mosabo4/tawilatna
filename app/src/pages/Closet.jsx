@@ -1,70 +1,13 @@
 import { useState } from 'react'
 import { useStore } from '../store'
 import { Section } from '../ui'
-import { usePerks } from '../perks'
-import { STICKERS, Sticker } from '../stickers'
-import { Character, CUSTOM, OPTION_NAMES, IMG_CHARS, imgSrc } from '../characters'
+import { IMG_CHARS, imgSrc } from '../characters'
 
 // شخصيتك + تعديلها
 export function CharacterEditor() {
   const { me } = useStore()
-  const { perks, set, level: L, active } = usePerks()
-  const ch = perks.char || {}
-  const setCh = (k, v) => set({ char: { ...ch, [k]: v } })
-  const ic = IMG_CHARS[(me.realName || me.name).trim()]
-  if (me.is_admin) return <AllPoses />
-  if (ic) {
-    const st = ic.styles[me.char_style] ? me.char_style : ic.def
-    const sty = ic.styles[st]
-    return (
-      <Section title="شخصيتك">
-        <div className="pose-strip">{sty.gallery.map(g => <img key={g} src={imgSrc(ic.slug, st, g)} alt="" />)}</div>
-        <p className="hint pad-x pad-b">أسلوب رسم الشخصيات يحدده المسؤول للكل.</p>
-      </Section>
-    )
-  }
-  return (
-    <Section title="شخصيتك">
-      <div className="char-edit">
-        <div className="char-stage"><Character player={me} custom={active.char} pose="idle" size={130} /></div>
-        <div className="char-opts">
-          {Object.entries(CUSTOM).map(([k, c]) => {
-            const open = L >= c.level
-            return (
-              <div key={k} className={`copt ${open ? '' : 'locked'}`}>
-                <span className="copt-label">{c.label}{!open && <small>🔒 ليفل {c.level}</small>}</span>
-                <div className="copt-row">
-                  {c.options.map(o => {
-                    const lock = !open || (o === 'crown' && L < 10)
-                    const on = (ch[k] ?? null) === o
-                    return k === 'outfit'
-                      ? <button key={String(o)} disabled={lock} className={`sw ${on ? 'on' : ''} ${o ? '' : 'none'}`} style={o ? { background: o } : null} onClick={() => setCh(k, o)} aria-label={o || 'الأصلي'}>{o ? '' : '↺'}</button>
-                      : <button key={String(o)} disabled={lock} className={`chip ${on ? 'on' : ''}`} onClick={() => setCh(k, o)}>{o ? OPTION_NAMES[o] : 'الأصلي'}{o === 'crown' && L < 10 ? ' 🔒' : ''}</button>
-                  })}
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </Section>
-  )
-}
-
-export function TeasePicker({ onPick }) {
-  const { idx, me } = useStore()
-  const [who, setWho] = useState('')
-  const [art, setArt] = useState('cry')
-  return (
-    <div className="tease-pick">
-      <select className="input" value={who} onChange={e => setWho(e.target.value)}>
-        <option value="">اختر الضحية 😈</option>
-        {idx.players.filter(p => p.id !== me.id).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-      </select>
-      <div className="arts">{STICKERS.map(t => <button key={t.id} type="button" className={art === t.id ? 'on' : ''} onClick={() => setArt(t.id)}><Sticker id={t.id} size={34} /><small>{t.name}</small></button>)}</div>
-      <button className="btn primary small" disabled={!who} onClick={() => onPick(who, art)}>لزّقه 3 أيام</button>
-    </div>
-  )
+  if (!me?.is_admin) return <p className="muted pad">هذي الصفحة للمسؤول بس.</p>
+  return <AllPoses />
 }
 
 // كل دور (متى تظهر الشخصية) والصور اللي تخدمه. الأدوار اللي تشترك بنفس الصورة تنعرض مرة وحدة.

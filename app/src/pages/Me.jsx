@@ -159,7 +159,7 @@ export default function Me({ sub }) {
         <RecentUnlocks pid={me.id} />
 
         <nav className="me-links slim">
-          {link('🧍', 'شخصيتي', '#/me/char', 'وضعياتها')}
+          {me.is_admin && link('🧍', 'شخصيتي', '#/me/char', 'وضعياتها')}
           {link('🎲', 'ألعابي وتقييماتي', '#/me/games', unrated ? `${unrated} بدون تقييم` : 'كلها مقيّمة', unrated ? 'warn' : '')}
           {link('⏳', 'جوائزي المحدودة', '#/me/limits', 'مرة بالأسبوع وبالشهر')}
           {link('🌐', 'صفحتي العامة', `#/player/${me.id}`, 'كيف يشوفني الباقين')}
