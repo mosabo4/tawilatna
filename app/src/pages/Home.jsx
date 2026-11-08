@@ -16,7 +16,7 @@ export default function Home() {
   const { idx, me } = useStore()
   const board = useMemo(() => leaderboard(idx), [idx])
   const top3 = board.filter(b => b.plays > 0).slice(0, 3)
-  const { byGame, mine, picks } = useFriday()
+  const { tally, mine, picks } = useFriday()
   const live = getLive()
   const events = useMemo(() => buildEvents(idx).filter(e => !e.post), [idx])
   const seen = getSeen()
@@ -39,7 +39,7 @@ export default function Home() {
     )
   }
 
-  const top = [...byGame.entries()].sort((a, b) => b[1].length - a[1].length).map(([id, ps]) => ({ g: idx.gamesById.get(id), n: ps.length })).filter(x => x.g)
+  const top = [...tally.entries()].sort((a, b) => b[1] - a[1]).map(([id, n]) => ({ g: idx.gamesById.get(id), n })).filter(x => x.g)
   const pickers = [...new Set(picks.map(p => p.player_id))].map(id => idx.playersById.get(id)).filter(Boolean)
   const needs = []
   if (me && unrated.length) needs.push({ icon: '⭐', title: unrated.length === 1 ? `قيّم ${unrated[0].name}` : `قيّم ${unrated.length} ألعاب`, sub: unrated.slice(0, 3).map(g => g.name).join('، '), href: `#/game/${unrated[0].id}`, btn: 'قيّم', hot: true })

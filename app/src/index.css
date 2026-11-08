@@ -2066,3 +2066,24 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .vt-chips span { font-size: 11px; padding: 3px 9px; border-radius: 99px; background: var(--hole); color: var(--muted); }
 .vt-chips .ok { color: #3ED6A0; }
 .vt-chips .warn { color: #F2B33D; }
+
+/* ---- vote pool ---- */
+.vt-cap{margin:2px 0 8px;font-size:.85rem;opacity:.85}
+.vt-bv{font-style:normal;font-size:.7rem;font-weight:700;color:var(--accent,#F2B33D)}
+.vt-pool{padding:14px;display:grid;gap:10px}
+.vt-coins{display:flex;gap:8px;justify-content:center}
+.vt-coins i{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-weight:800;border:2px dashed var(--line);font-size:.9rem}
+.vt-coins i.free{border-style:solid;border-color:#F2B33D;background:radial-gradient(circle at 35% 30%,#ffe08a,#F2B33D);box-shadow:0 2px 6px #f2b33d55}
+.vt-coins i.used{background:var(--line);border-style:solid;opacity:.6}
+.vt-coins i.lockd{opacity:.35}
+.vt-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.vt-stats span{background:var(--line);border-radius:12px;padding:8px 4px;display:grid}
+.vt-stats b{font-size:1.4rem;line-height:1.1}
+.vt-stats small{opacity:.75;font-size:.72rem}
+.vt-stats .hot{background:#F2B33D33;outline:1.5px solid #F2B33D}
+.vt-step{display:inline-flex;align-items:center;gap:6px;background:var(--line);border-radius:999px;padding:2px}
+.vt-step button{width:34px;height:34px;border-radius:50%;border:0;font-size:1.2rem;font-weight:800;background:var(--bc,#5B7CFF);color:#fff;cursor:pointer}
+.vt-step button:disabled{opacity:.35;cursor:not-allowed}
+.vt-step b{min-width:22px;text-align:center}
+.vt-played{font-size:.78rem;opacity:.7}
+.vt-x{text-decoration:none;font-size:.65rem;font-weight:800;color:var(--bc);margin-inline-start:2px}

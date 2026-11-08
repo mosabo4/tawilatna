@@ -23,6 +23,7 @@ export const ERRORS = {
   dup_game: 'هذي اللعبة موجودة من قبل',
   bad_week: 'التاريخ لازم يكون يوم جمعة',
   not_played: 'ما تقدر تقيّم لعبة قبل ما تجربها',
+  already_played: 'التصويت بس على ألعاب ما جربتها',
   eleven_used: 'عطيت 11 للعبة ثانية في نفس التصنيف. شيلها منها أول',
   too_long: 'النص طويل، اختصره شوي',
   empty: 'اكتب شي أول',
@@ -167,8 +168,21 @@ const demo = {
   toggleFriday: async (player, pin, week, game) => {
     const s = dGet(); dAuth(s, player, pin); s.picks ||= []
     const i = s.picks.findIndex(x => x.week === week && x.game_id === game && x.player_id === player)
-    if (i >= 0) s.picks.splice(i, 1); else s.picks.push({ week, game_id: game, player_id: player, created_at: new Date().toISOString() })
+    if (i >= 0) s.picks.splice(i, 1); else {
+      if (s.plays.some(pl => pl.game_id === game && s.results.some(r => r.play_id === pl.id && r.player_id === player))) throw new ApiError('already_played')
+      s.picks.push({ week, game_id: game, player_id: player, votes: 1, created_at: new Date().toISOString() })
+    }
     dSet(s); return { ok: true, picked: i < 0 }
+  },
+  setFridayVotes: async (player, pin, week, game, votes) => {
+    const s = dGet(); dAuth(s, player, pin); s.picks ||= []
+    const i = s.picks.findIndex(x => x.week === week && x.game_id === game && x.player_id === player)
+    if (votes <= 0) { if (i >= 0) s.picks.splice(i, 1) } else if (i >= 0) s.picks[i].votes = votes
+    else {
+      if (s.plays.some(pl => pl.game_id === game && s.results.some(r => r.play_id === pl.id && r.player_id === player))) throw new ApiError('already_played')
+      s.picks.push({ week, game_id: game, player_id: player, votes, created_at: new Date().toISOString() })
+    }
+    dSet(s); return { ok: true }
   },
   setComment: async (player, pin, game, body) => {
     const s = dGet(); dAuth(s, player, pin); s.comments ||= []
@@ -263,6 +277,7 @@ const real = {
   saveGame: (p, pin, game) => sbCall('save_game', { p_player: p, p_pin: pin, p_game: game }),
   deleteGame: (p, pin, id) => sbCall('delete_game', { p_player: p, p_pin: pin, p_game: id }),
   toggleFriday: (p, pin, week, g) => sbCall('toggle_friday', { p_player: p, p_pin: pin, p_week: week, p_game: g }),
+  setFridayVotes: (p, pin, week, g, n) => sbCall('set_friday_votes', { p_player: p, p_pin: pin, p_week: week, p_game: g, p_votes: n }),
   setComment: (p, pin, g, body) => sbCall('set_comment', { p_player: p, p_pin: pin, p_game: g, p_body: body }),
   addPost: (p, pin, body) => sbCall('add_post', { p_player: p, p_pin: pin, p_body: body }),
   deletePost: (p, pin, id) => sbCall('delete_post', { p_player: p, p_pin: pin, p_post: id }),
