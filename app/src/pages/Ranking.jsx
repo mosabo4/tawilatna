@@ -56,7 +56,7 @@ export default function Ranking() {
       <div className="stack">
         <p className="muted small sub-count">{total} قيم محسوب في الترتيب</p>
         <Section
-          title={cat === 'all' ? 'ترتيب الشلة' : current?.name}
+          title={cat === 'all' ? 'ترتيب العيال' : current?.name}
           action={cat !== 'all' && <button className="link-btn" onClick={() => setCat('all')}>رجوع للعام</button>}
         >
           {rows.some(r => r.plays > 0)

@@ -155,7 +155,7 @@ export function VersusView({ a, b }) {
   )
 }
 
-// قائمة الشلة بشخصياتهم
+// قائمة العيال بشخصياتهم
 export default function PlayersList() {
   const { idx, me } = useStore()
   const { look } = usePerks()

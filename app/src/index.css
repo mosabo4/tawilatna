@@ -918,7 +918,7 @@ textarea.input { resize: vertical; }
 .me-name b { font-size: 18px; }
 .lv-closet { font-size: 12.5px; color: var(--accent-text); margin-top: 2px; }
 
-/* الشلة: الكروت */
+/* العيال: الكروت */
 .crew { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
 .crew-card { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 10px 14px; text-decoration: none; color: inherit; position: relative; overflow: hidden; }
 .crew-card::before { content: ""; position: absolute; inset: auto -20% 40% -20%; height: 120px; background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 45%, transparent), transparent); pointer-events: none; }

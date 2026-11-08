@@ -128,7 +128,7 @@ export function buildRecap(idx, month) {
     return !last || (Date.now() - new Date(last + 'T00:00:00')) / 864e5 > 60
   })
 
-  // ---------- شخصيات الشلة (غير الفوز) ----------
+  // ---------- شخصيات العيال (غير الفوز) ----------
   const mine = (pid, list) => list.filter(p => p.results.some(r => r.player_id === pid))
   const allUntil = idx.plays.filter(p => monthOf(p.played_on) <= month)
   const prof = idx.players.map(pl => {
@@ -174,12 +174,12 @@ export function buildRecap(idx, month) {
   addP('fan', '💘', 'الوفي', 'أكثر واحد كرر نفس اللعبة', best(prof, x => x.favN, 3), f => `لعب ${G.get(f.items[0].fav[0])?.name} ${f.value} مرات`)
   addP('special', '🎯', 'المتخصص', 'أغلب أقيامه من تصنيف واحد', best(prof, x => x.topShare, 60), f => `${f.value}% من أقيامه ${catName(f.items[0].topCat[0])}`)
   addP('cats', '🌈', 'المتنوّع', 'لعب من أكثر عدد تصانيف', best(prof, x => x.cats, 2), f => `${f.value} تصانيف مختلفة`)
-  addP('social', '🫂', 'الاجتماعي', 'لعب مع أكثر عدد من الشلة', best(prof, x => x.mates, 2), f => `لعب مع ${f.value} من الشلة`)
+  addP('social', '🫂', 'الاجتماعي', 'لعب مع أكثر عدد من العيال', best(prof, x => x.mates, 2), f => `لعب مع ${f.value} من العيال`)
   addP('hours', '⏱️', 'ساكن الطاولة', 'أكثر وقت لعب هالشهر (تقريبي)', best(prof, x => x.minutes, 30), f => `حوالي ${Math.round(f.value / 6) / 10} ساعة`)
   addP('owner', '🗄️', 'صاحب الدولاب', 'ألعابه هي اللي انلعبت أكثر', best(prof, x => x.owned, 1), f => `${f.value} أقيام من ألعابه`)
   addP('critic', '🧐', 'الناقد القاسي', 'أقل متوسط تقييمات (3 تقييمات وفوق)', low(prof, x => x.avgGiven), f => `يعطي ${f.value} من 10 بالمتوسط`)
   addP('generous', '😍', 'الكريم بالتقييم', 'أعلى متوسط تقييمات', best(prof.filter(x => x.avgGiven != null), x => x.avgGiven, 0), f => `يعطي ${f.value} من 10 بالمتوسط`)
-  addP('taste', '🎼', 'ذوقه ذوق الشلة', 'تقييماته أقرب شي لتقييمات الباقين', low(prof, x => x.taste), f => `يفرق عنهم ${f.value} درجة بس`)
+  addP('taste', '🎼', 'ذوقه ذوق العيال', 'تقييماته أقرب شي لتقييمات الباقين', low(prof, x => x.taste), f => `يفرق عنهم ${f.value} درجة بس`)
   addP('rebel', '🦄', 'عكس التيار', 'تقييماته أبعد شي عن الباقين', best(prof.filter(x => x.taste != null), x => x.taste, 0), f => `يفرق عنهم ${f.value} درجة`)
   addP('comment', '💬', 'المعلّق', 'كتب أكثر تعليقات على الألعاب هالشهر', best(prof, x => x.comments, 1), f => `${f.value} تعليقات`)
   addP('eager', '🙋', 'المتحمس', 'اختار أكثر ألعاب للجلسة الجاية', best(prof, x => x.picks, 1), f => `اختار ${f.value} ألعاب`)

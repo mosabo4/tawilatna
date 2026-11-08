@@ -1,4 +1,4 @@
-// عرض «شرح»: يشرح للشلة نظام الموقع (نفس شكل ملخص الشهر)
+// عرض «شرح»: يشرح للعيال نظام الموقع (نفس شكل ملخص الشهر)
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore, go } from '../store'
 import { Avatar } from '../ui'
@@ -49,8 +49,8 @@ export default function Guide() {
         <Card icon="🏠" title="الرئيسية">التنبيهات، المتصدرين، اللوحة، وآخر الأحداث</Card>
         <Card icon="🎲" title="الألعاب">الدولاب كامل، تقييم كل لعبة، وملك كل لعبة</Card>
         <Card icon="➕" title="سجّل قيم">بعد كل قيم: اللعبة، مين لعب، والنتيجة</Card>
-        <Card icon="👥" title="الشلة">الترتيب، اللاعبين، لوحة الكلام، وسجل الأقيام</Card>
-        <Card icon="👤" title="أنا">بطاقتك، مستواك، جوائزك، وشكلك عند الشلة</Card>
+        <Card icon="👥" title="العيال">الترتيب، اللاعبين، لوحة الكلام، وسجل الأقيام</Card>
+        <Card icon="👤" title="أنا">بطاقتك، مستواك، جوائزك، وشكلك عند العيال</Card>
         <Card icon="▶" title="الجلسة الحيّة">تبدأها أول الجلسة، وآخرها يطلع ملخص الليلة</Card>
       </div>
     </div>,
@@ -103,13 +103,13 @@ export default function Guide() {
         {[2, 5, 10, 15, 20].map(l => <div key={l}><b>{l}</b><span>مستوى</span><i>{xpFor(l).toLocaleString('en')} XP</i></div>)}
       </div>
       <div className="gd-big small">كل مستوى يفتح لك جوائز جديدة</div>
-      <p className="gd-note">من 2 لين 20، وكل ما ارتفعت صارت الجوائز أقوى وأكثر تأثير على الشلة</p>
+      <p className="gd-note">من 2 لين 20، وكل ما ارتفعت صارت الجوائز أقوى وأكثر تأثير على العيال</p>
     </div>,
 
     <div key="rewards">
       <h2>جوائز وتحديات <small>تنفتح مع مستواك</small></h2>
       <div className="gd-grid">
-        <Card icon="🎁" title="جوائز">كل ما ارتفع مستواك تنفتح لك جوائز جديدة تستخدمها مع الشلة</Card>
+        <Card icon="🎁" title="جوائز">كل ما ارتفع مستواك تنفتح لك جوائز جديدة تستخدمها مع العيال</Card>
         <Card icon="⚔️" title="تحديات وتوقعات">تتحدون بعض وتتوقعون النتائج وتاخذون XP</Card>
         <Card icon="😈" title="طقطقة">أشياء خفيفة تضحكون فيها على بعض، وفيها حماية لمن يبي</Card>
         <Card icon="⏳" title="تتجدد">بعض الجوائز تتجدد كل أسبوع أو شهر، وتشوفها في «جوائزي المحدودة» بصفحة أنا</Card>
@@ -122,7 +122,7 @@ export default function Guide() {
       <div className="gd-grid">
         <Card icon="📈" title="المسيرة">إنجازات تكبر معك بدرجات: {TIER.map(t => t.icon).join(' ')}</Card>
         <Card icon="🔥" title="الصعبة">مواقف صعبة، مثل «الإعصار»: تفوز بكل أقيام الجلسة</Card>
-        <Card icon="🫂" title="الشلة">التجهيز، الهدايا، المذكرات، والشكر</Card>
+        <Card icon="🫂" title="العيال">التجهيز، الهدايا، المذكرات، والشكر</Card>
         <Card icon="❓" title="السرية">مخفية لين أحد يفتحها</Card>
         <Card icon="📅" title="الموسمية">تتجدد كل شهر، مثل «بطل الشهر»</Card>
       </div>
@@ -154,7 +154,7 @@ export default function Guide() {
     </div>,
 
     <div key="board">
-      <h2>وين الشلة الحين؟</h2>
+      <h2>وين العيال الحين؟</h2>
       <ol className="gd-board">
         {crew.map((l, k) => (
           <li key={l.player.id}><span className="gd-rk">{k + 1}</span><Avatar player={l.player} size={40} /><b>{l.player.name}</b><span className="gd-lv">مستوى {l.level}</span><em>{l.xp.toLocaleString('en')} XP</em></li>

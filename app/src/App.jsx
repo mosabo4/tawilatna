@@ -33,7 +33,7 @@ const Icon = ({ d }) => <svg width="23" height="23" viewBox="0 0 24 24" fill="no
 // الأقسام: كل قسم له تبويبات داخلية
 const SECTIONS = {
   games: { title: 'الألعاب', tabs: [['games', 'الدولاب'], ['friday', 'الجلسة الجاية']] },
-  shilla: { title: 'الشلة', tabs: [['rank', 'الترتيب'], ['players', 'اللاعبين'], ['board', 'اللوحة'], ['history', 'السجل']] },
+  shilla: { title: 'العيال', tabs: [['rank', 'الترتيب'], ['players', 'اللاعبين'], ['board', 'اللوحة'], ['history', 'السجل']] },
 }
 const SECTION_OF = { games: 'games', friday: 'games', rank: 'shilla', players: 'shilla', board: 'shilla', history: 'shilla' }
 const NAV_OF = { ...SECTION_OF, progress: 'me', game: 'games', play: 'shilla', vs: 'shilla', player: 'shilla', me: 'me', levels: 'me', titles: 'me' }
@@ -72,7 +72,7 @@ function Nav({ at }) {
       {me
         ? <a href="#/log" className="tab-add" aria-label="سجّل قيم"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round"><path d="M12 5v14M5 12h14" /></svg></a>
         : <button className="tab-add login" onClick={() => setGuest(false)}>ادخل</button>}
-      {tab('#/rank', 'players', 'الشلة', sec === 'shilla', hasNew)}
+      {tab('#/rank', 'players', 'العيال', sec === 'shilla', hasNew)}
       {tab('#/me', 'me', 'أنا', sec === 'me')}
     </nav>
   )

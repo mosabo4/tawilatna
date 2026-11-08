@@ -1,4 +1,4 @@
-// الإنجازات: درجات (برونزي→ماسي)، مواقف صعبة، الشلة، سرية، وموسمية
+// الإنجازات: درجات (برونزي→ماسي)، مواقف صعبة، العيال، سرية، وموسمية
 import { counts, kingOf } from './stats'
 
 export const TIER = [
@@ -14,14 +14,14 @@ export const SECRET_BADGES = {
   addict: { icon: '♾️', name: 'اللانهاية' }, revenge: { icon: '🗡️', name: 'الخنجر' }, ebaby: { icon: '🍼', name: 'الرضّاعة' }, grave: { icon: '🪦', name: 'شاهد القبر' },
 }
 export const GROUPS = [
-  { id: 'tier', name: 'المسيرة' }, { id: 'hard', name: 'صعبة' }, { id: 'crew', name: 'الشلة' }, { id: 'secret', name: 'سرية' }, { id: 'season', name: 'موسمية' },
+  { id: 'tier', name: 'المسيرة' }, { id: 'hard', name: 'صعبة' }, { id: 'crew', name: 'العيال' }, { id: 'secret', name: 'سرية' }, { id: 'season', name: 'موسمية' },
 ]
 const tsOf = p => p.created_at || `${p.played_on}T12:00:00`
 const isLast = (p, pid) => { const r = p.results.find(x => x.player_id === pid); return p.results.length > 1 && r && r.position === Math.max(...p.results.map(x => x.position)) && p.results.some(x => x.position < r.position) }
 const won = (p, pid) => p.results.length > 1 && p.results.some(r => r.player_id === pid && r.position === 1)
 const monthOf = d => d.slice(0, 7)
 
-// حسابات مشتركة لكل الشلة (مرة وحدة لكل idx)
+// حسابات مشتركة لكل العيال (مرة وحدة لكل idx)
 export function achContext(idx, rx) {
   const chrono = [...idx.plays].sort((a, b) => tsOf(a).localeCompare(tsOf(b)))
   const G = idx.gamesById
@@ -96,17 +96,17 @@ function defs(ctx) {
     once('wall', '🧱', 'الجدار', 'لا تجي الأخير في 25 قيم متتابع', 250, 'hard', s => s.bestNotLast >= 25, s => [s.bestNotLast, 25]),
     once('emperor', '👑', 'الإمبراطور', 'كن ملك 5 ألعاب في نفس الوقت', 400, 'hard', s => s.kingOf >= 5, s => [s.kingOf, 5]),
     once('reign', '🥇', 'المتصدر الدائم', 'ابقَ الأول في الترتيب 30 يوم متواصل', 400, 'hard', s => s.leadDays >= 30, s => [s.leadDays, 30]),
-    once('sniper', '🎯', 'القنّاص', 'اغلب كل واحد في الشلة في تحدي رسمي', 400, 'hard', s => s.sniper, s => [s.chalBeaten, s.others]),
-    once('goat', '🐐', 'الأسطورة الحية', 'في لعبة وحدة، اغلب كل واحد في الشلة 3 مرات', 500, 'hard', s => s.goat),
+    once('sniper', '🎯', 'القنّاص', 'اغلب كل واحد في العيال في تحدي رسمي', 400, 'hard', s => s.sniper, s => [s.chalBeaten, s.others]),
+    once('goat', '🐐', 'الأسطورة الحية', 'في لعبة وحدة، اغلب كل واحد في العيال 3 مرات', 500, 'hard', s => s.goat),
     once('perfect', '💯', 'المثالي', 'فز في 10 أقيام من أصل 12 متتابعة', 500, 'hard', s => s.perfect, s => [s.best12, 10]),
     once('chameleon', '🎭', 'الحرباية', `فز بكل طرق الفوز الموجودة (${ctx.scoringTypes.length} طرق)`, 300, 'hard', s => s.scorings >= ctx.scoringTypes.length, s => [s.scorings, ctx.scoringTypes.length]),
     once('patient', '⏱️', 'الصبور', 'فز في قيم استمر ساعتين ونص أو أكثر', 200, 'hard', s => s.longWin),
     once('nomad', '🧳', 'الرحّال', 'العب 20 لعبة مختلفة في شهر واحد', 300, 'hard', s => s.monthGames >= 20, s => [s.monthGames, 20]),
 
-    once('family', '🫂', 'العائلة', 'احضر 10 جلسات حضرتها الشلة كاملة', 200, 'crew', s => s.fullDays >= 10, s => [s.fullDays, 10]),
-    once('generous', '🎁', 'الكريم', 'أهدِ XP لأحد من الشلة 10 مرات', 100, 'crew', s => s.gifts >= 10, s => [s.gifts, 10]),
+    once('family', '🫂', 'العائلة', 'احضر 10 جلسات حضرتها العيال كاملة', 200, 'crew', s => s.fullDays >= 10, s => [s.fullDays, 10]),
+    once('generous', '🎁', 'الكريم', 'أهدِ XP لأحد من العيال 10 مرات', 100, 'crew', s => s.gifts >= 10, s => [s.gifts, 10]),
     once('historian', '📜', 'المؤرخ', 'اكتب 15 مذكرة لأقيام', 150, 'crew', s => s.stories >= 15, s => [s.stories, 15]),
-    once('beloved', '🙏', 'محبوب الشلة', 'خذ 25 شكر على التجهيز', 200, 'crew', s => s.thanked >= 25, s => [s.thanked, 25]),
+    once('beloved', '🙏', 'محبوب العيال', 'خذ 25 شكر على التجهيز', 200, 'crew', s => s.thanked >= 25, s => [s.thanked, 25]),
     once('luckyme', '🍀', 'المحظوظ رغماً عنه', 'ينحط «بالحظ» على 5 من انتصاراتك', 100, 'crew', s => s.luckyMarked >= 5, s => [s.luckyMarked, 5]),
     once('mentor', '🤝', 'العرّاب الناجح', 'كن عرّاب لاعب يوصل مستوى 10', 300, 'crew', s => s.mentorOk),
     once('taste', '👨‍🍳', 'صاحب الذوق', 'اختر للجلسة 10 ألعاب تنلعب فعلاً', 150, 'crew', s => s.tasteHits >= 10, s => [s.tasteHits, 10]),

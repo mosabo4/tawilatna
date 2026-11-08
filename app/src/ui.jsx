@@ -40,7 +40,7 @@ export function initials(player, all) {
   const clash = all?.some(o => o.id !== player.id && o.name.trim()[0] === n[0])
   return clash ? n.slice(0, 2) : n[0]
 }
-// صور الشلة (بدون خلفية) — الراس يطلع من الدائرة لفوق
+// صور العيال (بدون خلفية) — الراس يطلع من الدائرة لفوق
 const PHOTOS = { 'مصعب': 'musab', 'هاني': 'hani', 'محمدي': 'mohammadi', 'معتز': 'muataz', 'فارس': 'fares', 'اياد': 'eyad', 'إياد': 'eyad' }
 export const photoOf = p => (p && PHOTOS[(p.realName || p.name).trim()] ? `${import.meta.env.BASE_URL}players/${PHOTOS[(p.realName || p.name).trim()]}.webp` : null)
 

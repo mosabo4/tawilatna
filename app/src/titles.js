@@ -16,7 +16,7 @@ export const TITLE_DEFS = [
   // أسطورية
   T('sultan', 'سلطان الطاولة', '👑', 'legend', 'ابقَ المتصدر في الترتيب 60 يوم متواصل', '#7a5a12', '#e9b425', '#ffe08a', s => [s.leadDays, 60]),
   T('kingofkings', 'ملك الملوك', '🏰', 'legend', 'كن ملك 3 ألعاب من 3 تصانيف مختلفة', '#6b4a10', '#d4a017', '#ffd56b', s => [s.kingCats, 3]),
-  T('conqueror', 'القاهر', '⚔️', 'epic', 'اغلب كل واحد في الشلة 10 مرات', '#5a0f1f', '#c2185b', '#ff8fb1', s => [s.minBeat, 10]),
+  T('conqueror', 'القاهر', '⚔️', 'epic', 'اغلب كل واحد في العيال 10 مرات', '#5a0f1f', '#c2185b', '#ff8fb1', s => [s.minBeat, 10]),
   T('nemesis', 'عقدة الجميع', '🌀', 'legend', 'كل واحد لعبت معه 10 أقيام على الأقل يكون خسر قدّامك أكثر ما فاز عليك', '#1f2a6b', '#5b7cff', '#a9b8ff', s => [s.nemesisOk, s.others]),
   // ملحمية
   T('general', 'الجنرال', '🎖️', 'legend', 'فز 15 مرة في ألعاب الاستراتيجية', '#1e3a2a', '#2e9e5b', '#7be3a6', s => [s.stratWins, 15]),
@@ -139,7 +139,7 @@ export function unlockHistory(idx, pid) {
   return out.sort((a, b) => b.at.localeCompare(a.at) || order[a.kind] - order[b.kind])
 }
 
-// أحداث الفتح لكل الشلة في آخر أيام (إنجازات، ألقاب، مستويات) للأحداث الأخيرة
+// أحداث الفتح لكل العيال في آخر أيام (إنجازات، ألقاب، مستويات) للأحداث الأخيرة
 export function unlockEvents(idx, days = 14) {
   const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
   const set = new Set()

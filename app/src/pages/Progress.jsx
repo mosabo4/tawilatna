@@ -37,7 +37,7 @@ export default function Progress({ sub }) {
   if (!me) return <div className="page"><TopBar title="المستوى" backTo="/me" /><p className="muted pad">ادخل باسمك عشان تشوف تقدّمك.</p></div>
   if (sub === 'titles') return <div className="page"><TopBar title="الألقاب" backTo="/progress" /><TitlesList /></div>
   if (sub === 'ach') return <div className="page"><TopBar title="الإنجازات" backTo="/progress" /><div className="stack"><AchList /><XpHow /></div></div>
-  if (sub === 'crew') return <div className="page"><TopBar title="مستويات الشلة" backTo="/progress" /><div className="stack"><CrewLevels /></div></div>
+  if (sub === 'crew') return <div className="page"><TopBar title="مستويات العيال" backTo="/progress" /><div className="stack"><CrewLevels /></div></div>
   return <div className="page"><TopBar title="المستوى" backTo="/me" /><Main /></div>
 }
 
@@ -88,7 +88,7 @@ function Main() {
     { id: 'award', icon: '🛠️', name: 'صانع الجوائز', val: 'اخترع جائزة' },
     { id: 'luckbox', icon: '🎁', name: 'صندوق الحظ', val: cooldownLeft(idx, me.id, 'luckbox', 7) ? `بعد ${cooldownLeft(idx, me.id, 'luckbox', 7)} يوم` : 'افتحه!' },
     { id: 'hotseat', icon: '🔥', name: 'الكرسي الساخن', val: cooldownLeft(idx, me.id, 'hotseat', 30) ? `بعد ${cooldownLeft(idx, me.id, 'hotseat', 30)} يوم` : 'جاهز' },
-    { id: 'box', icon: '💰', name: 'صندوق الشلة', val: cooldownLeft(idx, me.id, 'box', 7) ? `بعد ${cooldownLeft(idx, me.id, 'box', 7)} يوم` : 'حط XP' },
+    { id: 'box', icon: '💰', name: 'صندوق العيال', val: cooldownLeft(idx, me.id, 'box', 7) ? `بعد ${cooldownLeft(idx, me.id, 'box', 7)} يوم` : 'حط XP' },
   ].filter(p => can(p.id))
 
   const editors = {
@@ -222,7 +222,7 @@ function Main() {
       </section>
 
       <section>
-        <h2 className="h-sec">شكلك عند الشلة</h2>
+        <h2 className="h-sec">شكلك عند العيال</h2>
         <div className="glass pg-look" style={{ '--c': active.color || me.color, ...(active.bg ? { background: active.bg.css } : {}) }}>
           <div className="pl-prev"><Avatar player={me} size={56} /><span><b>{me.name}</b>{active.title ? <TitleBadge title={active.title} kind={active.titleKind} small /> : <small className="muted">بدون لقب</small>}</span></div>
           <div className="pl-opts">
@@ -250,13 +250,13 @@ function Main() {
 
       {awards.length > 0 && (
         <section className="glass awards">
-          <b>🛠️ جوائز اخترعتها الشلة</b>
+          <b>🛠️ جوائز اخترعتها العيال</b>
           <ul>{awards.map(a => <li key={a.id}><b>{a.data?.name}</b><small>{a.data?.desc} · {nameOf(a.player_id)}</small>{(a.player_id === me.id || me.is_admin) && <button className="link-btn danger" onClick={() => undoAction(a.id, 'انشالت')}>شيل</button>}</li>)}</ul>
         </section>
       )}
 
       <nav className="me-links slim">
-        <a className="me-link" href="#/progress/crew"><span>📈</span><b>مستويات الشلة</b><em>بالتفصيل</em><i aria-hidden="true">‹</i></a>
+        <a className="me-link" href="#/progress/crew"><span>📈</span><b>مستويات العيال</b><em>بالتفصيل</em><i aria-hidden="true">‹</i></a>
         <a className="me-link" href="#/progress/ach"><span>⚡</span><b>كيف أجمع XP</b><em>كل الطرق</em><i aria-hidden="true">‹</i></a>
       </nav>
 

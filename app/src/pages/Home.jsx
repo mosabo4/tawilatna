@@ -44,7 +44,7 @@ export default function Home() {
   const needs = []
   if (me && unrated.length) needs.push({ icon: '⭐', title: unrated.length === 1 ? `قيّم ${unrated[0].name}` : `قيّم ${unrated.length} ألعاب`, sub: unrated.slice(0, 3).map(g => g.name).join('، '), href: `#/game/${unrated[0].id}`, btn: 'قيّم', hot: true })
   if (me && !mine.size) needs.push({ icon: '🎲', title: 'اختر ألعاب الجلسة', sub: 'وش ودك تلعب المرة الجاية؟', href: '#/friday', btn: 'اختر' })
-  if (newPosts) needs.push({ icon: '💬', title: `${newPosts} كتابات جديدة`, sub: 'في لوحة الشلة', href: '#/board', btn: 'افتح' })
+  if (newPosts) needs.push({ icon: '💬', title: `${newPosts} كتابات جديدة`, sub: 'في لوحة العيال', href: '#/board', btn: 'افتح' })
   if (me && fx) {
     const nm = id => idx.playersById.get(id)?.name
     for (const c of fx.challenges.filter(c => c.target === me.id && !c.play).slice(0, 2)) needs.push({ icon: '⚔️', title: `${nm(c.player_id)} يتحداك`, sub: c.game_id ? `في ${idx.gamesById.get(c.game_id)?.name}` : 'أول قيم يجمعكم ينحسب', href: `#/player/${c.player_id}`, btn: 'شوف', hot: true })
@@ -64,7 +64,7 @@ export default function Home() {
       {goldenAlert(idx) && <div className="golden-alert"><span>📢</span><p>{goldenAlert(idx).data?.text}<small>— {idx.playersById.get(goldenAlert(idx).player_id)?.name}</small></p></div>}
       {announces.map(c => <div key={c.id} className="announce">📣 <b>{nm(c.winner)}</b> سحق <b>{nm(c.winner === c.player_id ? c.target : c.player_id)}</b> في تحدي رسمي{c.play ? ` (${idx.gamesById.get(c.play.game_id)?.name})` : ''}!</div>)}
       {hs && <div className="announce hot">🔥 الكرسي الساخن: الكل يتحدى <b>{nm(hs.target)}</b> هالأسبوع</div>}
-      {box && <div className="announce boxa">💰 في صندوق الشلة <b>{box.amount} XP</b> لأول واحد يفوز!</div>}
+      {box && <div className="announce boxa">💰 في صندوق العيال <b>{box.amount} XP</b> لأول واحد يفوز!</div>}
       <Scenes />
 
       {live ? (
@@ -146,7 +146,7 @@ export default function Home() {
   )
 }
 
-// مشاهد الشلة: لو أكثر من واحد حاط مشهد، تتبدل كل 6 ثواني ويقدر يضغط على النقاط
+// مشاهد العيال: لو أكثر من واحد حاط مشهد، تتبدل كل 6 ثواني ويقدر يضغط على النقاط
 function Scenes() {
   const { idx } = useStore()
   const levels = useMemo(() => computeLevels(idx), [idx])
@@ -180,7 +180,7 @@ function BoardPeek({ seen }) {
     try { await act((p, pin) => api.addPost(p, pin, text.trim()), 'انكتبت'); setText('') } catch { /* toast */ } finally { setBusy(false) }
   }
   return (
-    <Section title="💬 لوحة الشلة" action={<a className="more" href="#/board">الكل</a>}>
+    <Section title="💬 لوحة العيال" action={<a className="more" href="#/board">الكل</a>}>
       {posts.length > 0 && (
         <ul className="posts peek">
           {posts.map(p => {
@@ -202,7 +202,7 @@ function BoardPeek({ seen }) {
       )}
       {me && (
         <form className="quick-post" onSubmit={send}>
-          <input className="input" maxLength={1000} value={text} onChange={e => setText(e.target.value)} placeholder="اكتب شي للشلة…" />
+          <input className="input" maxLength={1000} value={text} onChange={e => setText(e.target.value)} placeholder="اكتب شي للعيال…" />
           <button className="btn primary small" disabled={busy || !text.trim()}>انشر</button>
         </form>
       )}

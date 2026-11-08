@@ -249,7 +249,7 @@ export function GameView({ id }) {
         <TableHero game={game} />
         <div className="game-meta">
           <a className="cat-pill" href="#/games" onClick={() => write('tw-gcat', c.id)} style={{ '--t': c.tone }}><i className="dot" />{c.name}</a>
-          <div className="gh-avg"><ScoreBadge value={st.avg} big /><span>{st.ratings.length ? `تقييم الشلة من ${st.ratings.length}` : 'ما أحد قيّمها'}<br /><small className="muted">{st.plays.length} قيم، {ago(daysSince(st.lastPlayed))}{owner ? `، لعبة ${owner.name}` : ''}</small></span></div>
+          <div className="gh-avg"><ScoreBadge value={st.avg} big /><span>{st.ratings.length ? `تقييم العيال من ${st.ratings.length}` : 'ما أحد قيّمها'}<br /><small className="muted">{st.plays.length} قيم، {ago(daysSince(st.lastPlayed))}{owner ? `، لعبة ${owner.name}` : ''}</small></span></div>
         </div>
 
         {(() => { const k = kingOf(idx, id); return k?.player ? <a className="glass king" href={`#/player/${k.player.id}`}><Avatar player={k.player} size={34} /><span><small>👑 ملك اللعبة</small><b>{k.player.name}</b></span><em>{k.wins} فوز · قدّام الثاني بـ{k.gap}</em></a> : null })()}
@@ -272,7 +272,7 @@ export function GameView({ id }) {
 
         <ExpansionsSection game={game} baseAvg={st.avg} />
 
-        <Section title="تقييمات الشلة">
+        <Section title="تقييمات العيال">
           {ratingsSorted.length ? (
             <ul className="bars">
               {ratingsSorted.map(r => {

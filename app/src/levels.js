@@ -19,13 +19,13 @@ export const XP_RULES = [
   { id: 'thanks', icon: '🙏', label: 'أحد يشكرك على التجهيز', xp: 20 },
   { id: 'thankGive', icon: '🤝', label: 'تشكر اللي جهّز اللعبة (مستوى 3)', xp: 10 },
   { id: 'predict', icon: '🔮', label: 'توقّع صحيح للفايز (مستوى 8، ويصير +30 من مستوى 15)', xp: 15 },
-  { id: 'fullhouse', icon: '👨‍👩‍👦', label: 'جلسة حضرتها الشلة كاملة', xp: 20 },
-  { id: 'gift', icon: '🎁', label: 'هدية من واحد من الشلة', xp: 50 },
+  { id: 'fullhouse', icon: '👨‍👩‍👦', label: 'جلسة حضرتها العيال كاملة', xp: 20 },
+  { id: 'gift', icon: '🎁', label: 'هدية من واحد من العيال', xp: 50 },
   { id: 'lucky', icon: '🍀', label: 'فوز انحط عليه «بالحظ»: ينقص نص XP القيم', xp: 0 },
   { id: 'luckbox', icon: '🎁', label: 'صندوق الحظ (مستوى 4)', xp: 0 },
   { id: 'risk', icon: '⚡', label: 'Double or Nothing: +300 لو فزت، -50 لو خسرت (مستوى 11)', xp: 0 },
   { id: 'godfather', icon: '🤝', label: 'العرّاب: +20 لك، والتلميذ نص XP أقيامك (مستوى 16)', xp: 0 },
-  { id: 'box', icon: '💰', label: 'صندوق الشلة: تحطه أو تكسبه (مستوى 18)', xp: 0 },
+  { id: 'box', icon: '💰', label: 'صندوق العيال: تحطه أو تكسبه (مستوى 18)', xp: 0 },
   { id: 'guarantee', icon: '🛟', label: 'ضمان الخاسر: آخر واحد في الجلسة ياخذ +20', xp: 0 },
 ]
 const XP = Object.fromEntries(XP_RULES.map(r => [r.id, r.xp]))
@@ -35,7 +35,7 @@ export const xpFor = L => (L <= 1 ? 0 : L === 2 ? 300 : Math.round((150 * (L - 1
 export const levelFromXp = xp => { let L = 1; while (xpFor(L + 1) <= xp) L++; return L }
 
 export const TITLES = [
-  [1, 'زائر الطاولة'], [3, 'من الشلة'], [5, 'لاعب ثابت'], [8, 'خبير الدولاب'], [10, 'أسطورة الطاولة'],
+  [1, 'زائر الطاولة'], [3, 'من العيال'], [5, 'لاعب ثابت'], [8, 'خبير الدولاب'], [10, 'أسطورة الطاولة'],
 ]
 export const titleOf = L => TITLES.filter(([l]) => l <= L).at(-1)[1]
 
@@ -45,15 +45,15 @@ export const REWARDS = [
   { level: 2, id: 'reacts', icon: '😂', name: 'ردود فعل', desc: 'إيموجي على كتابات اللوحة' },
   { level: 3, id: 'title', icon: '🏷️', name: 'لقب جنب اسمك', desc: 'تحط جنب اسمك واحد من الألقاب اللي فتحتها' },
   { level: 3, id: 'thanks', icon: '🙏', name: 'شكر المجهّز', desc: 'تشكر اللي جهّز اللعبة الثقيلة: هو ياخذ +20 XP وأنت +10' },
-  { level: 3, id: 'story', icon: '📜', name: 'المذكرات', desc: 'تكتب قصة قيم مميز وتنحفظ في سجل الشلة' },
+  { level: 3, id: 'story', icon: '📜', name: 'المذكرات', desc: 'تكتب قصة قيم مميز وتنحفظ في سجل العيال' },
   { level: 4, id: 'f-silver', icon: '🥈', name: 'إطار فضي', desc: 'أول إطار لصورتك' },
   { level: 4, id: 'luckbox', icon: '🎁', name: 'صندوق الحظ', desc: 'مرة بالأسبوع تفتح صندوق فيه XP عشوائي' },
   { level: 4, id: 'pin', icon: '📌', name: 'تثبيت كتابة', desc: 'كتابة وحدة لك فوق اللوحة' },
   { level: 5, id: 'vote2', icon: '🗳️', name: 'صوت مضاعف', desc: 'اختياراتك للجلسة الجاية تنحسب صوتين' },
-  { level: 6, id: 'tease', icon: '😭', name: 'الطقطقة', desc: 'ملصق على صورة واحد من الشلة 3 أيام، مرة بالأسبوع' },
+  { level: 6, id: 'tease', icon: '😭', name: 'الطقطقة', desc: 'ملصق على صورة واحد من العيال 3 أيام، مرة بالأسبوع' },
   { level: 6, id: 'eleven', icon: '🔥', name: 'تقييم 11 من 10', desc: 'لعبة وحدة من كل تصنيف تعطيها 11' },
   { level: 6, id: 'pose', icon: '🕺', name: 'وضعية شخصيتك', desc: 'تختار وش وضعية شخصيتك اللي تطلع للكل' },
-  { level: 7, id: 'scene', icon: '🎭', name: 'مشهد الرئيسية', desc: 'مشهد متحرك بينك وبين واحد من الشلة في الرئيسية' },
+  { level: 7, id: 'scene', icon: '🎭', name: 'مشهد الرئيسية', desc: 'مشهد متحرك بينك وبين واحد من العيال في الرئيسية' },
   { level: 7, id: 'firstturn', icon: '⏭️', name: 'تجاوز الدور', desc: 'تختار مين يبدأ اللعب في قيم واحد، مرة بالأسبوع' },
   { level: 8, id: 'predict', icon: '🔮', name: 'التوقعات', desc: 'تتوقع الفايز قبل القيم، وإذا صح تاخذ +15 XP' },
   { level: 8, id: 'teampick', icon: '🤜', name: 'اختيار الفريق', desc: 'في الألعاب الجماعية تختار شريكك، مرة بالأسبوع' },
@@ -64,18 +64,18 @@ export const REWARDS = [
   { level: 10, id: 'challenge', icon: '⚔️', name: 'تحدي رسمي', desc: 'تتحدى واحد، وأول قيم بينكم ينحسب في سجل التحديات' },
   { level: 10, id: 'f-gold', icon: '🥇', name: 'إطار ذهبي', desc: 'ذهبي يلف حول صورتك' },
   { level: 10, id: 'nameFx', icon: '🌈', name: 'اسم ملوّن متحرك', desc: 'اسمك بتدرّج ألوان يتحرك في كل مكان' },
-  { level: 11, id: 'retitle', icon: '🏷️', name: 'تغيير لقب صاحبك', desc: 'تكتب لقب لواحد من الشلة يطلع للكل يوم كامل، مرة بالأسبوع' },
+  { level: 11, id: 'retitle', icon: '🏷️', name: 'تغيير لقب صاحبك', desc: 'تكتب لقب لواحد من العيال يطلع للكل يوم كامل، مرة بالأسبوع' },
   { level: 11, id: 'flag', icon: '🏳️', name: 'راية الهزيمة', desc: 'اللي تفوز عليه في تحدي رسمي تطلع على صورته راية بيضاء لين يفوز عليك' },
   { level: 11, id: 'risk', icon: '⚡', name: 'Double or Nothing', desc: 'تخاطر على قيم: لو فزت +300 XP، لو خسرت -50' },
   { level: 12, id: 'bg', icon: '🖼️', name: 'خلفية بطاقتك', desc: 'خلفية خاصة لبطاقتك' },
   { level: 12, id: 'celebrate', icon: '🎉', name: 'احتفال الفوز', desc: 'ورق ملوّن يتطاير مع اسمك في صفحة كل قيم تفوزه' },
-  { level: 12, id: 'gift', icon: '🎁', name: 'إهداء XP', desc: 'تهدي واحد من الشلة 50 XP بدون ما تخسر شي، مرة بالأسبوع' },
+  { level: 12, id: 'gift', icon: '🎁', name: 'إهداء XP', desc: 'تهدي واحد من العيال 50 XP بدون ما تخسر شي، مرة بالأسبوع' },
   { level: 13, id: 'announce', icon: '📣', name: 'إعلان الهزيمة', desc: 'لما تفوز في تحدي رسمي يطلع إعلان للكل في الرئيسية' },
   { level: 13, id: 'report', icon: '🔒', name: 'تقريرك الخاص', desc: 'إحصائيات مخفية لك بس: مين تغلبه أكثر ومين يغلبك' },
   { level: 13, id: 'nick', icon: '🎭', name: 'اسم مستعار', desc: 'تغيّر اسم واحد في التطبيق ساعتين، مرة بالأسبوع' },
   { level: 14, id: 'veto', icon: '🚫', name: 'الفيتو', desc: 'تشيل لعبة من اختيارات الجلسة الجاية، مرة بالشهر' },
   { level: 14, id: 'guarantee', icon: '🛟', name: 'ضمان الخاسر', desc: 'تفعّله لجلسة: آخر واحد فيها ياخذ +20 XP، مرة بالشهر' },
-  { level: 14, id: 'faceSticker', icon: '😜', name: 'ملصق وجهك', desc: 'وجهك يصير ردّ فعل تستخدمه الشلة في اللوحة' },
+  { level: 14, id: 'faceSticker', icon: '😜', name: 'ملصق وجهك', desc: 'وجهك يصير ردّ فعل تستخدمه العيال في اللوحة' },
   { level: 15, id: 'lucky', icon: '🍀', name: 'ماسح الفوز', desc: 'تحط «بالحظ 🍀» على فوز واحد: الفوز ينحسب بس ياخذ نص الـXP، مرة بالشهر' },
   { level: 15, id: 'predict2', icon: '🔮', name: 'التوقع المضاعف', desc: 'توقعك الصحيح يعطيك +30 بدال +15' },
   { level: 15, id: 'swap', icon: '🔀', name: 'تبديل المركز', desc: 'إذا تعادلت بالنقاط مع اللي قدّامك تاخذ مركزه، مرة بالشهر' },
@@ -85,13 +85,13 @@ export const REWARDS = [
   { level: 17, id: 'hotseat', icon: '🔥', name: 'الكرسي الساخن', desc: 'تختار واحد لازم الكل يتحداه الجلسة الجاية، مرة بالشهر' },
   { level: 17, id: 'frame2', icon: '🎨', name: 'إطار بألوانك', desc: 'إطار بلونين تختارهم أنت' },
   { level: 17, id: 'opener', icon: '🎬', name: 'لعبة الافتتاح', desc: 'تحدد أول لعبة في الجلسة الجاية، مرة بالشهر' },
-  { level: 18, id: 'box', icon: '💰', name: 'صندوق الشلة', desc: 'تحط من XP حقك في صندوق، وأول واحد يفوز ياخذه، مرة بالأسبوع' },
+  { level: 18, id: 'box', icon: '💰', name: 'صندوق العيال', desc: 'تحط من XP حقك في صندوق، وأول واحد يفوز ياخذه، مرة بالأسبوع' },
   { level: 18, id: 'customTitle', icon: '✍️', name: 'لقب تكتبه بنفسك', desc: 'لقبك أنت تختار كلامه' },
   { level: 18, id: 'legendPage', icon: '🏛️', name: 'صفحة الأسطورة', desc: 'قسم في صفحتك فيه أعظم انتصاراتك' },
   { level: 19, id: 'alert', icon: '📢', name: 'التنبيه الذهبي', desc: 'تنبيه يطلع للكل في أعلى الرئيسية يوم كامل، مرة بالأسبوع' },
   { level: 19, id: 'immune', icon: '🛡️', name: 'الحصانة', desc: 'محد يقدر يطقطق عليك أسبوع كامل، مرة بالشهر' },
   { level: 20, id: 'hall', icon: '🏛️', name: 'قاعة المشاهير', desc: 'صورتك تنحط في الرئيسية كأسطورة' },
-  { level: 20, id: 'award', icon: '🛠️', name: 'صانع الجوائز', desc: 'تخترع جائزة تنضاف لقائمة جوائز الشلة' },
+  { level: 20, id: 'award', icon: '🛠️', name: 'صانع الجوائز', desc: 'تخترع جائزة تنضاف لقائمة جوائز العيال' },
 ]
 export const levelOfReward = id => REWARDS.find(r => r.id === id)?.level ?? 99
 
@@ -103,7 +103,7 @@ export function computeLevels(idx) {
   const pre = []
   const chrono = [...idx.plays].reverse()
   const sessionDays = [...new Set(chrono.map(p => p.played_on))]
-  // أيام حضرها كل الشلة
+  // أيام حضرها كل العيال
   const fullDays = sessionDays.filter(d => { const who = new Set(chrono.filter(p => p.played_on === d).flatMap(p => p.results.map(r => r.player_id))); return idx.players.length > 1 && idx.players.every(pl => who.has(pl.id)) })
   const out = new Map()
   for (const pl of idx.players) {
@@ -121,7 +121,7 @@ export function computeLevels(idx) {
         if (r.position === 1) { wins++; winPts += winXp(p, g); run++; bestWinStreak = Math.max(bestWinStreak, run); if (g?.category) winCats.add(g.category); if (p.results.length >= 5) bigWin = true } else run = 0
       }
     }
-    // جلسات ورا بعض = أيام لعب الشلة المتتالية اللي حضرها
+    // جلسات ورا بعض = أيام لعب العيال المتتالية اللي حضرها
     let srun = 0, streaks = 0
     for (const d of sessionDays) { if (myDays.has(d)) { srun++; if (srun % 3 === 0) streaks++ } else srun = 0 }
     const setups = idx.plays.filter(p => (p.setup_by || []).includes(pl.id)).length

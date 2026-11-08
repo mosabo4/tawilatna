@@ -86,7 +86,7 @@ export function Friday() {
             {me && (opener.player_id === me.id || me.is_admin) && <button className="link-btn" onClick={() => undoAction(opener.id, 'انشالت')}>شيلها</button>}
           </div>
         )}
-        <Section title="وش ودّ الشلة يجربون" action={<span className="muted small">{pickers ? `${pickers} اختاروا` : ''}</span>}>
+        <Section title="وش ودّ العيال يجربون" action={<span className="muted small">{pickers ? `${pickers} اختاروا` : ''}</span>}>
           {ranked.length ? (
             <ol className="friday-rank">
               {ranked.map(({ game, ps, votes, veto }, i) => (
@@ -160,7 +160,7 @@ export function GameComments({ gameId }) {
     )
   }
   return (
-    <Section title="تعليقات الشلة" action={<span className="muted small">{all.length ? `${all.length}` : ''}</span>}>
+    <Section title="تعليقات العيال" action={<span className="muted small">{all.length ? `${all.length}` : ''}</span>}>
       {me && (editing ? (
         <form className="pad form" onSubmit={e => { e.preventDefault(); save(text.trim()) }}>
           <textarea className="input" rows={3} maxLength={500} autoFocus value={text} onChange={e => setText(e.target.value)} placeholder="وش رأيك فيها؟ نصيحة، قاعدة ننساها، أي شي…" />
@@ -182,7 +182,7 @@ export function GameComments({ gameId }) {
   )
 }
 
-// ---------- لوحة الشلة ----------
+// ---------- لوحة العيال ----------
 const timeFmt = new Intl.DateTimeFormat('ar-SA-u-ca-gregory-nu-latn', { hour: 'numeric', minute: '2-digit' })
 function when(iso) {
   const d = new Date(iso), mins = (Date.now() - d) / 60000

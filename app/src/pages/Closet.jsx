@@ -13,7 +13,7 @@ export function CharacterEditor() {
 // كل دور (متى تظهر الشخصية) والصور اللي تخدمه. الأدوار اللي تشترك بنفس الصورة تنعرض مرة وحدة.
 // ready = فيه صورة مخصصة له · borrow = يستعير صورة مؤقتة ويحتاج صورة خاصة · none = ما فيه صورة
 const ROLES = [
-  { id: 'stand', title: 'الوقفة الأساسية', draw: 'واقف عادي مبتسم، وجهه للكاميرا (ممكن عدة وقفات بنفس الفكرة)', where: ['الرئيسية، بطاقة «أنا»، بطاقات الشلة، صفحة اللاعب', '«مين حاضر الليلة؟» قبل الاختيار'], pose: 'idle', extra: ['front', 'side', 'cross'], extraNote: 'وقفات بديلة جاهزة، ما تطلع للحين', ready: true },
+  { id: 'stand', title: 'الوقفة الأساسية', draw: 'واقف عادي مبتسم، وجهه للكاميرا (ممكن عدة وقفات بنفس الفكرة)', where: ['الرئيسية، بطاقة «أنا»، بطاقات العيال، صفحة اللاعب', '«مين حاضر الليلة؟» قبل الاختيار'], pose: 'idle', extra: ['front', 'side', 'cross'], extraNote: 'وقفات بديلة جاهزة، ما تطلع للحين', ready: true },
   { id: 'dice', title: 'رمي النرد', draw: 'يرمي النرد بيده', where: ['مشهد «يرمي النرد على»: اللي يرمي'], pose: 'dice', ready: true },
   { id: 'jump', title: 'النطّة', draw: 'يقفز بفرح', where: ['نجم الليلة في ملخص الجلسة', 'وضعية «النطّة» (جائزة وضعية شخصيتك)'], pose: 'jump', ready: true },
   { id: 'face', title: 'وجهه (ملصق)', draw: 'وجهه فقط بتعبير واضح', where: ['ملصق وجهه في ردود اللوحة (مستوى 14)'], files: ['bust'], ready: true },
@@ -38,7 +38,7 @@ function rolesFor(sty) {
   })
 }
 
-// للمسؤول: وضعيات كل الشلة
+// للمسؤول: وضعيات كل العيال
 function AllPoses() {
   const { idx } = useStore()
   const players = idx.players.filter(pl => IMG_CHARS[(pl.realName || pl.name).trim()])

@@ -24,7 +24,7 @@ function Award({ a }) {
         <b>{a.title}</b>
         <small>{a.desc}</small>
         {a.empty ? <Pending /> : a.who.length > 3
-          ? <div className="rc-aw-who"><Avs who={a.who} size={26} /><span><strong>تعادل بين {a.who.length} من الشلة</strong><em>{a.text}</em></span></div>
+          ? <div className="rc-aw-who"><Avs who={a.who} size={26} /><span><strong>تعادل بين {a.who.length} من العيال</strong><em>{a.text}</em></span></div>
           : <div className="rc-aw-who"><Avs who={a.who} size={30} /><span><strong><Names who={a.who} /></strong><em>{a.text}</em></span></div>}
       </div>
     </div>
@@ -131,7 +131,7 @@ export default function Recap({ month }) {
 
     ...chunk(r.persona, 4).map((part, k) => (
       <div key={'pe' + k}>
-        <h2>شخصيات الشلة {k > 0 ? <small>({k + 1})</small> : null}</h2>
+        <h2>شخصيات العيال {k > 0 ? <small>({k + 1})</small> : null}</h2>
         <div className="rc-awards">{part.map(a => <Award key={a.id} a={a} />)}</div>
         {k === 0 && <p className="rc-note">ألقاب غير الفوز: مين يتعلم، مين يعرف، ووش ذوق كل واحد.</p>}
       </div>
@@ -175,7 +175,7 @@ export default function Recap({ month }) {
     </div>,
 
     <div key="activity">
-      <h2>نشاط الشلة</h2>
+      <h2>نشاط العيال</h2>
       <div className="rc-nums small">
         <div><b>{r.activity.ratings}</b><span>تقييم انضاف</span></div>
         <div><b>{r.activity.posts}</b><span>كتابة في اللوحة</span>{r.activity.poster && <i>أكثرهم: <Names who={r.activity.poster.items.map(x => x.player)} /></i>}</div>

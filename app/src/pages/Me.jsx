@@ -60,7 +60,7 @@ function RecapLauncher() {
   const start = () => { document.documentElement.requestFullscreen?.().catch(() => {}); go(`/recap/${m}`) }
   return (
     <div className="pad form">
-      <p className="hint" style={{ margin: 0 }}>عرض كامل للشهر بالإحصائيات والجوائز، تعرضه على الشلة. اضغط على الشاشة أو الأسهم عشان تنتقل بين الشرائح.</p>
+      <p className="hint" style={{ margin: 0 }}>عرض كامل للشهر بالإحصائيات والجوائز، تعرضه على العيال. اضغط على الشاشة أو الأسهم عشان تنتقل بين الشرائح.</p>
       <div className="row gap">
         <select className="input" value={m} onChange={e => setM(e.target.value)} aria-label="الشهر">
           {months.map(x => <option key={x} value={x}>{monthName(x)}</option>)}
@@ -94,8 +94,8 @@ function Admin() {
   return (
     <>
       <Section title="ملخص الشهر 🎬"><RecapLauncher /></Section>
-      <Section title="شرح الموقع 📖"><div className="pad form"><p className="hint" style={{ margin: 0 }}>عرض يشرح للشلة نظام الموقع: النقاط، المستويات، الجوائز، الإنجازات، الألقاب.</p><button className="btn primary" onClick={() => { document.documentElement.requestFullscreen?.().catch(() => {}); go('/guide') }}>▶ اعرض الشرح</button></div></Section>
-      <Section title="دخول الشلة"><LockToggle /></Section>
+      <Section title="شرح الموقع 📖"><div className="pad form"><p className="hint" style={{ margin: 0 }}>عرض يشرح للعيال نظام الموقع: النقاط، المستويات، الجوائز، الإنجازات، الألقاب.</p><button className="btn primary" onClick={() => { document.documentElement.requestFullscreen?.().catch(() => {}); go('/guide') }}>▶ اعرض الشرح</button></div></Section>
+      <Section title="دخول العيال"><LockToggle /></Section>
       <Section title="إدارة اللاعبين" action={editing !== 'new' && <button className="btn small ghost" onClick={() => setEditing('new')}>أضف لاعب</button>}>
         {editing === 'new' && <PlayerEditor onDone={() => setEditing(null)} />}
         <ul className="admin-players">
@@ -233,14 +233,14 @@ export function PlayerCard({ pid, href }) {
   )
 }
 
-// بطاقات الشلة كلها، الأعلى مستوى أول
+// بطاقات العيال كلها، الأعلى مستوى أول
 function AllCards() {
   const { me } = useStore()
   const levels = useLevels()
   const list = [...levels.values()].sort((a, b) => b.xp - a.xp)
   return (
     <div className="page">
-      <TopBar title="بطاقات الشلة" backTo="/me" />
+      <TopBar title="بطاقات العيال" backTo="/me" />
       <div className="stack">
         {list.map(l => <PlayerCard key={l.player.id} pid={l.player.id} href={l.player.id === me?.id ? '#/progress' : `#/player/${l.player.id}`} />)}
       </div>

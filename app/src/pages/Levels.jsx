@@ -23,7 +23,7 @@ export function CrewLevels() {
   const levels = useLevels()
   const list = [...levels.values()].sort((a, b) => b.xp - a.xp)
   return (
-    <Section title="مستويات الشلة">
+    <Section title="مستويات العيال">
       <ol className="lv-list">
         {list.map(l => (
           <li key={l.player.id} className={l.player.id === me?.id ? 'mine' : ''}>
