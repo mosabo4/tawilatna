@@ -10,7 +10,7 @@ export const XP_RULES = [
   { id: 'newgame', icon: '🆕', label: 'لعبة تجربها لأول مرة', xp: 40 },
   { id: 'rate', icon: '⭐', label: 'تقييم لعبة', xp: 10 },
   { id: 'comment', icon: '💬', label: 'تعليق على لعبة', xp: 5 },
-  { id: 'win', icon: '🏆', label: 'الفوز في قيم: حسب صعوبة اللعبة ومدتها', xp: 5, range: '5 – 40' },
+  { id: 'win', icon: '🏆', label: 'الفوز في قيم (حسب الصعوبة والمدة)', xp: 5, range: '+5 → 40' },
   { id: 'picks', icon: '🙋', label: 'تختار ألعاب للجلسة الجاية (مرة لكل جلسة)', xp: 5 },
   { id: 'post', icon: '📝', label: 'كتابة في اللوحة (3 باليوم بالكثير)', xp: 2 },
   { id: 'streak', icon: '🔥', label: 'كل 3 جلسات ورا بعض', xp: 60 },

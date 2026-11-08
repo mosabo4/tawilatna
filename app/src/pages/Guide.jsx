@@ -20,7 +20,7 @@ export default function Guide() {
   const victim = crew.at(-1)?.player
   const rules = XP_RULES.filter(r => r.xp > 0 && !['thankGive'].includes(r.id))
   const pick = ids => ids.map(id => REWARDS.find(r => r.id === id)).filter(Boolean)
-  const titleEx = ['sultan', 'general', 'wolf', 'teacher', 's67', 'runnerup'].map(id => TITLE_DEFS.find(t => t.id === id)).filter(Boolean)
+  const titleEx = ['sultan', 'general', 'teacher', 's67'].map(id => TITLE_DEFS.find(t => t.id === id)).filter(Boolean)
 
   const slides = [
     <div className="rc-cover end" key="cover">
@@ -65,7 +65,7 @@ export default function Guide() {
 
     <div key="xp">
       <h2>الـXP <small>تجمعه بالحضور والتفاعل، مو بالفوز بس</small></h2>
-      <div className="gd-xp">{rules.map(r => <div key={r.id}><span>{r.icon}</span><small>{r.label.replace(/ \(.*\)$/, '')}</small><b>+{r.range || r.xp}</b></div>)}</div>
+      <div className="gd-xp">{rules.map(r => <div key={r.id}><span>{r.icon}</span><small>{r.label.replace(/ \(.*\)$/, '')}</small><b>{r.range || `+${r.xp}`}</b></div>)}</div>
       <p className="gd-note">وفوقها: الإنجازات، صندوق الحظ، الهدايا، والتوقعات</p>
     </div>,
 

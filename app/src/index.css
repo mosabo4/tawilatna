@@ -1673,3 +1673,8 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .role-imgs img { max-width: 120px; }
 .lim-sec { padding: 4px 12px 8px; } .lim-sec h3 { margin: 10px 2px 8px; font-size: 15px; }
 .lim-sec .tlist { display: grid; gap: 10px; }
+@media (max-width: 600px) {
+  .gd-xp { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .gd-xp div { padding: 6px 8px; gap: 6px; }
+  .gd-xp small { font-size: 11px; line-height: 1.3; } .gd-xp b { font-size: 12px; white-space: nowrap; }
+}
