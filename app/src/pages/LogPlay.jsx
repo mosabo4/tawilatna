@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { Fragment, useMemo, useState } from 'react'
+import { Fragment, useMemo, useRef, useState } from 'react'
 import { useStore, go } from '../store'
 import { api } from '../api'
 import { Avatar, TopBar, Cover, Confirm, today, Field, Empty, playersText } from '../ui'
@@ -33,6 +33,45 @@ const MODE_TIPS = {
   elim: 'اضغط على اللي يطلعون بالترتيب، وآخر واحد يبقى هو الفايز',
   teams: 'وزّع اللاعبين على الفرق، ثم اضغط «فاز» على الفريق الفايز',
   coop: 'كلكم تفوزون أو كلكم تخسرون',
+}
+
+// مؤشر وقت قابل للسحب: نافذة من 12 ظهراً إلى 12 ظهر اليوم التالي
+const toOff = t => { if (!t) return null; const [h, m] = t.split(':').map(Number); return ((h * 60 + m - 720) % 1440 + 1440) % 1440 }
+const fromOff = o => { const t = (o + 720) % 1440; return `${String(Math.floor(t / 60)).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}` }
+const fmt12 = o => { const t = (o + 720) % 1440; const h = Math.floor(t / 60), m = t % 60; return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'م' : 'ص'}` }
+function TimeDial({ start, end, onChange }) {
+  const ref = useRef(null)
+  const a = toOff(start) ?? 480, b = toOff(end) ?? 600
+  const set = (which, o) => {
+    const v = Math.max(0, Math.min(1439, Math.round(o / 5) * 5))
+    if (which === 'a') onChange(fromOff(Math.min(v, b - 5)), fromOff(b))
+    else onChange(fromOff(a), fromOff(Math.max(v, a + 5)))
+  }
+  const move = which => e => {
+    if (!e.currentTarget.hasPointerCapture?.(e.pointerId)) return
+    const r = ref.current.getBoundingClientRect()
+    set(which, ((e.clientX - r.left) / r.width) * 1440)
+  }
+  const down = e => e.currentTarget.setPointerCapture(e.pointerId)
+  const tap = e => {
+    if (e.target !== ref.current && !e.target.classList.contains('lg-fill')) return
+    const r = ref.current.getBoundingClientRect(); const o = ((e.clientX - r.left) / r.width) * 1440
+    set(Math.abs(o - a) < Math.abs(o - b) ? 'a' : 'b', o)
+  }
+  const pct = o => `${(o / 1440) * 100}%`
+  const on = start && end
+  return (
+    <div className={`lg-dial ${on ? 'on' : ''}`}>
+      <div className="lg-dial-read"><div><small>بدأنا</small><b>{fmt12(a)}</b></div><i>←</i><div><small>خلصنا</small><b>{fmt12(b)}</b></div><div className="lg-dial-d"><small>المدة</small><b>{b - a >= 60 ? `${Math.floor((b - a) / 60)}:${String((b - a) % 60).padStart(2, '0')} ساعة` : `${b - a}د`}</b></div></div>
+      <div className="lg-track" ref={ref} onPointerDown={tap}>
+        <div className="lg-fill" style={{ left: pct(a), width: `${((b - a) / 1440) * 100}%` }} />
+        <span className="lg-th" style={{ left: pct(a) }} onPointerDown={down} onPointerMove={move('a')}><em>🟢</em></span>
+        <span className="lg-th e" style={{ left: pct(b) }} onPointerDown={down} onPointerMove={move('b')}><em>🏁</em></span>
+        {[0, 3, 6, 9, 12, 15, 18, 21].map(h => <u key={h} style={{ left: pct(h * 60) }}>{fmt12(h * 60).replace(':00 ', '')}</u>)}
+      </div>
+      <div className="lg-days">{!on && <small className="muted">اسحب 🟢 و🏁 أو اختر مدة من فوق</small>}</div>
+    </div>
+  )
 }
 
 function Podium({ st, pl, name, story }) {
@@ -416,9 +455,10 @@ export default function LogPlay({ id, presetGame, live }) {
             <p className="lg-datebig">📅 {dateText(date)}</p>
             <span className="sub-label">كم طولت الجلسة؟</span>
             <div className="lg-days">{DURS.map(m => <button key={m} className={`chip ${dur === m ? 'on' : ''}`} onClick={() => setDur(m)}>{m >= 60 ? `${m / 60 === Math.floor(m / 60) ? m / 60 : (m / 60).toFixed(1)} س` : `${m} د`}</button>)}</div>
-            <div className="time-row">
-              <label><small>بدأنا</small><input type="time" className="input" value={startT} onChange={e => setStartT(e.target.value)} /><button type="button" className="link-btn" onClick={() => setStartT(nowT())}>الحين</button></label>
-              <label><small>خلصنا</small><input type="time" className="input" value={endT} onChange={e => setEndT(e.target.value)} /><button type="button" className="link-btn" onClick={() => setEndT(nowT())}>الحين</button></label>
+            <TimeDial start={startT} end={endT} onChange={(a, b) => { setStartT(a); setEndT(b) }} />
+            <div className="lg-days">
+              <button type="button" className="chip" onClick={() => { const n = nowT(); setEndT(n); if (!startT) setDur(60) }}>🏁 خلصنا الحين</button>
+              <button type="button" className="chip" onClick={() => setStartT(nowT())}>🟢 بدأنا الحين</button>
             </div>
             {dur != null && <p className="hint">⏱️ المدة: {dur >= 60 ? `${Math.floor(dur / 60)} ساعة ${dur % 60 ? `و${dur % 60} دقيقة` : ''}` : `${dur} دقيقة`}</p>}
           </>
