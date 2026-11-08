@@ -20,7 +20,7 @@ export default function Guide() {
   const victim = crew.at(-1)?.player
   const rules = XP_RULES.filter(r => r.xp > 0 && !['thankGive'].includes(r.id))
   const pick = ids => ids.map(id => REWARDS.find(r => r.id === id)).filter(Boolean)
-  const titleEx = ['sultan', 'wolf', 'teacher', 's67', 'runnerup', 'runaway'].map(id => TITLE_DEFS.find(t => t.id === id)).filter(Boolean)
+  const titleEx = ['sultan', 'general', 'wolf', 'teacher', 's67', 'runnerup'].map(id => TITLE_DEFS.find(t => t.id === id)).filter(Boolean)
 
   const slides = [
     <div className="rc-cover end" key="cover">
@@ -34,7 +34,7 @@ export default function Guide() {
     <div key="nav">
       <h2>التطبيق بخمس أزرار</h2>
       <div className="gd-grid">
-        <Card icon="🏠" title="الرئيسية">وش يحتاجك، تحدي اليوم، المتصدرين، اللوحة، وآخر الأحداث</Card>
+        <Card icon="🏠" title="الرئيسية">وش يحتاجك، المتصدرين، اللوحة، وآخر الأحداث</Card>
         <Card icon="🎲" title="الألعاب">الدولاب كامل، تقييم كل لعبة، وملك كل لعبة</Card>
         <Card icon="➕" title="سجّل قيم">بعد كل قيم: اللعبة، مين لعب، والنتيجة</Card>
         <Card icon="👥" title="الشلة">الترتيب، اللاعبين، لوحة الكلام، وسجل الأقيام</Card>
@@ -74,7 +74,7 @@ export default function Guide() {
       <div className="rc-nums">
         {[2, 5, 10, 15, 20].map(l => <div key={l}><b>{l}</b><span>ليفل</span><i>{xpFor(l).toLocaleString('en')} XP</i></div>)}
       </div>
-      <div className="gd-big small">كل ليفل يفتح لك 3 جوائز جديدة</div>
+      <div className="gd-big small">كل ليفل يفتح لك جوائز جديدة</div>
       <p className="gd-note">من 2 لين 20، وكل ما ارتفعت صارت الجوائز أقوى وأكثر تأثير على الشلة</p>
     </div>,
 
@@ -82,6 +82,15 @@ export default function Guide() {
       <h2>الجوائز <small>أمثلة</small></h2>
       <div className="gd-grid">
         {pick(['color', 'tease', 'scene', 'baby', 'challenge', 'predict', 'veto', 'lucky', 'immune', 'hall']).map(r => <Card key={r.id} icon={r.icon} title={`ليفل ${r.level} · ${r.name}`}>{r.desc}</Card>)}
+      </div>
+    </div>,
+
+    <div key="limits">
+      <h2>جوائز تتجدد <small>مرة بالأسبوع أو بالشهر</small></h2>
+      <div className="gd-grid">
+        <Card icon="📅" title="مرة بالأسبوع">مثل صندوق الحظ، الطقطقة، تجاوز الدور، واختيار الفريق</Card>
+        <Card icon="🗓️" title="مرة بالشهر">مثل الفيتو، الحصانة، والعرّاب</Card>
+        <Card icon="⏳" title="بعد ما تستخدمها">تتجدد بعد المدة، وتشوف الباقي في «جوائزي المحدودة» بصفحة أنا</Card>
       </div>
     </div>,
 
@@ -122,14 +131,14 @@ export default function Guide() {
       <h2>الألقاب <small>صعبة وتستاهل</small></h2>
       <div className="gd-rar">{Object.values(RARITY).reverse().map(r => <span key={r.name}><i style={{ background: r.dot }} />{r.name}</span>)}</div>
       <div className="gd-grid">{titleEx.map(t => <Card key={t.id} icon={t.icon} title={`${t.name} · ${RARITY[t.rarity].name}`}>{t.desc}</Card>)}</div>
-      <p className="gd-note">{TITLE_DEFS.length} لقب، تلبس واحد منها جنب اسمك من ليفل 3</p>
+      <p className="gd-note">{TITLE_DEFS.length} لقب بثلاث درجات حسب الصعوبة، تلبس واحد منها جنب اسمك من ليفل 3</p>
     </div>,
 
     <div key="session">
       <h2>الجلسة <small>قبل وأثناء وبعد</small></h2>
       <div className="gd-grid">
         <Card icon="🗳️" title="قبل: الجلسة الجاية">كل واحد يختار وش يبي يلعب، والأكثر طلباً يطلع فوق</Card>
-        <Card icon="📋" title="أثناء: قرارات الليلة">قانون منزلي، حجز مقعد، اختيار شريك، والبورد على جهتك</Card>
+        <Card icon="📋" title="أثناء: قرارات الليلة">اختيار شريك، تجاوز الدور، ضمان الخاسر، وDouble or Nothing</Card>
         <Card icon="🔮" title="أثناء: التوقعات">توقّع الفايز قبل القيم، وإذا صح تاخذ XP</Card>
         <Card icon="⚡" title="بعد: XP الليلة">كم أخذ كل واحد، ومين ارتفع ليفله</Card>
       </div>

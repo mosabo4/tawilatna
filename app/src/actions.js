@@ -52,7 +52,7 @@ export function resolveActions(idx) {
       if (d) {
         const mine = idx.plays.filter(p => p.played_on === d && p.results.some(r => r.player_id === a.player_id))
         const earned = mine.length * 10 + mine.filter(p => pos(p, a.player_id) === 1 && p.results.length > 1).length * 5
-        add(a.target, 'godfather', Math.round(earned / 2))
+        add(a.target, 'godfather', Math.round(earned / 2)); add(a.player_id, 'godfather', 20)
       }
     } else if (a.kind === 'box') {
       const amt = Math.max(20, Math.min(100, Number(a.data?.amount) || 0))
