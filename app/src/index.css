@@ -2025,3 +2025,10 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .vt-lane { position: relative; height: 8px; border-radius: 99px; background: var(--hole); }
 .vt-lane i { position: absolute; top: 0; bottom: 0; inset-inline-start: 0; border-radius: 99px; background: var(--bc); box-shadow: 0 0 10px var(--bc); transition: width .5s; }
 .vt-lane u { position: absolute; top: -3px; bottom: -3px; left: 50%; width: 2px; background: rgba(255, 255, 255, .55); }
+.post-slots { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.post-slots span { font-size: 12.5px; color: var(--muted); }
+.post-slots i { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11px; border: 2px dashed var(--line); }
+.post-slots i.used { background: var(--grad); border: 0; color: #fff; }
+.post-slots i.lockd { opacity: .4; }
+.post-slots small { color: var(--muted-2); font-size: 11.5px; }
+.post-full { margin: 0; padding: 8px 12px; border-radius: 12px; background: rgba(242, 193, 78, .12); border: 1px solid rgba(242, 193, 78, .4); font-size: 12.5px; }

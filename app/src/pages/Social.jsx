@@ -281,8 +281,13 @@ export function Board() {
     try { if (mineR) await undoAction(mineR.id); if (!mineR || mineR.data?.e !== e) await doAction('react', { data: { post: postId, e } }) } catch { /* toast */ }
   }
   const posts = [...(idx.posts || [])].sort((a, b) => (pins.has(b.id) - pins.has(a.id)) || b.created_at.localeCompare(a.created_at))
+  const myPosts = me ? posts.filter(p => p.player_id === me.id) : []
+  const pLimit = 1 + (can('post2') ? 1 : 0) + (can('post3') ? 1 : 0)
+  const pFull = myPosts.length >= pLimit
+  const nextP = pLimit < 2 ? levelOfReward('post2') : pLimit < 3 ? levelOfReward('post3') : null
   const post = async e => {
     e.preventDefault()
+    if (pFull) return
     setBusy(true)
     try { await act((p, pin) => api.addPost(p, pin, text.trim()), 'انكتبت'); setText('') } catch { /* toast */ } finally { setBusy(false) }
   }
@@ -296,8 +301,10 @@ export function Board() {
         <Section title="اللوحة">
           {me ? (
             <form className="pad form compose" onSubmit={post}>
-              <textarea className="input" rows={3} maxLength={1000} value={text} onChange={e => setText(e.target.value)} placeholder="اكتب شي يشوفه الكل: موعد، فكرة، تحدّي…" />
-              <div className="row gap center"><button className="btn primary small" disabled={busy || !text.trim()}>انشر</button>{text.length > 800 && <span className="muted small">{text.length}/1000</span>}</div>
+              <div className="post-slots"><span>كتاباتك على اللوحة</span>{Array.from({ length: 3 }, (_, k) => <i key={k} className={k < myPosts.length ? 'used' : k < pLimit ? 'free' : 'lockd'}>{k < myPosts.length ? '✓' : k < pLimit ? '' : '🔒'}</i>)}<small>{myPosts.length} من {pLimit}{nextP ? ` · مستوى ${nextP} يفتح خانة` : ''}</small></div>
+              {pFull && <p className="post-full">✋ وصلت حدّك ({pLimit === 1 ? 'كتابة وحدة' : `${pLimit} كتابات`}). احذف وحدة من كتاباتك تحت عشان تكتب جديدة.</p>}
+              <textarea className="input" rows={3} maxLength={1000} disabled={pFull} value={text} onChange={e => setText(e.target.value)} placeholder="اكتب شي يشوفه الكل: موعد، فكرة، تحدّي…" />
+              <div className="row gap center"><button className="btn primary small" disabled={busy || pFull || !text.trim()}>انشر</button>{text.length > 800 && <span className="muted small">{text.length}/1000</span>}</div>
             </form>
           ) : <p className="muted pad">ادخل باسمك عشان تكتب.</p>}
           {posts.length ? (
