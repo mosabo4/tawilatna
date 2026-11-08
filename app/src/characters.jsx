@@ -105,6 +105,9 @@ const own = (ks, o = {}) => ({ ...E, own: ks, poses: { ...E.poses, ...Object.fro
 const OWN = {
   musab: own(['punch', 'hit', 'laugh', 'cry', 'dance', 'cheer', 'flag', 'crown', 'baby'], { dice: ['throw', 'l'] }),
   eyad: own(['punch', 'hit', 'laugh', 'cry', 'dance', 'cheer', 'crown', 'baby']),
+  hani: own(['punch', 'hit', 'laugh', 'cry', 'cheer']),
+  muataz: own(['punch', 'hit', 'laugh', 'cry', 'cheer']),
+  fares: own(['punch', 'hit', 'laugh', 'cry', 'cheer']),
   mohammadi: own(['punch', 'hit', 'laugh', 'dance', 'cheer', 'crown', 'baby']),
 }
 export const IMG_CHARS = Object.fromEntries([['مصعب', 'musab'], ['هاني', 'hani'], ['محمدي', 'mohammadi'], ['معتز', 'muataz'], ['فارس', 'fares'], ['اياد', 'eyad']].map(([n, slug]) => [n, { slug, def: 'e', styles: { e: OWN[slug] || E } }]))
