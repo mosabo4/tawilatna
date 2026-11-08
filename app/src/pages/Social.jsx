@@ -3,6 +3,7 @@ import { useStore, go } from '../store'
 import { api } from '../api'
 import { usePerks } from '../perks'
 import { cooldownLeft } from '../actions'
+import { levelOfReward } from '../levels'
 import { IMG_CHARS, imgSrc } from '../characters'
 import { Avatar, Section, Empty, Cover, Confirm, playersText, fmtDate } from '../ui'
 
@@ -18,7 +19,9 @@ export function sessionKey(idx) {
 }
 
 export function useFriday() {
-  const { idx, me, act } = useStore()
+  const { idx, me, act, notify } = useStore()
+  const { can } = usePerks()
+  const limit = 1 + (can('slot2') ? 1 : 0) + (can('slot3') ? 1 : 0)
   const week = sessionKey(idx)
   const picks = useMemo(() => (idx.picks || []).filter(p => p.week === week), [idx, week])
   const byGame = useMemo(() => {
@@ -28,24 +31,30 @@ export function useFriday() {
   }, [picks, idx])
   const mine = useMemo(() => new Set(picks.filter(p => p.player_id === me?.id).map(p => p.game_id)), [picks, me])
   const [busy, setBusy] = useState(null)
+  const full = mine.size >= limit
+  const nextLv = limit < 2 ? levelOfReward('slot2') : limit < 3 ? levelOfReward('slot3') : null
   const toggle = async gameId => {
+    if (!mine.has(gameId) && full) {
+      notify(`حدّك ${limit === 1 ? 'لعبة وحدة' : `${limit} ألعاب`} للتصويت. شيل صوتك من لعبة ثانية${nextLv ? `، أو وصّل مستوى ${nextLv} وتنفتح لك خانة جديدة` : ''}`, 'err')
+      return
+    }
     setBusy(gameId)
     try { await act((p, pin) => api.toggleFriday(p, pin, week, gameId)) } catch { /* toast */ } finally { setBusy(null) }
   }
-  return { week, picks, byGame, mine, toggle, busy }
+  return { week, picks, byGame, mine, toggle, busy, limit, full, nextLv }
 }
 
 export function FridayButton({ gameId, big }) {
   const { me } = useStore()
-  const { mine, toggle, busy, byGame } = useFriday()
+  const { mine, toggle, busy, byGame, full } = useFriday()
   if (!me) return null
   const on = mine.has(gameId)
   const others = (byGame.get(gameId) || []).filter(p => p && p.id !== me.id)
   return (
     <div className="friday-btn-wrap">
-      <button className={`friday-btn ${on ? 'on' : ''} ${big && !on ? 'big' : ''}`} disabled={busy === gameId} onClick={() => toggle(gameId)} aria-pressed={on}>
-        <span className="fb-check" aria-hidden="true">{on ? '✓' : '+'}</span>
-        <span>{on ? 'بتجربها الجلسة الجاية' : big ? '🎲 أبي أجربها الجلسة الجاية' : 'أبي أجربها الجلسة الجاية'}</span>
+      <button className={`friday-btn ${on ? 'on' : ''} ${big && !on && !full ? 'big' : ''} ${full && !on ? 'locked' : ''}`} disabled={busy === gameId} onClick={() => toggle(gameId)} aria-pressed={on}>
+        <span className="fb-check" aria-hidden="true">{on ? '✓' : full ? '🔒' : '+'}</span>
+        <span>{on ? 'بتجربها الجلسة الجاية' : full ? 'وصلت حد التصويت' : big ? '🎲 أبي أجربها الجلسة الجاية' : 'أبي أجربها الجلسة الجاية'}</span>
       </button>
       {others.length > 0 && <span className="fb-others">{others.map(p => <Avatar key={p.id} player={p} size={22} />)}<small>{others.length === 1 ? `${others[0].name} بعد` : `و${others.length} غيرك`}</small></span>}
     </div>
@@ -54,44 +63,64 @@ export function FridayButton({ gameId, big }) {
 
 export function Friday() {
   const { idx, me } = useStore()
-  const { picks, byGame, mine, toggle, busy, week } = useFriday()
+  const { picks, byGame, mine, toggle, busy, week, limit, full, nextLv } = useFriday()
   const { can, doAction, undoAction } = usePerks()
   const acts = (idx.actions || []).filter(a => a.data?.week === week)
   const vetoes = new Map(acts.filter(a => a.kind === 'veto').map(a => [a.game_id, a]))
   const opener = acts.find(a => a.kind === 'opener')
-  const weightOf = p => (p && can('vote2', p.id) ? 2 : 1)
   const ranked = useMemo(() => [...byGame.entries()]
     .map(([id, ps]) => ({ game: idx.gamesById.get(id), ps: ps.filter(Boolean) }))
     .filter(x => x.game)
-    .map(x => ({ ...x, votes: x.ps.reduce((t, p) => t + weightOf(p), 0), veto: vetoes.get(x.game.id) }))
-    .sort((a, b) => (!!a.veto - !!b.veto) || (opener ? (b.game.id === opener.game_id) - (a.game.id === opener.game_id) : 0) || b.votes - a.votes || a.game.name.localeCompare(b.game.name)), [byGame, idx, vetoes, opener]) // eslint-disable-line react-hooks/exhaustive-deps
+    .map(x => ({ ...x, votes: x.ps.length, veto: vetoes.get(x.game.id) }))
+    .sort((a, b) => (!!a.veto - !!b.veto) || (opener ? (b.game.id === opener.game_id) - (a.game.id === opener.game_id) : 0) || b.votes - a.votes || a.game.name.localeCompare(b.game.name)), [byGame, idx, vetoes, opener])
   const vetoLeft = me ? cooldownLeft(idx, me.id, 'veto', 30) : 0
   const openLeft = me ? cooldownLeft(idx, me.id, 'opener', 30) : 0
   const [busyA, setBusyA] = useState(false)
   const run = async (...a) => { setBusyA(true); try { await doAction(...a) } catch { /* toast */ } finally { setBusyA(false) } }
   const voters = new Set(picks.map(p => p.player_id))
-  const silent = idx.players.filter(p => !voters.has(p.id))
   const top = Math.max(1, ...ranked.map(r => r.votes))
   const live = ranked.filter(r => !r.veto)
   const leader = live[0]
   const tie = leader && live.filter(r => r.votes === leader.votes).length > 1
-  const byPlayer = idx.players.map(p => ({ p, games: picks.filter(x => x.player_id === p.id).map(x => idx.gamesById.get(x.game_id)).filter(Boolean) })).filter(x => x.games.length)
   const unplayed = useMemo(() => me ? idx.games.filter(g => !idx.plays.some(pl => pl.game_id === g.id && pl.results.some(r => r.player_id === me.id))).sort(() => 0.5 - Math.random()).slice(0, 10) : [], [idx, me]) // eslint-disable-line react-hooks/exhaustive-deps
   const total = idx.players.length
+  const PAL = ['#5B7CFF', '#F2B33D', '#2FB36B', '#E5484D', '#A35BFF', '#2BC4D6', '#FF8A3D', '#E056A0']
+  const colorOf = new Map(ranked.map((r, k) => [r.game.id, PAL[k % PAL.length]]))
+  const majority = leader && !tie && leader.votes > voters.size / 2
+  const seats = (() => {
+    const n = idx.players.length
+    const rows = n > 8 ? [Math.ceil(n * 0.58), n - Math.ceil(n * 0.58)] : [n]
+    const out = []; let k = 0
+    rows.forEach((cnt, r) => {
+      const rad = rows.length === 1 ? 40 : r === 0 ? 43 : 28
+      for (let m = 0; m < cnt; m++) {
+        const th = Math.PI * (1 - (cnt === 1 ? 0.5 : m / (cnt - 1)))
+        out.push({ p: idx.players[k++], x: 50 + rad * Math.cos(th) * 1.0, y: 78 - (rows.length === 1 ? 62 : r === 0 ? 62 : 40) * Math.sin(th) })
+      }
+    })
+    return out
+  })()
 
   return (
     <div className="page vt">
       <div className="stack">
-        <section className="vt-hero glass">
-          <div className="vt-hero-top"><span className="vt-ballot">🗳️</span><div><h2>تصويت الجلسة الجاية</h2><small>{voters.size ? `${voters.size} من ${total} صوّتوا` : 'ما أحد صوّت للحين'}</small></div></div>
-          <div className="vt-turnout"><i style={{ width: `${(voters.size / Math.max(1, total)) * 100}%` }} /></div>
-          {leader ? (
-            <div className="vt-leader">
-              <Cover game={leader.game} className="sm" />
-              <div><small>{tie ? '🤝 تعادل في الصدارة' : '🏆 المتصدر الحين'}</small><b>{leader.game.name}</b><span className="vt-pill">{leader.votes} {leader.votes === 1 ? 'صوت' : 'أصوات'}</span></div>
+        <section className="vt-parl glass">
+          <div className="vt-parl-top"><b>🏛️ برلمان العيال</b><small>{voters.size ? `${voters.size} من ${total} صوّتوا` : 'الكراسي فاضية، ابدأ التصويت'}</small></div>
+          <div className="vt-hemi">
+            {seats.map(({ p, x, y }) => {
+              const cols = picks.filter(k => k.player_id === p.id).map(k => colorOf.get(k.game_id)).filter(Boolean)
+              const bg = !cols.length ? 'var(--line)' : cols.length === 1 ? cols[0] : `conic-gradient(${cols.map((c, k) => `${c} ${(k / cols.length) * 100}% ${((k + 1) / cols.length) * 100}%`).join(',')})`
+              return (
+                <span key={p.id} className={`vt-seat ${cols.length ? '' : 'absent'}`} style={{ left: `${x}%`, top: `${y}%`, '--sc': bg }}>
+                  <i><Avatar player={p} size={42} /></i><em>{p.name}</em>
+                </span>
+              )
+            })}
+            <div className="vt-podium">
+              {leader ? <><Cover game={leader.game} className="xs" /><b>{leader.game.name}</b><small>{tie ? '🤝 تعادل' : majority ? '👑 أغلبية' : '🏆 الأكثر أصواتاً'} · {leader.votes}</small></> : <small>ما فيه أصوات</small>}
             </div>
-          ) : <p className="muted">اضغط «أنا معهم» على أي لعبة، أو اختر لعبة جديدة من الدولاب.</p>}
-          {silent.length > 0 && voters.size > 0 && <div className="vt-silent"><small>لسا ما صوّتوا:</small>{silent.map(p => <Avatar key={p.id} player={p} size={26} />)}</div>}
+          </div>
+          {me && <div className="vt-slots"><span>أصواتك</span>{Array.from({ length: 3 }, (_, k) => <i key={k} className={k < mine.size ? 'used' : k < limit ? 'free' : 'lockd'}>{k < mine.size ? '✓' : k < limit ? '' : '🔒'}</i>)}<small>{mine.size} من {limit}{nextLv ? ` · مستوى ${nextLv} يفتح خانة` : ''}</small></div>}
         </section>
 
         {opener && idx.gamesById.get(opener.game_id) && (
@@ -104,20 +133,20 @@ export function Friday() {
 
         {ranked.length > 0 && (
           <ol className="vt-list">
-            {ranked.map(({ game, ps, votes, veto }, i) => {
+            {ranked.map(({ game, ps, votes, veto }) => {
               const on = mine.has(game.id)
               return (
-                <li key={game.id} className={`vt-card ${veto ? 'vetoed' : ''} ${on ? 'mine' : ''}`} style={{ '--w': `${(votes / top) * 100}%` }}>
+                <li key={game.id} className={`vt-card ${veto ? 'vetoed' : ''} ${on ? 'mine' : ''}`} style={{ '--w': `${(votes / top) * 100}%`, '--bc': colorOf.get(game.id) || '#666' }}>
                   <div className="vt-bar" aria-hidden="true" />
                   <a className="vt-main" href={`#/game/${game.id}`}>
-                    <span className="vt-rk">{veto ? '🚫' : ['🥇', '🥈', '🥉'][i] || i + 1}</span>
+                    <span className="vt-rk"><i className="vt-dot" />{veto ? '🚫' : ''}</span>
                     <Cover game={game} className="xs" />
                     <span className="nm"><b>{game.name}</b><small>{veto ? `فيتو من ${idx.playersById.get(veto.player_id)?.name}` : playersText(game)}</small></span>
                     <strong className="vt-n">{votes}</strong>
                   </a>
                   <div className="vt-foot">
                     <span className="vt-who">{ps.map(p => <span key={p.id} className="vt-av" title={p.name}><Avatar player={p} size={30} /><em>{p.name}</em></span>)}</span>
-                    {me && !veto && <button className={`vt-join ${on ? 'on' : ''}`} disabled={busy === game.id} onClick={() => toggle(game.id)} aria-pressed={on}>{on ? '✓ صوتك معهم' : '👍 أنا معهم'}</button>}
+                    {me && !veto && <button className={`vt-join ${on ? 'on' : ''} ${full && !on ? 'full' : ''}`} disabled={busy === game.id} onClick={() => toggle(game.id)} aria-pressed={on}>{on ? '✓ في كتلتك' : full ? '🔒 حدّك وصل' : '🏛️ انضم لكتلتهم'}</button>}
                   </div>
                   {me && !veto && (can('veto') || can('opener')) && (
                     <div className="fr-acts">
@@ -131,21 +160,11 @@ export function Friday() {
           </ol>
         )}
 
-        {byPlayer.length > 0 && (
-          <Section title="مين صوّت لإيش">
-            <ul className="vt-people">
-              {byPlayer.map(({ p, games }) => (
-                <li key={p.id}><Avatar player={p} size={34} /><b>{p.name}</b><span>{games.map(g => <a key={g.id} href={`#/game/${g.id}`} className="chip">{g.name}</a>)}</span></li>
-              ))}
-            </ul>
-          </Section>
-        )}
-
         {me ? (
           <Section title="تبي تقترح لعبة جديدة؟" action={<a className="more" href="#/games">الدولاب ←</a>}>
             <p className="hint pad-x">افتح الدولاب، اضغط على اللعبة اللي تبيها واختر «أبي أجربها الجلسة الجاية». وهذي ألعاب ما جربتها للحين:</p>
             <div className="vt-strip">{unplayed.map(g => <a key={g.id} href={`#/game/${g.id}`}><Cover game={g} className="xs" /><small>{g.name}</small></a>)}</div>
-            {can('vote2') && <p className="hint pad-x">🗳️ صوتك ينحسب صوتين (جائزة مستوى 5).</p>}
+            <p className="hint pad-x">🗳️ تصوّت على لعبة وحدة، ومع مستوى {levelOfReward('slot2')} لعبتين، ومع مستوى {levelOfReward('slot3')} ثلاث ألعاب.</p>
             <p className="hint pad-x pad-b">التصويت يتصفّر لحاله أول ما تسجلون أقيام الجلسة.</p>
           </Section>
         ) : <Empty title="ادخل باسمك" text="عشان تصوّت على الألعاب اللي ودك تجربها." />}

@@ -1971,3 +1971,30 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .fl-opt.on { background: var(--grad); border-color: transparent; color: #fff; }
 .fl-opt.on small { color: rgba(255, 255, 255, .8); }
 .fl-foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 12px; }
+.friday-btn.locked { opacity: .6; border-style: dashed; }
+.vt-slots { display: flex; align-items: center; gap: 6px; }
+.vt-slots span { font-size: 12.5px; color: var(--muted); }
+.vt-slots i { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 12px; border: 2px dashed var(--line); }
+.vt-slots i.used { background: var(--grad); border: 0; color: #fff; }
+.vt-slots i.lockd { opacity: .4; }
+.vt-slots small { color: var(--muted-2); font-size: 11.5px; }
+.vt-join.full { opacity: .55; border-style: dashed; }
+
+/* برلمان العيال */
+.vt-parl { padding: 14px 12px 12px; display: flex; flex-direction: column; gap: 10px; background: radial-gradient(120% 100% at 50% 0%, rgba(91, 124, 255, .25), rgba(18, 18, 40, .4) 70%); }
+.vt-parl-top { display: flex; align-items: baseline; justify-content: space-between; }
+.vt-parl-top b { font-size: 17px; }
+.vt-parl-top small { color: var(--muted); }
+.vt-hemi { position: relative; height: 215px; margin: 0 4px 12px; }
+.vt-hemi::before { content: ''; position: absolute; left: 6%; right: 6%; top: 10%; bottom: -14%; border-radius: 50% 50% 0 0 / 100% 100% 0 0; border: 2px dashed rgba(255, 255, 255, .12); }
+.vt-seat { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 2px; transition: all .4s; animation: lgPop .4s ease both; }
+.vt-seat i { display: block; padding: 3px; border-radius: 50%; background: var(--sc); box-shadow: 0 0 16px color-mix(in srgb, var(--sc) 70%, transparent); line-height: 0; }
+.vt-seat em { font-style: normal; font-size: 10.5px; color: var(--ink); background: rgba(10, 12, 28, .7); border-radius: 99px; padding: 0 6px; }
+.vt-seat.absent i { box-shadow: none; filter: grayscale(1); opacity: .5; }
+.vt-seat.absent em { opacity: .5; }
+.vt-podium { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 3px; min-width: 130px; text-align: center; padding: 8px 12px; border-radius: 16px; background: rgba(10, 12, 28, .75); border: 1px solid var(--line); }
+.vt-podium b { font-size: 13px; }
+.vt-podium small { color: #F2C14E; font-size: 11px; }
+.vt-dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--bc); box-shadow: 0 0 10px var(--bc); }
+.vt-card { border-inline-start: 4px solid var(--bc); }
+.vt-rk { width: 20px; text-align: center; }
