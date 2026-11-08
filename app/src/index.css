@@ -1857,3 +1857,8 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .lg-bench { display: flex; align-items: center; gap: 8px; }
 .lg-bench small { color: var(--muted); font-size: 12px; }
 .lg-bench button { border: 2px dashed var(--line); border-radius: 50%; padding: 0; background: none; opacity: .7; }
+.lg-trackbox { display: flex; align-items: center; gap: 6px; padding-bottom: 20px; }
+.lg-trackbox .lg-track { flex: 1; margin: 0 22px; }
+.lg-nav { flex: none; width: 34px; height: 44px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); color: var(--accent-text); font-size: 22px; }
+.lg-tick { position: absolute; top: 14px; bottom: 14px; width: 1px; background: var(--line); pointer-events: none; }
+.lg-track { height: 84px; }

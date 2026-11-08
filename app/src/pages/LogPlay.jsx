@@ -41,35 +41,44 @@ const fromOff = o => { const t = (o + 720) % 1440; return `${String(Math.floor(t
 const fmt12 = o => { const t = (o + 720) % 1440; const h = Math.floor(t / 60), m = t % 60; return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'م' : 'ص'}` }
 function TimeDial({ start, end, onChange }) {
   const ref = useRef(null)
-  const a = toOff(start) ?? 480, b = toOff(end) ?? 600
+  const W = 480
+  const nowO = (() => { const d = new Date(); return Math.floor((((d.getHours() * 60 + d.getMinutes() - 720) % 1440) + 1440) % 1440 / 5) * 5 })()
+  const a = toOff(start) ?? Math.max(0, nowO - 60), b = toOff(end) ?? Math.max(5, nowO)
+  const [ws0, setWs] = useState(null)
+  const clampW = v => Math.max(0, Math.min(1440 - W, v))
+  const inWin = v => v != null && a >= v && b <= v + W
+  const ws = inWin(ws0) ? ws0 : clampW(Math.floor((a - 90) / 60) * 60)
   const set = (which, o) => {
     const v = Math.max(0, Math.min(1439, Math.round(o / 5) * 5))
     if (which === 'a') onChange(fromOff(Math.min(v, b - 5)), fromOff(b))
     else onChange(fromOff(a), fromOff(Math.max(v, a + 5)))
   }
-  const move = which => e => {
-    if (!e.currentTarget.hasPointerCapture?.(e.pointerId)) return
-    const r = ref.current.getBoundingClientRect()
-    set(which, ((e.clientX - r.left) / r.width) * 1440)
-  }
+  const posToOff = e => { const r = ref.current.getBoundingClientRect(); return ws + Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * W }
+  const move = which => e => { if (e.currentTarget.hasPointerCapture?.(e.pointerId)) { setWs(ws); set(which, posToOff(e)) } }
   const down = e => e.currentTarget.setPointerCapture(e.pointerId)
   const tap = e => {
     if (e.target !== ref.current && !e.target.classList.contains('lg-fill')) return
-    const r = ref.current.getBoundingClientRect(); const o = ((e.clientX - r.left) / r.width) * 1440
+    const o = posToOff(e); setWs(ws)
     set(Math.abs(o - a) < Math.abs(o - b) ? 'a' : 'b', o)
   }
-  const pct = o => `${(o / 1440) * 100}%`
+  const pct = o => `${((o - ws) / W) * 100}%`
   const on = start && end
+  const hours = Array.from({ length: W / 60 + 1 }, (_, k) => ws + k * 60)
   return (
     <div className={`lg-dial ${on ? 'on' : ''}`}>
       <div className="lg-dial-read"><div><small>بدأنا</small><b>{fmt12(a)}</b></div><i>←</i><div><small>خلصنا</small><b>{fmt12(b)}</b></div><div className="lg-dial-d"><small>المدة</small><b>{b - a >= 60 ? `${Math.floor((b - a) / 60)}:${String((b - a) % 60).padStart(2, '0')} ساعة` : `${b - a}د`}</b></div></div>
-      <div className="lg-track" ref={ref} onPointerDown={tap}>
-        <div className="lg-fill" style={{ left: pct(a), width: `${((b - a) / 1440) * 100}%` }} />
-        <span className="lg-th" style={{ left: pct(a) }} onPointerDown={down} onPointerMove={move('a')}><em>🟢</em></span>
-        <span className="lg-th e" style={{ left: pct(b) }} onPointerDown={down} onPointerMove={move('b')}><em>🏁</em></span>
-        {[0, 3, 6, 9, 12, 15, 18, 21].map(h => <u key={h} style={{ left: pct(h * 60) }}>{fmt12(h * 60).replace(':00 ', '')}</u>)}
+      <div className="lg-trackbox">
+        <button type="button" className="lg-nav" aria-label="أبكر" onClick={() => setWs(clampW(ws - 120))}>‹</button>
+        <div className="lg-track" ref={ref} onPointerDown={tap}>
+          {hours.map(h => <i key={h} className="lg-tick" style={{ left: pct(h) }} />)}
+          <div className="lg-fill" style={{ left: pct(a), width: `${((b - a) / W) * 100}%` }} />
+          <span className="lg-th" style={{ left: pct(a) }} onPointerDown={down} onPointerMove={move('a')}><em>🟢</em></span>
+          <span className="lg-th e" style={{ left: pct(b) }} onPointerDown={down} onPointerMove={move('b')}><em>🏁</em></span>
+          {hours.map(h => <u key={h} style={{ left: pct(h) }}>{fmt12(h).replace(':00 ', '')}</u>)}
+        </div>
+        <button type="button" className="lg-nav" aria-label="أمتأخر" onClick={() => setWs(clampW(ws + 120))}>›</button>
       </div>
-      <div className="lg-days">{!on && <small className="muted">اسحب 🟢 و🏁 أو اختر مدة من فوق</small>}</div>
+      {!on && <small className="muted">اسحب 🟢 و🏁 أو اختر مدة من فوق</small>}
     </div>
   )
 }
