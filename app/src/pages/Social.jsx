@@ -87,15 +87,26 @@ export function Friday() {
   const PAL = ['#5B7CFF', '#F2B33D', '#2FB36B', '#E5484D', '#A35BFF', '#2BC4D6', '#FF8A3D', '#E056A0']
   const colorOf = new Map(ranked.map((r, k) => [r.game.id, PAL[k % PAL.length]]))
   const majority = leader && !tie && leader.votes > voters.size / 2
+  const silent = idx.players.filter(p => !voters.has(p.id))
+  const second = live[1]
+  const lead = leader ? leader.votes - (second?.votes || 0) : 0
+  const status = !leader ? null
+    : tie ? { i: '🤝', t: <>تعادل بين {live.filter(r => r.votes === leader.votes).slice(0, 3).map((r, k) => <span key={r.game.id}>{k > 0 && ' و'}<bdi>{r.game.name}</bdi></span>)}</>, d: 'صوت واحد يحسمها' }
+    : lead > silent.length ? { i: '✅', t: <>انحسمت: <bdi>{leader.game.name}</bdi></>, d: 'حتى لو الباقين صوّتوا لغيرها تبقى الأولى' }
+    : majority ? { i: '👑', t: <>أغلبية لـ<bdi>{leader.game.name}</bdi></>, d: silent.length ? `بس لسا ${silent.length} ما صوّتوا` : 'الكل صوّت' }
+    : { i: '🏁', t: 'السباق مفتوح', d: <><bdi>{leader.game.name}</bdi> تتقدم بـ{lead} {lead === 1 ? 'صوت' : 'أصوات'}{silent.length ? `، و${silent.length} لسا ما صوّتوا` : ''}</> }
   const seats = (() => {
-    const n = idx.players.length
+    const rank = new Map(ranked.map((r, k) => [r.game.id, k]))
+    const key = pid => { const ks = picks.filter(x => x.player_id === pid).map(x => rank.get(x.game_id)).filter(v => v != null); return ks.length ? Math.min(...ks) : 99 }
+    const plist = [...idx.players].sort((a, b) => key(a.id) - key(b.id))
+    const n = plist.length
     const rows = n > 8 ? [Math.ceil(n * 0.58), n - Math.ceil(n * 0.58)] : [n]
     const out = []; let k = 0
     rows.forEach((cnt, r) => {
       const rad = rows.length === 1 ? 40 : r === 0 ? 43 : 28
       for (let m = 0; m < cnt; m++) {
         const th = Math.PI * (1 - (cnt === 1 ? 0.5 : m / (cnt - 1)))
-        out.push({ p: idx.players[k++], x: 50 + rad * Math.cos(th) * 1.0, y: 78 - (rows.length === 1 ? 62 : r === 0 ? 62 : 40) * Math.sin(th) })
+        out.push({ p: plist[k++], x: 50 + rad * Math.cos(th) * 1.0, y: 78 - (rows.length === 1 ? 62 : r === 0 ? 62 : 40) * Math.sin(th) })
       }
     })
     return out
@@ -121,7 +132,28 @@ export function Friday() {
             </div>
           </div>
           {me && <div className="vt-slots"><span>أصواتك</span>{Array.from({ length: 3 }, (_, k) => <i key={k} className={k < mine.size ? 'used' : k < limit ? 'free' : 'lockd'}>{k < mine.size ? '✓' : k < limit ? '' : '🔒'}</i>)}<small>{mine.size} من {limit}{nextLv ? ` · مستوى ${nextLv} يفتح خانة` : ''}</small></div>}
+          {status && <div className={`vt-status ${status.i === '✅' ? 'done' : ''}`}><span>{status.i}</span><div><b>{status.t}</b><small>{status.d}</small></div></div>}
+          {ranked.length > 0 && <div className="vt-legend">{live.slice(0, 5).map(r => <span key={r.game.id}><i style={{ background: colorOf.get(r.game.id) }} />{r.game.name}<b>{r.votes}</b></span>)}{live.length > 5 && <span>+{live.length - 5}</span>}</div>}
+          {silent.length > 0 && voters.size > 0 && <div className="vt-silent"><small>لسا ما صوّتوا:</small>{silent.map(p => <Avatar key={p.id} player={p} size={26} />)}</div>}
         </section>
+
+        {live.length >= 2 && (
+          <section className="vt-h2h glass">
+            <h3>⚔️ المنافسة على الصدارة</h3>
+            <div className="vt-h2h-row">
+              {[live[0], live[1]].map((r, k) => (
+                <a key={r.game.id} href={`#/game/${r.game.id}`} className={`vt-fighter ${k === 0 && !tie ? 'lead' : ''}`} style={{ '--bc': colorOf.get(r.game.id) }}>
+                  <Cover game={r.game} className="sm" />
+                  <b>{r.game.name}</b>
+                  <strong>{r.votes}</strong>
+                  <small>{k === 0 ? (tie ? 'متعادلة' : 'المتصدرة') : tie ? 'متعادلة' : `متأخرة بـ${lead}`}</small>
+                </a>
+              ))}
+              <span className="vt-vs">VS</span>
+            </div>
+            {live[2] && <p className="vt-chase">🏃 وراهم: {live.slice(2, 5).map(r => `${r.game.name} (${r.votes})`).join('، ')}</p>}
+          </section>
+        )}
 
         {opener && idx.gamesById.get(opener.game_id) && (
           <div className="glass opener">
@@ -137,13 +169,13 @@ export function Friday() {
               const on = mine.has(game.id)
               return (
                 <li key={game.id} className={`vt-card ${veto ? 'vetoed' : ''} ${on ? 'mine' : ''}`} style={{ '--w': `${(votes / top) * 100}%`, '--bc': colorOf.get(game.id) || '#666' }}>
-                  <div className="vt-bar" aria-hidden="true" />
                   <a className="vt-main" href={`#/game/${game.id}`}>
                     <span className="vt-rk"><i className="vt-dot" />{veto ? '🚫' : ''}</span>
                     <Cover game={game} className="xs" />
                     <span className="nm"><b>{game.name}</b><small>{veto ? `فيتو من ${idx.playersById.get(veto.player_id)?.name}` : playersText(game)}</small></span>
                     <strong className="vt-n">{votes}</strong>
                   </a>
+                  {!veto && <div className="vt-lane" aria-hidden="true"><i style={{ width: `${Math.min(100, (votes / Math.max(1, total)) * 100)}%` }} /><u /></div>}
                   <div className="vt-foot">
                     <span className="vt-who">{ps.map(p => <span key={p.id} className="vt-av" title={p.name}><Avatar player={p} size={30} /><em>{p.name}</em></span>)}</span>
                     {me && !veto && <button className={`vt-join ${on ? 'on' : ''} ${full && !on ? 'full' : ''}`} disabled={busy === game.id} onClick={() => toggle(game.id)} aria-pressed={on}>{on ? '✓ في كتلتك' : full ? '🔒 حدّك وصل' : '🏛️ انضم لكتلتهم'}</button>}
