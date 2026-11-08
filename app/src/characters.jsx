@@ -101,8 +101,13 @@ function Hat({ type }) {
 // d = اتجاه الحركة في الصورة (l يسار، r يمين) عشان نقلبها صح في المسرح
 export const K_POSES = ['idle', 'bust', 'punch', 'hit', 'laugh', 'cry', 'dance', 'fight', 'dice', 'jump', 'flag', 'crown', 'f_happy', 'f_angry', 'f_shock', 'f_smug', 'f_cry']
 const E = { name: 'واقعي', poses: { idle: 'idle', punch: ['throw', 'r'], dice: ['throw', 'r'], hit: 'three', laugh: 'cards', cry: 'back', dance: 'jump', cheer: 'jump', jump: 'jump' }, gallery: ['idle', 'front', 'three', 'side', 'back', 'cross', 'cards', 'jump', 'throw'] }
-const MUSAB = { ...E, own: ['punch', 'hit', 'laugh', 'cry', 'dance', 'cheer', 'flag', 'crown', 'baby'], poses: { ...E.poses, punch: ['punch', 'l'], dice: ['throw', 'l'], hit: ['hit', 'l'], laugh: ['laugh', 'l'], cry: 'cry', dance: 'dance', cheer: 'cheer', flag: 'flag', crown: 'crown', baby: 'baby' }, gallery: [...E.gallery, 'punch', 'hit', 'laugh', 'cry', 'dance', 'cheer', 'flag', 'crown', 'baby'] }
-export const IMG_CHARS = Object.fromEntries([['مصعب', 'musab'], ['هاني', 'hani'], ['محمدي', 'mohammadi'], ['معتز', 'muataz'], ['فارس', 'fares'], ['اياد', 'eyad']].map(([n, slug]) => [n, { slug, def: 'e', styles: { e: slug === 'musab' ? MUSAB : E } }]))
+const own = (ks, o = {}) => ({ ...E, own: ks, poses: { ...E.poses, ...Object.fromEntries(ks.map(k => [k, k === 'punch' || k === 'hit' || k === 'laugh' ? [k, 'l'] : k])), ...o }, gallery: [...E.gallery, ...ks] })
+const OWN = {
+  musab: own(['punch', 'hit', 'laugh', 'cry', 'dance', 'cheer', 'flag', 'crown', 'baby'], { dice: ['throw', 'l'] }),
+  eyad: own(['punch', 'hit', 'laugh', 'cry', 'dance', 'cheer', 'crown', 'baby']),
+  mohammadi: own(['punch', 'hit', 'laugh', 'dance', 'cheer', 'crown', 'baby']),
+}
+export const IMG_CHARS = Object.fromEntries([['مصعب', 'musab'], ['هاني', 'hani'], ['محمدي', 'mohammadi'], ['معتز', 'muataz'], ['فارس', 'fares'], ['اياد', 'eyad']].map(([n, slug]) => [n, { slug, def: 'e', styles: { e: OWN[slug] || E } }]))
 export const idleFile = sty => { const p = sty.poses.idle; return Array.isArray(p) ? p[0] : p }
 export const imgSrc = (slug, style, pose) => `${import.meta.env.BASE_URL}chars/${slug}/${style}/${pose}.webp`
 
@@ -121,7 +126,7 @@ export function Character({ player, custom, pose: pose0 = 'idle', size = 120, fl
       const c = sty.poses.cry || sty.poses.idle; const [f2] = Array.isArray(c) ? c : [c]
       return <span className="chr-baby" style={{ height: size * 4 / 3 }}><img className="chr chr-img pose-cry" src={imgSrc(ic.slug, st, f2)} alt={player.name} style={{ height: size * 4 / 3 }} draggable="false" /><i aria-hidden="true">🍼</i></span>
     }
-    const p = (pose === 'idle' && sty.cards ? sty.cards[cardPick % sty.cards.length] : null) || sty.poses[pose] || (pose === 'dice' && st === 'k' ? ['dice', 'r'] : ic.styles[st].poses.punch) || ic.styles[st].poses.idle
+    const p = (pose === 'idle' && sty.cards ? sty.cards[cardPick % sty.cards.length] : null) || sty.poses[pose] || (pose === 'dice' && st === 'k' ? ['dice', 'r'] : ic.styles[st].poses.idle) || ic.styles[st].poses.idle
     const [file, dir] = Array.isArray(p) ? p : [p, null]
     const want = flip ? 'l' : 'r'
     const mirror = dir ? dir !== want : !!flip
