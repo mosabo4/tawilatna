@@ -22,7 +22,7 @@ export function useFriday() {
   const { idx, me, act, notify } = useStore()
   const { can } = usePerks()
   const limit = 1 + (can('slot2') ? 1 : 0) + (can('slot3') ? 1 : 0)
-  const total = 2 + (can('votes3') ? 1 : 0) + (can('votes4') ? 1 : 0)
+  const total = 1 + (can('votes2') ? 1 : 0) + (can('votes3') ? 1 : 0) + (can('votes4') ? 1 : 0)
   const week = sessionKey(idx)
   const picks = useMemo(() => (idx.picks || []).filter(p => p.week === week).map(p => ({ ...p, votes: Math.max(1, p.votes || 1) })), [idx, week])
   const byGame = useMemo(() => {
@@ -38,7 +38,7 @@ export function useFriday() {
   const left = Math.max(0, total - used)
   const full = mine.size >= limit
   const nextLv = limit < 2 ? levelOfReward('slot2') : limit < 3 ? levelOfReward('slot3') : null
-  const nextVoteLv = total < 3 ? levelOfReward('votes3') : total < 4 ? levelOfReward('votes4') : null
+  const nextVoteLv = total < 2 ? levelOfReward('votes2') : total < 3 ? levelOfReward('votes3') : total < 4 ? levelOfReward('votes4') : null
   const run = async fn => { try { await act(fn) } catch { /* toast */ } finally { setBusy(null) } }
   const toggle = async gameId => {
     if (!mine.has(gameId)) {
