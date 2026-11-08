@@ -81,7 +81,7 @@ export function resolveActions(idx) {
         const first = !idx.plays.some(x => x.game_id === p.game_id && x.id !== p.id && tsOf(x) < tsOf(p) && x.results.some(r => r.player_id === a.target))
         add(a.target, 'lucky', -Math.round((10 + 5 + (first ? 15 : 0)) / 2))
       }
-    } else if (a.kind === 'thanks' && a.target) { add(a.target, 'thanks', 10); add(a.player_id, 'thankGive', 3) }
+    } else if (a.kind === 'thanks' && a.target) { add(a.target, 'thanks', 20); add(a.player_id, 'thankGive', 10) }
   }
   return { xp, predictions, challenges, rematches, risks, boxes, guarantees }
 }
