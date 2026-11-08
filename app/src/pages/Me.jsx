@@ -11,6 +11,7 @@ import { usePerks, TitleBadge } from '../perks'
 import { unlockHistory } from '../titles'
 import { useLevels } from './Levels'
 import { LimitsList } from './Limits'
+import Lab from './Lab'
 import { Avatar, TopBar, Section, Field, Empty } from '../ui'
 
 const PALETTE = ['#D93A3A', '#2F6FDB', '#E9B425', '#2E9E5B', '#8A4FD8', '#EE7A2B', '#1BA6A6', '#D6458F', '#6B7A2E', '#4B4F58']
@@ -123,7 +124,7 @@ function Admin() {
   )
 }
 
-const SUBS = { char: ['شخصيتي', CharacterEditor], games: ['ألعابي وتقييماتي', MyGames], limits: ['جوائزي المحدودة', LimitsList], admin: ['أدوات المسؤول', Admin] }
+const SUBS = { char: ['شخصيتي', CharacterEditor], games: ['ألعابي وتقييماتي', MyGames], limits: ['جوائزي المحدودة', LimitsList], admin: ['أدوات المسؤول', Admin], lab: ['المختبر 🔬', Lab] }
 
 export default function Me({ sub }) {
   const { me, idx, logout } = useStore()
@@ -164,7 +165,7 @@ export default function Me({ sub }) {
           {link('⏳', 'جوائزي المحدودة', '#/me/limits', 'مرة بالأسبوع وبالشهر')}
           {link('🌐', 'صفحتي العامة', `#/player/${me.id}`, 'كيف يشوفني الباقين')}
         </nav>
-        {me.is_admin && <nav className="me-links">{link('🛠️', 'أدوات المسؤول', '#/me/admin', 'الملخص، القفل، اللاعبين، الشخصيات', 'admin')}</nav>}
+        {me.is_admin && <nav className="me-links">{link('🛠️', 'أدوات المسؤول', '#/me/admin', 'الملخص، القفل، اللاعبين، الشخصيات', 'admin')}{link('🔬', 'المختبر', '#/me/lab', 'انتخابات، لعبة الشهر، الدوري (تجريبي)', 'admin')}</nav>}
         <p className="hint pad-x">رمزك ثابت. لو نسيته، المسؤول يقدر يعطيك رمز جديد.</p>
         <button className="btn danger-link" onClick={() => { logout(); go('/') }}>اطلع من الحساب</button>
       </div>

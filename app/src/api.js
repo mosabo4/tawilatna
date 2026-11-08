@@ -265,6 +265,11 @@ const demo = {
     if (!me.is_admin) throw new ApiError('forbidden')
     s.settings = { ...(s.settings || {}), login_locked: locked }; dSet(s); return { ok: true, locked }
   },
+  setLab: async (player, pin, lab) => {
+    const s = dGet(); const me = dAuth(s, player, pin)
+    if (!me.is_admin) throw new ApiError('forbidden')
+    s.settings = { ...(s.settings || {}), lab }; dSet(s); return { ok: true }
+  },
   reset: () => { try { localStorage.removeItem(DKEY) } catch { /* ignore */ } },
 }
 
@@ -282,6 +287,7 @@ const real = {
   addPost: (p, pin, body) => sbCall('add_post', { p_player: p, p_pin: pin, p_body: body }),
   deletePost: (p, pin, id) => sbCall('delete_post', { p_player: p, p_pin: pin, p_post: id }),
   savePlayer: (p, pin, d) => sbCall('save_player', { p_player: p, p_pin: pin, p_data: d }),
+  setLab: (p, pin, lab) => sbCall('set_lab', { p_player: p, p_pin: pin, p_lab: lab }),
   setLoginLock: (p, pin, locked) => sbCall('set_login_lock', { p_player: p, p_pin: pin, p_locked: locked }),
   setExpRating: (p, pin, exp, delta) => sbCall('set_exp_rating', { p_player: p, p_pin: pin, p_exp: exp, p_delta: delta }),
   setPlayExpansions: (p, pin, play, games) => sbCall('set_play_expansions', { p_player: p, p_pin: pin, p_play: play, p_games: games }),
