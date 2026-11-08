@@ -262,7 +262,7 @@ export function GameView({ id }) {
           <div><span>طريقة الفوز</span><b>{SCORING[game.scoring || 'rank'].icon} {SCORING[game.scoring || 'rank'].name}</b></div>
           {realAvg && <div><span>مدتها عندنا</span><b>⏱️ {realAvg}</b></div>}
         </div>
-        <FridayButton gameId={game.id} />
+        <FridayButton gameId={game.id} big={!!me && !iPlayed} />
         {game.bgg_id && <a className="bgg-link" href={`https://boardgamegeek.com/boardgame/${game.bgg_id}`} target="_blank" rel="noreferrer">صفحتها في BoardGameGeek ↗</a>}
 
         {me && !iPlayed && <div className="glass pad lock-rate">🔒 جرّب اللعبة أول وبعدها تقدر تقيّمها</div>}
