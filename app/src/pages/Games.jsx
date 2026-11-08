@@ -14,12 +14,17 @@ import TableHero from './TableHero'
 import { FridayButton, GameComments } from './Social'
 
 const SORTS = [
-  ['cat', 'التصانيف'],
-  ['plays', 'الأكثر لعباً'],
-  ['rating', 'الأعلى تقييماً'],
-  ['weight', 'الأسهل'],
-  ['name', 'الاسم'],
+  ['cat', '🗄️ ترتيب الدولاب'],
+  ['name', '🔤 أبجدي'],
+  ['plays', '🔥 الأكثر لعباً'],
+  ['rating', '⭐ الأعلى تقييماً'],
+  ['weight', '🌱 الأسهل أولاً'],
+  ['hard', '🧠 الأصعب أولاً'],
 ]
+const WEIGHTS = [['easy', '🌱 سهلة'], ['mid', '⚖️ متوسطة'], ['hard', '🧠 صعبة']]
+const TIMES = [['short', '⚡ قصيرة', 'أقل من 30 د'], ['mid', '⏱️ متوسطة', '30–60 د'], ['long', '🕰️ طويلة', 'أكثر من ساعة']]
+const wOf = w => (w < 2 ? 'easy' : w < 3 ? 'mid' : 'hard')
+const tOf = m => (m <= 30 ? 'short' : m <= 60 ? 'mid' : 'long')
 const read = (k, d) => { try { return localStorage.getItem(k) || d } catch { return d } }
 const write = (k, v) => { try { localStorage.setItem(k, v) } catch { /* ignore */ } }
 
@@ -53,6 +58,10 @@ export default function Games() {
   const [cat, setCat] = useState(() => read('tw-gcat', 'all'))
   const [sort, setSort] = useState(() => read('tw-gsort2', 'cat'))
   const [players, setPlayers] = useState(0)
+  const [weightF, setWeightF] = useState('')
+  const [timeF, setTimeF] = useState('')
+  const [statusF, setStatusF] = useState('')
+  const [fOpen, setFOpen] = useState(false)
   const setV = v => { setView(v); write('tw-gview', v) }
   const setC = c => { setCat(c); write('tw-gcat', c) }
   const setS = s => { setSort(s); write('tw-gsort2', s) }
@@ -66,12 +75,16 @@ export default function Games() {
 
   const t = q.trim().toLowerCase()
   const matches = g => (!t || g.game.name.toLowerCase().includes(t)) &&
-    (!players || ((g.game.min_players ?? 1) <= players && (g.game.max_players ?? 99) >= players))
+    (!players || ((g.game.min_players ?? 1) <= players && (g.game.max_players ?? 99) >= players)) &&
+    (!weightF || (g.game.weight != null && wOf(g.game.weight) === weightF)) &&
+    (!timeF || (g.game.play_minutes != null && tOf(g.game.play_minutes) === timeF)) &&
+    (!statusF || (statusF === 'new' ? g.unplayed : !g.unplayed))
   const by = {
     cat: (a, b) => a.game.name.localeCompare(b.game.name),
     plays: (a, b) => b.plays.length - a.plays.length || a.game.name.localeCompare(b.game.name),
     rating: (a, b) => (b.avg ?? -1) - (a.avg ?? -1),
     weight: (a, b) => (a.game.weight ?? 9) - (b.game.weight ?? 9),
+    hard: (a, b) => (b.game.weight ?? -1) - (a.game.weight ?? -1),
     name: (a, b) => a.game.name.localeCompare(b.game.name),
   }[sort]
   const byShelf = (a, b) => (a.game.shelf_order ?? 1e6) - (b.game.shelf_order ?? 1e6)
@@ -121,21 +134,55 @@ export default function Games() {
               </button>
             ))}
           </div>
-          <div className="tools-row">
-            <label className="mini-select">
-              <span>كم لاعب؟</span>
-              <select value={players} onChange={e => setPlayers(+e.target.value)}>
-                <option value={0}>أي عدد</option>
-                {[2, 3, 4, 5, 6, 7, 8].map(n => <option key={n} value={n}>{n}</option>)}
-              </select>
-            </label>
-            <label className="mini-select">
-              <span>رتّب</span>
-              <select value={sort} onChange={e => setS(e.target.value)}>
-                {SORTS.map(([k, l]) => <option key={k} value={k}>{k === 'cat' ? 'الأبجدي' : l}</option>)}
-              </select>
-            </label>
-          </div>
+          {(() => {
+            const act = (players ? 1 : 0) + (weightF ? 1 : 0) + (timeF ? 1 : 0) + (statusF ? 1 : 0) + (sort !== 'cat' ? 1 : 0)
+            const clear = () => { setPlayers(0); setWeightF(''); setTimeF(''); setStatusF(''); setS('cat') }
+            const Opt = ({ on, onClick, children }) => <button type="button" className={`fl-opt ${on ? 'on' : ''}`} aria-pressed={on} onClick={onClick}>{children}</button>
+            return (
+              <div className="fl">
+                <button type="button" className={`fl-toggle ${act ? 'has' : ''}`} aria-expanded={fOpen} onClick={() => setFOpen(!fOpen)}>
+                  <span>⚙️ تصفية وترتيب</span>
+                  {act > 0 && <em>{act}</em>}
+                  <small>{lit} لعبة</small>
+                  <i aria-hidden="true">{fOpen ? '▴' : '▾'}</i>
+                </button>
+                {act > 0 && !fOpen && (
+                  <div className="fl-active">
+                    {players > 0 && <button onClick={() => setPlayers(0)}>👥 {players === 2 ? '1v1' : `${players} لاعبين`} ✕</button>}
+                    {weightF && <button onClick={() => setWeightF('')}>{WEIGHTS.find(w => w[0] === weightF)[1]} ✕</button>}
+                    {timeF && <button onClick={() => setTimeF('')}>{TIMES.find(w => w[0] === timeF)[1]} ✕</button>}
+                    {statusF && <button onClick={() => setStatusF('')}>{statusF === 'new' ? '🔒 ما جربتها' : '✅ جربتها'} ✕</button>}
+                    {sort !== 'cat' && <button onClick={() => setS('cat')}>{SORTS.find(x => x[0] === sort)[1]} ✕</button>}
+                  </div>
+                )}
+                {fOpen && (
+                  <div className="fl-panel glass">
+                    <div className="fl-grp"><h4>👥 كم لاعب؟</h4><div>
+                      <Opt on={!players} onClick={() => setPlayers(0)}>أي عدد</Opt>
+                      {[2, 3, 4, 5, 6, 7, 8].map(n => <Opt key={n} on={players === n} onClick={() => setPlayers(n)}>{n === 2 ? '2 (1v1)' : n}</Opt>)}
+                    </div></div>
+                    <div className="fl-grp"><h4>🎚️ الصعوبة</h4><div>
+                      <Opt on={!weightF} onClick={() => setWeightF('')}>الكل</Opt>
+                      {WEIGHTS.map(([k, l]) => <Opt key={k} on={weightF === k} onClick={() => setWeightF(k)}>{l}</Opt>)}
+                    </div></div>
+                    <div className="fl-grp"><h4>⏳ مدة اللعب</h4><div>
+                      <Opt on={!timeF} onClick={() => setTimeF('')}>الكل</Opt>
+                      {TIMES.map(([k, l, h]) => <Opt key={k} on={timeF === k} onClick={() => setTimeF(k)}>{l}<small>{h}</small></Opt>)}
+                    </div></div>
+                    {me && <div className="fl-grp"><h4>🎮 حالتها عندك</h4><div>
+                      <Opt on={!statusF} onClick={() => setStatusF('')}>الكل</Opt>
+                      <Opt on={statusF === 'new'} onClick={() => setStatusF('new')}>🔒 ما جربتها</Opt>
+                      <Opt on={statusF === 'played'} onClick={() => setStatusF('played')}>✅ جربتها</Opt>
+                    </div></div>}
+                    <div className="fl-grp"><h4>↕️ الترتيب</h4><div>
+                      {SORTS.map(([k, l]) => <Opt key={k} on={sort === k} onClick={() => setS(k)}>{l}</Opt>)}
+                    </div></div>
+                    <div className="fl-foot"><button type="button" className="link-btn" disabled={!act} onClick={clear}>مسح الكل</button><button type="button" className="btn primary small" onClick={() => setFOpen(false)}>عرض {lit} لعبة</button></div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
         </>
       )}
 

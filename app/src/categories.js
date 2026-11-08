@@ -6,7 +6,7 @@ export const CATEGORIES = [
   { id: 'coop', name: 'تعاونية وألغاز', hint: 'كلنا فريق واحد ضد اللعبة', tone: '#6FD08C' },
   { id: 'bluff', name: 'خداع وأدوار مخفية', hint: 'كذب وشك ومين الخاين', tone: '#E0708E' },
   { id: 'light', name: 'أوراق خفيفة وسريعة', hint: 'جولات قصيرة وضحك', tone: '#C38BFF' },
-  { id: 'duel', name: 'مواجهات لاعبين اثنين', hint: 'واحد ضد واحد', tone: '#5FB2FF' },
+  { id: 'duel', name: 'ألعاب 1v1', hint: 'واحد ضد واحد', tone: '#5FB2FF' },
 ]
 export const CAT = Object.fromEntries(CATEGORIES.map(c => [c.id, c]))
 export const OTHER = { id: 'other', name: 'بدون تصنيف', hint: '', tone: '#8A90B8' }
