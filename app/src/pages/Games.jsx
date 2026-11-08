@@ -25,8 +25,9 @@ const write = (k, v) => { try { localStorage.setItem(k, v) } catch { /* ignore *
 
 function GameTile({ g }) {
   return (
-    <a className="game-tile" href={`#/game/${g.game.id}`}>
+    <a className={`game-tile ${g.unplayed ? 'unplayed' : ''}`} href={`#/game/${g.game.id}`}>
       <Cover game={g.game} />
+      {g.unplayed && <span className="new-tag">✨ ما جربتها</span>}
       <div className="gt-body">
         <b className="gt-name">{g.game.name}</b>
         <div className="gt-meta">
@@ -57,7 +58,7 @@ export default function Games() {
   const setC = c => { setCat(c); write('tw-gcat', c) }
   const setS = s => { setSort(s); write('tw-gsort2', s) }
 
-  const all = useMemo(() => allGameStats(idx).map(g => ({ ...g, king: kingOf(idx, g.game.id)?.player?.name || null })), [idx])
+  const all = useMemo(() => allGameStats(idx).map(g => ({ ...g, king: kingOf(idx, g.game.id)?.player?.name || null, unplayed: !!me && !g.plays.some(p => p.results.some(r => r.player_id === me.id)) })), [idx, me])
   const counts = useMemo(() => {
     const m = {}
     for (const g of all) { const c = catOf(g.game).id; m[c] = (m[c] || 0) + 1 }
@@ -228,6 +229,7 @@ export function GameView({ id }) {
     )
   }
 
+  const iPlayed = !!me && st.plays.some(p => p.results.some(r => r.player_id === me.id))
   const mine = me ? st.ratings.find(r => r.player_id === me.id)?.score ?? null : null
   const owner = idx.playersById.get(game.owner_id)
   const canEdit = me && (me.is_admin || me.id === game.added_by)
@@ -264,7 +266,8 @@ export function GameView({ id }) {
         <FridayButton gameId={game.id} />
         {game.bgg_id && <a className="bgg-link" href={`https://boardgamegeek.com/boardgame/${game.bgg_id}`} target="_blank" rel="noreferrer">صفحتها في BoardGameGeek ↗</a>}
 
-        {me && (
+        {me && !iPlayed && <div className="glass pad lock-rate">🔒 جرّب اللعبة أول وبعدها تقدر تقيّمها</div>}
+        {me && iPlayed && (
           <Section title={mine != null ? `تقييمك: ${fmtScore(mine)}` : 'قيّمها'} action={mine != null && <button className="link-btn" disabled={saving} onClick={() => rate(null)}>امسح تقييمي</button>}>
             <div className="pad-x"><RatingInput value={mine} onChange={rate} disabled={saving} eleven={elevenInfo} /></div>
           </Section>

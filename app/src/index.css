@@ -1895,3 +1895,14 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
   .dragging { cursor: grabbing !important; scroll-snap-type: none !important; user-select: none; }
   .dragging * { pointer-events: none; }
 }
+
+/* ألعاب ما جربتها للحين */
+.box.unplayed .box-face { filter: grayscale(1) brightness(.62) contrast(.9); }
+.box.unplayed .box-side, .box.unplayed .box-top { filter: grayscale(1) brightness(.6); }
+.box.unplayed .box-3d { outline: 2px dashed rgba(255, 255, 255, .28); outline-offset: 3px; border-radius: 6px; }
+.box.unplayed .box-name { opacity: .6; }
+.box-new { position: absolute; top: -8px; inset-inline-start: -4px; z-index: 3; font-size: 15px; background: var(--bg); border: 1px solid var(--line); border-radius: 99px; padding: 1px 5px; animation: lgFloat 2.4s ease-in-out infinite; }
+.game-tile.unplayed .cover, .game-tile.unplayed img { filter: grayscale(1) brightness(.65); }
+.game-tile { position: relative; }
+.new-tag { position: absolute; top: 8px; inset-inline-start: 8px; z-index: 2; font-size: 11.5px; background: rgba(10, 12, 28, .85); border: 1px dashed rgba(255, 255, 255, .4); border-radius: 99px; padding: 2px 8px; }
+.lock-rate { font-size: 13.5px; color: var(--muted); text-align: center; }

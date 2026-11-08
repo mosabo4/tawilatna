@@ -22,6 +22,7 @@ export const ERRORS = {
   not_found: 'العنصر غير موجود، يمكن انحذف',
   dup_game: 'هذي اللعبة موجودة من قبل',
   bad_week: 'التاريخ لازم يكون يوم جمعة',
+  not_played: 'ما تقدر تقيّم لعبة قبل ما تجربها',
   eleven_used: 'عطيت 11 للعبة ثانية في نفس التصنيف. شيلها منها أول',
   too_long: 'النص طويل، اختصره شوي',
   empty: 'اكتب شي أول',
@@ -111,6 +112,7 @@ const demo = {
   setRating: async (player, pin, game, score) => {
     const s = dGet(); dAuth(s, player, pin)
     s.ratings = s.ratings.filter(r => !(r.game_id === game && r.player_id === player))
+    if (score != null && !s.results.some(r => r.player_id === player && s.plays.some(p => p.id === r.play_id && p.game_id === game))) throw new ApiError('not_played')
     if (score === 11) {
       const cat = s.games.find(g => g.id === game)?.category || ''
       if (s.ratings.some(r => r.player_id === player && r.score === 11 && r.game_id !== game && (s.games.find(g => g.id === r.game_id)?.category || '') === cat)) throw new ApiError('eleven_used')

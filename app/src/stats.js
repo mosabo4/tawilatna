@@ -50,7 +50,11 @@ export function buildIndex(data) {
     })
     .sort((a, b) => b.played_on.localeCompare(a.played_on) || (b.created_at || '').localeCompare(a.created_at || ''))
   const baseGames = allGames.filter(g => !(g.base_game_id && games.has(g.base_game_id)))
-  return { ...data, games: baseGames, allGames, expansionsOf, playersById: players, gamesById: games, plays }
+  // التقييم يُحسب فقط لمن جرّب اللعبة
+  const playedBy = new Set()
+  for (const p of plays) for (const r of p.results) playedBy.add(`${r.player_id}|${p.game_id}`)
+  const ratings = (data.ratings || []).filter(r => playedBy.has(`${r.player_id}|${r.game_id}`))
+  return { ...data, ratings, games: baseGames, allGames, expansionsOf, playersById: players, gamesById: games, plays }
 }
 
 // ---------- الترتيب ----------

@@ -5,6 +5,7 @@ import { launch, shelfMemory } from '../table'
 
 // علبة واقفة على الرف: طولها حسب صعوبة اللعبة (الثقيلة علبتها أكبر)
 function Box({ g, dim, onPick, picked }) {
+  const un = g.unplayed
   const w = g.game.weight ?? 2
   const h = Math.round(88 + Math.min(4, Math.max(1, w)) * 12)
   const open = e => {
@@ -15,7 +16,7 @@ function Box({ g, dim, onPick, picked }) {
     go(`/game/${g.game.id}`)
   }
   return (
-    <a href={`#/game/${g.game.id}`} className={`box ${dim ? 'dim' : ''} ${picked ? 'picked' : ''} ${onPick ? 'editing' : ''}`} onClick={open} style={{ '--h': `${h}px` }}
+    <a href={`#/game/${g.game.id}`} className={`box ${un ? 'unplayed' : ''} ${dim ? 'dim' : ''} ${picked ? 'picked' : ''} ${onPick ? 'editing' : ''}`} onClick={open} style={{ '--h': `${h}px` }}
       aria-label={`${g.game.name}${g.game.min_players ? `، ${g.game.min_players} إلى ${g.game.max_players} لاعبين` : ''}`}>
       <span className="box-3d">
         <span className="box-face"><Cover game={g.game} /></span>
@@ -23,6 +24,7 @@ function Box({ g, dim, onPick, picked }) {
         <span className="box-top" />
       </span>
       <span className="box-label"><span className="box-name">{g.game.name}</span></span>
+      {un && <span className="box-new" title="ما جربتها للحين">✨</span>}
       {g.king && <span className="box-king" title={`ملك اللعبة: ${g.king}`}>👑</span>}
       {g.plays.length > 0 && <span className="box-plays" title={`${g.plays.length} قيم`}>{g.plays.length}</span>}
     </a>
