@@ -58,9 +58,11 @@ export function achContext(idx, rx) {
     for (const r of p.results.filter(r => r.position === 1)) monthWins.get(m).set(r.player_id, (monthWins.get(m).get(r.player_id) || 0) + 1)
   }
   const nowM = monthOf(new Date().toISOString())
+  const monthDays = new Map()
+  for (const p of chrono) { const m = monthOf(p.played_on); if (!monthDays.has(m)) monthDays.set(m, new Set()); monthDays.get(m).add(p.played_on) }
   const monthChamps = new Map()
   for (const [m, w] of monthWins) {
-    if (m >= nowM) continue
+    if (m >= nowM || (monthDays.get(m)?.size || 0) < 3) continue
     const s = [...w.entries()].sort((a, b) => b[1] - a[1])
     if (s[0] && (!s[1] || s[1][1] < s[0][1])) monthChamps.set(s[0][0], [...(monthChamps.get(s[0][0]) || []), m])
   }
@@ -120,7 +122,7 @@ function defs(ctx) {
     once('ebaby', '👶', 'البيبي الأبدي', 'يسوّونك بيبي 5 مرات', 60, 'secret', s => s.babied >= 5),
     once('grave', '🪦', 'المقبرة', 'تخسر 10 تحديات رسمية', 80, 'secret', s => s.chalLost >= 10),
 
-    { id: 'champ', icon: '🏅', name: 'بطل الشهر', desc: 'كن أكثر واحد فاز في الشهر (يتجدد كل شهر)', group: 'season', each: 150, times: s => s.champMonths, extra: s => (s.champList?.length ? ` · فزت بـ: ${s.champList.join('، ')}` : '') },
+    { id: 'champ', icon: '🏅', name: 'بطل الشهر', desc: 'كن أكثر واحد فاز في الشهر (يتجدد كل شهر، وما يُحسب إلا بعد ما ينتهي الشهر وفيه 3 جلسات على الأقل)', group: 'season', each: 150, times: s => s.champMonths, extra: s => (s.champList?.length ? ` · فزت بـ: ${s.champList.join('، ')}` : '') },
     { id: 'always', icon: '📆', name: 'الحاضر الدائم', desc: 'احضر كل جلسات الشهر (3 جلسات على الأقل)', group: 'season', each: 100, times: s => s.fullMonths },
   ]
 }
