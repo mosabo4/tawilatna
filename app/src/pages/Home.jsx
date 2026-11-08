@@ -98,7 +98,7 @@ export default function Home() {
 
       {needs.length > 0 && (
         <>
-          <h2 className="h-sec">يحتاجك</h2>
+          <h2 className="h-sec">التنبيهات</h2>
           <div className="needs">
             {needs.map(n => (
               <a key={n.title} className={`need ${n.hot ? 'hot' : ''}`} href={n.href}>

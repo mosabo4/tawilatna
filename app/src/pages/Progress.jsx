@@ -37,7 +37,7 @@ export default function Progress({ sub }) {
   if (!me) return <div className="page"><TopBar title="المستوى" backTo="/me" /><p className="muted pad">ادخل باسمك عشان تشوف تقدّمك.</p></div>
   if (sub === 'titles') return <div className="page"><TopBar title="الألقاب" backTo="/progress" /><TitlesList /></div>
   if (sub === 'ach') return <div className="page"><TopBar title="الإنجازات" backTo="/progress" /><div className="stack"><AchList /><XpHow /></div></div>
-  if (sub === 'crew') return <div className="page"><TopBar title="ليفلات الشلة" backTo="/progress" /><div className="stack"><CrewLevels /></div></div>
+  if (sub === 'crew') return <div className="page"><TopBar title="مستويات الشلة" backTo="/progress" /><div className="stack"><CrewLevels /></div></div>
   return <div className="page"><TopBar title="المستوى" backTo="/me" /><Main /></div>
 }
 
@@ -105,7 +105,7 @@ function Main() {
     </>,
     frame: <div className="frames">
       <button type="button" className={!perks.frame ? 'on' : ''} onClick={() => set({ frame: null })}><span className="avatar-demo"><Avatar player={me} size={44} frame={null} /></span>بدون</button>
-      {FRAMES.map(f => <button key={f.id} type="button" disabled={L < f.level} className={perks.frame === f.id ? 'on' : ''} onClick={() => set({ frame: f.id })}><span className="avatar-demo"><Avatar player={me} size={44} frame={f.id} /></span>{f.name}{L < f.level && <small>🔒 ليفل {f.level}</small>}</button>)}
+      {FRAMES.map(f => <button key={f.id} type="button" disabled={L < f.level} className={perks.frame === f.id ? 'on' : ''} onClick={() => set({ frame: f.id })}><span className="avatar-demo"><Avatar player={me} size={44} frame={f.id} /></span>{f.name}{L < f.level && <small>🔒 مستوى {f.level}</small>}</button>)}
     </div>,
     bg: <div className="bg-pick">
       <button className={!perks.bg ? 'on' : ''} onClick={() => set({ bg: null })}><span className="bgp none">↺</span>بدون</button>
@@ -183,16 +183,16 @@ function Main() {
   return (
     <div className="stack pg">
       <section className="glass pg-now" style={{ '--c': active.color || me.color }}>
-        <Ring value={lv.progress}><b>{realLevel}</b><small>ليفل</small></Ring>
+        <Ring value={lv.progress}><b>{realLevel}</b><small>مستوى</small></Ring>
         <div className="pg-now-txt">
           <small>{lv.title}{test && ' · 🧪 تجربة'}</small>
           <strong>باقي <bdi>{lv.need - lv.into} XP</bdi></strong>
-          <span>على ليفل {realLevel + 1} · عندك <bdi>{lv.xp} XP</bdi></span>
+          <span>على مستوى {realLevel + 1} · عندك <bdi>{lv.xp} XP</bdi></span>
         </div>
       </section>
 
       <section>
-        <h2 className="h-sec">طريق الليفلات <small>اسحب ←</small></h2>
+        <h2 className="h-sec">طريق المستويات <small>اسحب ←</small></h2>
         <div className="lv-road" ref={roadRef}>
           {byLevel.map((g, k) => {
             const st = realLevel > g.l ? 'done' : realLevel === g.l ? 'cur' : 'lock'
@@ -202,7 +202,7 @@ function Main() {
               <div key={g.l} className={`lv-col ${st}`}>
                 <div className="lc-head">
                   <span className="lc-node">{st === 'done' ? '✓' : g.l}</span>
-                  <span className="lc-t"><b>ليفل {g.l}</b><small><bdi>{xpFor(g.l)} XP</bdi></small></span>
+                  <span className="lc-t"><b>مستوى {g.l}</b><small><bdi>{xpFor(g.l)} XP</bdi></small></span>
                 </div>
                 <div className="lc-track">
                   <i className="lc-line" />
@@ -228,7 +228,7 @@ function Main() {
           <div className="pl-opts">
             {looks.map(o => o.open
               ? <button key={o.id} onClick={() => setSheet(o.id)}><small>{o.label}</small><span>{o.val}</span></button>
-              : <button key={o.id} disabled><small>{o.label}</small><span>🔒 ليفل {o.lvl}</span></button>)}
+              : <button key={o.id} disabled><small>{o.label}</small><span>🔒 مستوى {o.lvl}</span></button>)}
           </div>
         </div>
         {powers.length > 0 && <div className="pg-powers">{powers.map(p => <button key={p.id} onClick={() => setSheet(p.id)}><span>{p.icon}</span><b>{p.name}</b><small>{p.val}</small></button>)}</div>}
@@ -256,7 +256,7 @@ function Main() {
       )}
 
       <nav className="me-links slim">
-        <a className="me-link" href="#/progress/crew"><span>📈</span><b>ليفلات الشلة</b><em>بالتفصيل</em><i aria-hidden="true">‹</i></a>
+        <a className="me-link" href="#/progress/crew"><span>📈</span><b>مستويات الشلة</b><em>بالتفصيل</em><i aria-hidden="true">‹</i></a>
         <a className="me-link" href="#/progress/ach"><span>⚡</span><b>كيف أجمع XP</b><em>كل الطرق</em><i aria-hidden="true">‹</i></a>
       </nav>
 
@@ -278,7 +278,7 @@ function Main() {
   )
 }
 
-// تقريرك الخاص (ليفل 12): لك بس، ما يدخل في ملخص الشهر
+// تقريرك الخاص (مستوى 12): لك بس، ما يدخل في ملخص الشهر
 function Report() {
   const { idx, me } = useStore()
   const rep = useMemo(() => {

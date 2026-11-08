@@ -127,7 +127,7 @@ export default function App() {
   if (r[0] === 'recap') return <><Recap month={r[1] || new Date().toISOString().slice(0, 7)} key={r[1]} /><Toast /></>
 
   const top = r[0] === undefined
-  const alerts = me ? unread(idx, me).length : 0
+  const alerts = me ? unread(idx, me).filter(e => !e.post).length : 0
   return (
     <div className="app">
       {top && (

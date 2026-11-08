@@ -127,7 +127,7 @@ export function PlayView({ id }) {
   )
 }
 
-// احتفال الفوز (ليفل 12)
+// احتفال الفوز (مستوى 12)
 function Confetti({ winners }) {
   const { idx } = useStore()
   const { look } = usePerks()
@@ -176,7 +176,7 @@ function PlayPowers({ play, winners, lucky }) {
   </>
 }
 
-// المذكرات (ليفل 5): قصة القيم
+// المذكرات (مستوى 5): قصة القيم
 function Stories({ play }) {
   const { idx, me } = useStore()
   const { can, doAction, undoAction } = usePerks()

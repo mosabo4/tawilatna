@@ -1,4 +1,4 @@
-// جوائز الليفلات: تنحفظ في القاعدة ويشوفها الكل (وضع التجربة بس يبقى على الجهاز)
+// جوائز المستويات: تنحفظ في القاعدة ويشوفها الكل (وضع التجربة بس يبقى على الجهاز)
 /* eslint-disable react/prop-types */
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { useStore } from './store'

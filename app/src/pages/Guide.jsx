@@ -39,18 +39,18 @@ export default function Guide() {
     <div className="rc-cover end" key="cover">
       <small>طاولتنا</small>
       <h1>شرح<br /><span>الموقع الجديد</span></h1>
-      <p>كل اللي تحتاج تعرفه: النقاط، الليفلات، الجوائز، الإنجازات، والألقاب</p>
+      <p>كل اللي تحتاج تعرفه: النقاط، المستويات، الجوائز، الإنجازات، والألقاب</p>
       <em>اضغط عشان نبدأ ←</em>
     </div>,
 
     <div key="nav">
       <h2>التطبيق بخمس أزرار</h2>
       <div className="gd-grid">
-        <Card icon="🏠" title="الرئيسية">وش يحتاجك، المتصدرين، اللوحة، وآخر الأحداث</Card>
+        <Card icon="🏠" title="الرئيسية">التنبيهات، المتصدرين، اللوحة، وآخر الأحداث</Card>
         <Card icon="🎲" title="الألعاب">الدولاب كامل، تقييم كل لعبة، وملك كل لعبة</Card>
         <Card icon="➕" title="سجّل قيم">بعد كل قيم: اللعبة، مين لعب، والنتيجة</Card>
         <Card icon="👥" title="الشلة">الترتيب، اللاعبين، لوحة الكلام، وسجل الأقيام</Card>
-        <Card icon="👤" title="أنا">بطاقتك، ليفلك، جوائزك، وشكلك عند الشلة</Card>
+        <Card icon="👤" title="أنا">بطاقتك، مستواك، جوائزك، وشكلك عند الشلة</Card>
         <Card icon="▶" title="الجلسة الحيّة">تبدأها أول الجلسة، وآخرها يطلع ملخص الليلة</Card>
       </div>
     </div>,
@@ -98,18 +98,18 @@ export default function Guide() {
     </div>,
 
     <div key="levels">
-      <h2>الليفلات</h2>
+      <h2>المستويات</h2>
       <div className="rc-nums">
-        {[2, 5, 10, 15, 20].map(l => <div key={l}><b>{l}</b><span>ليفل</span><i>{xpFor(l).toLocaleString('en')} XP</i></div>)}
+        {[2, 5, 10, 15, 20].map(l => <div key={l}><b>{l}</b><span>مستوى</span><i>{xpFor(l).toLocaleString('en')} XP</i></div>)}
       </div>
-      <div className="gd-big small">كل ليفل يفتح لك جوائز جديدة</div>
+      <div className="gd-big small">كل مستوى يفتح لك جوائز جديدة</div>
       <p className="gd-note">من 2 لين 20، وكل ما ارتفعت صارت الجوائز أقوى وأكثر تأثير على الشلة</p>
     </div>,
 
     <div key="rewards">
-      <h2>جوائز وتحديات <small>تنفتح مع ليفلك</small></h2>
+      <h2>جوائز وتحديات <small>تنفتح مع مستواك</small></h2>
       <div className="gd-grid">
-        <Card icon="🎁" title="جوائز">كل ما ارتفع ليفلك تنفتح لك جوائز جديدة تستخدمها مع الشلة</Card>
+        <Card icon="🎁" title="جوائز">كل ما ارتفع مستواك تنفتح لك جوائز جديدة تستخدمها مع الشلة</Card>
         <Card icon="⚔️" title="تحديات وتوقعات">تتحدون بعض وتتوقعون النتائج وتاخذون XP</Card>
         <Card icon="😈" title="طقطقة">أشياء خفيفة تضحكون فيها على بعض، وفيها حماية لمن يبي</Card>
         <Card icon="⏳" title="تتجدد">بعض الجوائز تتجدد كل أسبوع أو شهر، وتشوفها في «جوائزي المحدودة» بصفحة أنا</Card>
@@ -140,7 +140,7 @@ export default function Guide() {
       <h2>الألقاب <small>صعبة وتستاهل</small></h2>
       <div className="gd-rar">{Object.values(RARITY).reverse().map(r => <span key={r.name}><i style={{ background: r.dot }} />{r.name}</span>)}</div>
       <div className="gd-grid">{titleEx.map(t => <Card key={t.id} icon={t.icon} title={`${t.name} · ${RARITY[t.rarity].name}`}>{t.desc}</Card>)}</div>
-      <p className="gd-note">{TITLE_DEFS.length} لقب بثلاث درجات حسب الصعوبة، تلبس واحد منها جنب اسمك من ليفل 3</p>
+      <p className="gd-note">{TITLE_DEFS.length} لقب بثلاث درجات حسب الصعوبة، تلبس واحد منها جنب اسمك من مستوى 3</p>
     </div>,
 
     <div key="session">
@@ -149,7 +149,7 @@ export default function Guide() {
         <Card icon="🙏" title="بعد اللعبة الثقيلة">كل المجهّزين تقدر تشكرهم من صفحة القيم: هو +20 وأنت +10</Card>
         <Card icon="🗳️" title="قبل: الجلسة الجاية">كل واحد يختار وش يبي يلعب، والأكثر طلباً يطلع فوق</Card>
         <Card icon="📋" title="أثناء: قرارات وتوقعات">جوائز وتحديات تستخدمونها وقت اللعب</Card>
-        <Card icon="⚡" title="بعد: XP الليلة">كم أخذ كل واحد، ومين ارتفع ليفله</Card>
+        <Card icon="⚡" title="بعد: XP الليلة">كم أخذ كل واحد، ومين ارتفع مستواه</Card>
       </div>
     </div>,
 
@@ -157,10 +157,10 @@ export default function Guide() {
       <h2>وين الشلة الحين؟</h2>
       <ol className="gd-board">
         {crew.map((l, k) => (
-          <li key={l.player.id}><span className="gd-rk">{k + 1}</span><Avatar player={l.player} size={40} /><b>{l.player.name}</b><span className="gd-lv">ليفل {l.level}</span><em>{l.xp.toLocaleString('en')} XP</em></li>
+          <li key={l.player.id}><span className="gd-rk">{k + 1}</span><Avatar player={l.player} size={40} /><b>{l.player.name}</b><span className="gd-lv">مستوى {l.level}</span><em>{l.xp.toLocaleString('en')} XP</em></li>
         ))}
       </ol>
-      {someone && <p className="gd-note">{someone.name} قدّام، بس الطريق للين ليفل 20 طويل 😏</p>}
+      {someone && <p className="gd-note">{someone.name} قدّام، بس الطريق للين مستوى 20 طويل 😏</p>}
     </div>,
 
     <div className="rc-cover end" key="end">

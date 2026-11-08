@@ -127,7 +127,7 @@ export function Friday() {
                 )
               })}
             </ul>
-            {can('vote2') && <p className="hint pad-x">🗳️ صوتك ينحسب صوتين (جائزة ليفل 5).</p>}
+            {can('vote2') && <p className="hint pad-x">🗳️ صوتك ينحسب صوتين (جائزة مستوى 5).</p>}
             <p className="hint pad-x pad-b">الاختيارات تتصفّر لحالها أول ما تسجلون أقيام الجلسة.</p>
           </Section>
         ) : <Empty title="ادخل باسمك" text="عشان تختار الألعاب اللي ودك تجربها." />}

@@ -94,7 +94,7 @@ function Admin() {
   return (
     <>
       <Section title="ملخص الشهر 🎬"><RecapLauncher /></Section>
-      <Section title="شرح الموقع 📖"><div className="pad form"><p className="hint" style={{ margin: 0 }}>عرض يشرح للشلة نظام الموقع: النقاط، الليفلات، الجوائز، الإنجازات، الألقاب.</p><button className="btn primary" onClick={() => { document.documentElement.requestFullscreen?.().catch(() => {}); go('/guide') }}>▶ اعرض الشرح</button></div></Section>
+      <Section title="شرح الموقع 📖"><div className="pad form"><p className="hint" style={{ margin: 0 }}>عرض يشرح للشلة نظام الموقع: النقاط، المستويات، الجوائز، الإنجازات، الألقاب.</p><button className="btn primary" onClick={() => { document.documentElement.requestFullscreen?.().catch(() => {}); go('/guide') }}>▶ اعرض الشرح</button></div></Section>
       <Section title="دخول الشلة"><LockToggle /></Section>
       <Section title="إدارة اللاعبين" action={editing !== 'new' && <button className="btn small ghost" onClick={() => setEditing('new')}>أضف لاعب</button>}>
         {editing === 'new' && <PlayerEditor onDone={() => setEditing(null)} />}
@@ -128,7 +128,7 @@ const SUBS = { char: ['شخصيتي', CharacterEditor], games: ['ألعابي و
 export default function Me({ sub }) {
   const { me, idx, logout } = useStore()
   const levels = useLevels()
-  if (!me) return <div className="page"><TopBar title="أنا" /><Empty title="ما دخلت" text="ادخل باسمك عشان تشوف ليفلك وجوائزك." /></div>
+  if (!me) return <div className="page"><TopBar title="أنا" /><Empty title="ما دخلت" text="ادخل باسمك عشان تشوف مستواك وجوائزك." /></div>
   if (sub === 'closet') return <Progress />
   if (sub === 'cards') return <AllCards />
   if (sub && SUBS[sub]) {
@@ -151,7 +151,7 @@ export default function Me({ sub }) {
         <div className="me-prog">
           <a href="#/progress" className="mp-main">
             <span className="mp-ic">🎁</span>
-            <span className="mp-txt"><b>تقدّمي وجوائزي</b><small>{lv.nextReward ? `الجاية: ${lv.nextReward.icon} ${lv.nextReward.name} · ليفل ${lv.nextReward.level}` : 'فتحت كل شي 👑'}</small></span>
+            <span className="mp-txt"><b>تقدّمي وجوائزي</b><small>{lv.nextReward ? `الجاية: ${lv.nextReward.icon} ${lv.nextReward.name} · مستوى ${lv.nextReward.level}` : 'فتحت كل شي 👑'}</small></span>
             <i aria-hidden="true">‹</i>
           </a>
         </div>
@@ -172,7 +172,7 @@ export default function Me({ sub }) {
   )
 }
 
-const KIND = { level: ['ليفل', '#FF7A59'], reward: ['جائزة', '#E9B425'], title: ['لقب', '#8A4FD8'], ach: ['إنجاز', '#2E9E5B'] }
+const KIND = { level: ['مستوى', '#FF7A59'], reward: ['جائزة', '#E9B425'], title: ['لقب', '#8A4FD8'], ach: ['إنجاز', '#2E9E5B'] }
 const dayText = d => { const n = Math.round((new Date(new Date().toISOString().slice(0, 10)) - new Date(d)) / 864e5); return n <= 0 ? 'اليوم' : n === 1 ? 'أمس' : n < 7 ? `قبل ${n} أيام` : new Date(d).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'short' }) }
 function RecentUnlocks({ pid }) {
   const { idx } = useStore()
@@ -213,7 +213,7 @@ export function PlayerCard({ pid, href }) {
         <div className="mc-mid">
           <b className={`mc-nm ${lk.nameFx ? 'name-fx' : ''}`}>{p.name}{lk.badge && <i className="nm-badge">{lk.badge.icon}</i>}</b>
           {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <span className="mc-tb">{lv.title}</span>}
-          <span className="mc-lv"><span className="mc-lvn">{lv.level}</span>ليفل · <bdi>{lv.xp} XP</bdi></span>
+          <span className="mc-lv"><span className="mc-lvn">{lv.level}</span>مستوى · <bdi>{lv.xp} XP</bdi></span>
         </div>
         <div className="mc-left">
           <div className="mc-big"><bdi>{st.points ?? '—'}{st.points != null && <em>%</em>}</bdi></div>
@@ -226,14 +226,14 @@ export function PlayerCard({ pid, href }) {
         </div>
       </div>
       <div className="mc-xp">
-        <div className="mc-xprow"><span>باقي <bdi>{lv.need - lv.into} XP</bdi> على ليفل {lv.level + 1}</span><bdi>{Math.round(lv.progress * 100)}%</bdi></div>
+        <div className="mc-xprow"><span>باقي <bdi>{lv.need - lv.into} XP</bdi> على مستوى {lv.level + 1}</span><bdi>{Math.round(lv.progress * 100)}%</bdi></div>
         <div className="mc-bar"><i style={{ width: `${Math.max(3, lv.progress * 100)}%` }} /></div>
       </div>
     </a>
   )
 }
 
-// بطاقات الشلة كلها، الأعلى ليفل أول
+// بطاقات الشلة كلها، الأعلى مستوى أول
 function AllCards() {
   const { me } = useStore()
   const levels = useLevels()

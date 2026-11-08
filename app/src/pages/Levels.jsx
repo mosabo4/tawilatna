@@ -23,7 +23,7 @@ export function CrewLevels() {
   const levels = useLevels()
   const list = [...levels.values()].sort((a, b) => b.xp - a.xp)
   return (
-    <Section title="ليفلات الشلة">
+    <Section title="مستويات الشلة">
       <ol className="lv-list">
         {list.map(l => (
           <li key={l.player.id} className={l.player.id === me?.id ? 'mine' : ''}>
@@ -99,7 +99,7 @@ export function XpHow() {
         <li><span>🏅</span><span>كل إنجاز تفتحه</span><b>+10 إلى 250</b></li>
       </ul>
       <div className="pad-x pad-b">
-        <p className="hint">الليفل يقيس حضورك وتفاعلك، مو مهارتك. المهارة لها صفحة الترتيب.</p>
+        <p className="hint">اللمستوى يقيس حضورك وتفاعلك، مو مهارتك. المهارة لها صفحة الترتيب.</p>
         <div className="lv-titles">{TITLES.map(([l, t]) => <span key={l}><b>{l}</b><TitleBadge title={t} small /><small>{xpFor(l)} XP</small></span>)}</div>
       </div>
     </Section>

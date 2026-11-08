@@ -32,7 +32,7 @@ export function Search() {
 export function Alerts() {
   const { idx, me } = useStore()
   const [seen] = useState(getSeen)
-  const ev = useMemo(() => buildEvents(idx), [idx])
+  const ev = useMemo(() => buildEvents(idx).filter(e => !e.post), [idx])
   useEffect(() => { markSeen() }, [])
   return (
     <div className="page">

@@ -41,7 +41,7 @@ export function PlayerView({ id }) {
         {lv && (
           <a className="glass lv-home" href={mine ? "#/progress" : "#/progress/crew"}>
             <span className="lv-main">
-              <span className="lv-top"><b>ليفل {lv.level} · {lv.title}</b><small>{lv.xp} XP</small></span>
+              <span className="lv-top"><b>مستوى {lv.level} · {lv.title}</b><small>{lv.xp} XP</small></span>
               <span className="lv-bar"><span style={{ width: `${Math.max(3, lv.progress * 100)}%`, '--c': player.color }} /></span>
               <small className="lv-hint">🏅 {lv.achievements.filter(a => a.done).length} من {lv.achievements.length} إنجاز</small>
             </span>
@@ -173,7 +173,7 @@ export default function PlayersList() {
                 <span className="crew-char"><Character player={p} size={92} /></span>
                 <b className={lk.nameFx ? 'name-fx' : ''}>{p.name}{lk.badge && <i className="nm-badge">{lk.badge.icon}</i>}</b>
                 {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <small>{lv?.title}</small>}
-                {lv && <span className="crew-lv"><LevelPill level={lv.level} /> ليفل</span>}
+                {lv && <span className="crew-lv"><LevelPill level={lv.level} /> مستوى</span>}
               </a>
             )
           })}
@@ -234,7 +234,7 @@ function XpBreakdown({ lv, log }) {
   )
 }
 
-// أشياء تسويها مع لاعب ثاني من صفحته (حسب ليفلك)
+// أشياء تسويها مع لاعب ثاني من صفحته (حسب مستواك)
 function PlayerPowers({ target }) {
   const { idx, me } = useStore()
   const { can, doAction, levels } = usePerks()
@@ -322,7 +322,7 @@ function Challenges({ pid }) {
   )
 }
 
-// نقطة ضعف الخصم (ليفل 10)
+// نقطة ضعف الخصم (مستوى 10)
 function Weakness({ pid }) {
   const { idx } = useStore()
   const { can } = usePerks()
@@ -338,7 +338,7 @@ function Weakness({ pid }) {
   return <div className="glass weak">🎯 <span>نقطة ضعفه: <b>{w.g?.name}</b> · فاز {w.w} من {w.n}</span></div>
 }
 
-// صفحة الأسطورة (ليفل 18): أعظم الانتصارات
+// صفحة الأسطورة (مستوى 18): أعظم الانتصارات
 function LegendWins({ pid }) {
   const { idx } = useStore()
   const { levels } = usePerks()

@@ -1,4 +1,4 @@
-// نظام الليفلات: يقيس التفاعل والحضور (مو المهارة). كل شي يتحسب من البيانات المسجلة.
+// نظام المستويات: يقيس التفاعل والحضور (مو المهارة). كل شي يتحسب من البيانات المسجلة.
 import { counts } from './stats'
 import { resolveActions } from './actions'
 import { winXp } from './winxp'
@@ -17,20 +17,20 @@ export const XP_RULES = [
   { id: 'setup', icon: '🧱', label: 'تجهيز لعبة ثقيلة', xp: 20 },
   { id: 'cleanup', icon: '🧹', label: 'ترتيب لعبة ثقيلة بعد القيم', xp: 15 },
   { id: 'thanks', icon: '🙏', label: 'أحد يشكرك على التجهيز', xp: 20 },
-  { id: 'thankGive', icon: '🤝', label: 'تشكر اللي جهّز اللعبة (ليفل 3)', xp: 10 },
-  { id: 'predict', icon: '🔮', label: 'توقّع صحيح للفايز (ليفل 8، ويصير +30 من ليفل 15)', xp: 15 },
+  { id: 'thankGive', icon: '🤝', label: 'تشكر اللي جهّز اللعبة (مستوى 3)', xp: 10 },
+  { id: 'predict', icon: '🔮', label: 'توقّع صحيح للفايز (مستوى 8، ويصير +30 من مستوى 15)', xp: 15 },
   { id: 'fullhouse', icon: '👨‍👩‍👦', label: 'جلسة حضرتها الشلة كاملة', xp: 20 },
   { id: 'gift', icon: '🎁', label: 'هدية من واحد من الشلة', xp: 50 },
   { id: 'lucky', icon: '🍀', label: 'فوز انحط عليه «بالحظ»: ينقص نص XP القيم', xp: 0 },
-  { id: 'luckbox', icon: '🎁', label: 'صندوق الحظ (ليفل 4)', xp: 0 },
-  { id: 'risk', icon: '⚡', label: 'Double or Nothing: +300 لو فزت، -50 لو خسرت (ليفل 11)', xp: 0 },
-  { id: 'godfather', icon: '🤝', label: 'العرّاب: +20 لك، والتلميذ نص XP أقيامك (ليفل 16)', xp: 0 },
-  { id: 'box', icon: '💰', label: 'صندوق الشلة: تحطه أو تكسبه (ليفل 18)', xp: 0 },
+  { id: 'luckbox', icon: '🎁', label: 'صندوق الحظ (مستوى 4)', xp: 0 },
+  { id: 'risk', icon: '⚡', label: 'Double or Nothing: +300 لو فزت، -50 لو خسرت (مستوى 11)', xp: 0 },
+  { id: 'godfather', icon: '🤝', label: 'العرّاب: +20 لك، والتلميذ نص XP أقيامك (مستوى 16)', xp: 0 },
+  { id: 'box', icon: '💰', label: 'صندوق الشلة: تحطه أو تكسبه (مستوى 18)', xp: 0 },
   { id: 'guarantee', icon: '🛟', label: 'ضمان الخاسر: آخر واحد في الجلسة ياخذ +20', xp: 0 },
 ]
 const XP = Object.fromEntries(XP_RULES.map(r => [r.id, r.xp]))
 
-// XP المطلوب للوصول لليفل L (تراكمي): 300، 720، 1440، 2400، 3600...
+// XP المطلوب للوصول للمستوى L (تراكمي): 300، 720، 1440، 2400، 3600...
 export const xpFor = L => (L <= 1 ? 0 : L === 2 ? 300 : Math.round((150 * (L - 1) ** 2 + 150 * (L - 1)) * 0.8 / 10) * 10)
 export const levelFromXp = xp => { let L = 1; while (xpFor(L + 1) <= xp) L++; return L }
 
@@ -39,7 +39,7 @@ export const TITLES = [
 ]
 export const titleOf = L => TITLES.filter(([l]) => l <= L).at(-1)[1]
 
-// الجوائز (أكثر من وحدة ممكن تكون في نفس الليفل)
+// الجوائز (أكثر من وحدة ممكن تكون في نفس اللمستوى)
 export const REWARDS = [
   { level: 2, id: 'color', icon: '🎨', name: 'لون حسابك', desc: 'لون يطلع لك في صورتك وبطاقتك، والكل يشوفه' },
   { level: 2, id: 'reacts', icon: '😂', name: 'ردود فعل', desc: 'إيموجي على كتابات اللوحة' },
@@ -79,7 +79,7 @@ export const REWARDS = [
   { level: 15, id: 'lucky', icon: '🍀', name: 'ماسح الفوز', desc: 'تحط «بالحظ 🍀» على فوز واحد: الفوز ينحسب بس ياخذ نص الـXP، مرة بالشهر' },
   { level: 15, id: 'predict2', icon: '🔮', name: 'التوقع المضاعف', desc: 'توقعك الصحيح يعطيك +30 بدال +15' },
   { level: 15, id: 'swap', icon: '🔀', name: 'تبديل المركز', desc: 'إذا تعادلت بالنقاط مع اللي قدّامك تاخذ مركزه، مرة بالشهر' },
-  { level: 16, id: 'godfather', icon: '🤝', name: 'العرّاب', desc: 'تختار لاعب أقل منك بليفلين: جلستكم الجاية ياخذ نص XP أقيامك بدون ما تنقص أنت شي، وأنت +20' },
+  { level: 16, id: 'godfather', icon: '🤝', name: 'العرّاب', desc: 'تختار لاعب أقل منك بمستويين: جلستكم الجاية ياخذ نص XP أقيامك بدون ما تنقص أنت شي، وأنت +20' },
   { level: 16, id: 'gold', icon: '🃏', name: 'الكرت الذهبي', desc: 'بطاقتك تصير كرت لاعب ذهبي' },
   { level: 16, id: 'f-diamond', icon: '💎', name: 'إطار ماسي', desc: 'أندر إطار في الطاولة' },
   { level: 17, id: 'hotseat', icon: '🔥', name: 'الكرسي الساخن', desc: 'تختار واحد لازم الكل يتحداه الجلسة الجاية، مرة بالشهر' },
@@ -147,7 +147,7 @@ export function computeLevels(idx) {
     }
     pre.push({ pl, s, parts, base: Math.max(0, Object.values(parts).reduce((a, b) => a + b, 0)) })
   }
-  // الإنجازات (تحتاج ليفلات الكل بدون الإنجازات عشان «العرّاب الناجح»)
+  // الإنجازات (تحتاج مستويات الكل بدون الإنجازات عشان «العرّاب الناجح»)
   const ctx = achContext(idx, rx)
   const baseLv = new Map(pre.map(x => [x.pl.id, levelFromXp(x.base)]))
   for (const { pl, s, parts, base } of pre) {

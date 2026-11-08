@@ -775,7 +775,7 @@ textarea.input { resize: vertical; }
 .maint h2 { font-size: 22px; margin: 6px 0 0; }
 .maint p { color: var(--muted); line-height: 1.9; margin: 0; }
 
-/* ---------- الليفلات ---------- */
+/* ---------- المستويات ---------- */
 .lvl-pill { position: absolute; bottom: -3px; inset-inline-start: -4px; z-index: 2; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 99px; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; background: var(--grad); border: 2px solid var(--bg); font-variant-numeric: tabular-nums; }
 .lvl-pill.big { min-width: 30px; height: 30px; font-size: 15px; bottom: -4px; }
 .lv-av, .lv-me-av { position: relative; flex: none; display: inline-flex; }
@@ -835,7 +835,7 @@ textarea.input { resize: vertical; }
 .lv-titles b { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; background: var(--grad); font-size: 11px; flex: none; }
 .lv-titles small { margin-inline-start: auto; color: var(--muted-2); font-size: 10.5px; }
 
-/* ---------- جوائز الليفلات ---------- */
+/* ---------- جوائز المستويات ---------- */
 .avatar.f-silver { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #CBD3E3, 0 0 12px rgba(203, 211, 227, .5); }
 .avatar.f-gold::after, .avatar.f-diamond::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; padding: 3px; z-index: 0; pointer-events: none;
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: ringSpin 3s linear infinite; }
@@ -1523,7 +1523,7 @@ a.pw:active { transform: scale(.99); }
 .hall-row { display: flex; gap: 10px; justify-content: center; padding-top: 6px; }
 .hall-row span { display: flex; flex-direction: column; align-items: center; } .hall-row .chr-img { height: 80px !important; width: auto; } .hall-row small { font-size: 11px; color: #FFC45C; }
 
-/* طريق الليفلات */
+/* طريق المستويات */
 .lv-road { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 4px 16px 10px; margin: 0 -16px; scrollbar-width: none; }
 .lv-road::-webkit-scrollbar { display: none; }
 .lv-col { flex: none; width: 232px; scroll-snap-align: center; border-radius: 20px; padding: 12px; background: var(--card); border: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }

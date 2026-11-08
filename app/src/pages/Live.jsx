@@ -43,7 +43,7 @@ export default function Live() {
                   <li key={x.player.id}>
                     <span className="xn-chr"><Character player={x.player} pose={x.to > x.from ? 'cheer' : 'idle'} size={46} /></span>
                     <div className="xn-body">
-                      <div className="xn-top"><b>{x.player.name}</b>{x.to > x.from && <em className="xn-up">⬆ ليفل {x.to}!</em>}<strong>+{x.total}<small> XP</small></strong></div>
+                      <div className="xn-top"><b>{x.player.name}</b>{x.to > x.from && <em className="xn-up">⬆ مستوى {x.to}!</em>}<strong>+{x.total}<small> XP</small></strong></div>
                       <div className="xn-parts">
                         {x.parts.map(p => <span key={p.id}>{p.icon} +{p.got}</span>)}
                         {x.ach.map(a => <span key={a.id} className="ach">{a.icon} {a.name} +{a.xp}</span>)}
@@ -127,7 +127,7 @@ export default function Live() {
   )
 }
 
-// التوقعات (ليفل 8) والرهان (ليفل 16) قبل القيم الجاي
+// التوقعات (مستوى 8) والرهان (مستوى 16) قبل القيم الجاي
 function Forecast({ live, people }) {
   const { idx, me } = useStore()
   const { can, doAction, fx } = usePerks()
@@ -173,7 +173,7 @@ function Forecast({ live, people }) {
 }
 
 
-// تجاوز الدور (ليفل 8): تختار مين يبدأ في قيم، مرة بالأسبوع
+// تجاوز الدور (مستوى 8): تختار مين يبدأ في قيم، مرة بالأسبوع
 function FirstTurn({ people }) {
   const { idx, me } = useStore()
   const { can, doAction } = usePerks()

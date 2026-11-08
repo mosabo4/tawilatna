@@ -108,7 +108,7 @@ function defs(ctx) {
     once('historian', '📜', 'المؤرخ', 'اكتب 15 مذكرة لأقيام', 150, 'crew', s => s.stories >= 15, s => [s.stories, 15]),
     once('beloved', '🙏', 'محبوب الشلة', 'خذ 25 شكر على التجهيز', 200, 'crew', s => s.thanked >= 25, s => [s.thanked, 25]),
     once('luckyme', '🍀', 'المحظوظ رغماً عنه', 'ينحط «بالحظ» على 5 من انتصاراتك', 100, 'crew', s => s.luckyMarked >= 5, s => [s.luckyMarked, 5]),
-    once('mentor', '🤝', 'العرّاب الناجح', 'كن عرّاب لاعب يوصل ليفل 10', 300, 'crew', s => s.mentorOk),
+    once('mentor', '🤝', 'العرّاب الناجح', 'كن عرّاب لاعب يوصل مستوى 10', 300, 'crew', s => s.mentorOk),
     once('taste', '👨‍🍳', 'صاحب الذوق', 'اختر للجلسة 10 ألعاب تنلعب فعلاً', 150, 'crew', s => s.tasteHits >= 10, s => [s.tasteHits, 10]),
 
     once('zero', '💀', 'الكارثة', 'صفر نقاط في قيم', 60, 'secret', s => s.zero),

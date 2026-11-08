@@ -38,7 +38,7 @@ export function TitlesList() {
             </div>
           )
         })}
-        {me && realLevel < 3 && <p className="hint pad-x">تقدر تلبس لقب جنب اسمك من ليفل 3.</p>}
+        {me && realLevel < 3 && <p className="hint pad-x">تقدر تلبس لقب جنب اسمك من مستوى 3.</p>}
     </div>
   )
 }

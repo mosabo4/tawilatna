@@ -240,7 +240,7 @@ export function GameView({ id }) {
   const durs = st.plays.filter(p => p.started_at && p.ended_at).map(p => (new Date(p.ended_at) - new Date(p.started_at)) / 60000).filter(m => m > 0)
   const realAvg = durs.length ? (m => (m >= 60 ? `${Math.floor(m / 60)}س ${m % 60}د` : `${m} د`))(Math.round(durs.reduce((x, y) => x + y, 0) / durs.length)) + (durs.length > 1 ? ` (${durs.length} أقيام)` : '') : null
   const otherEleven = me ? idx.ratings.find(r => r.player_id === me.id && Number(r.score) === 11 && r.game_id !== id && (idx.gamesById.get(r.game_id)?.category || '') === (game.category || '')) : null
-  const elevenInfo = level < 6 ? { ok: false, why: '🔒 تنفتح في ليفل 6' } : otherEleven ? { ok: false, why: `عطيتها لـ ${idx.gamesById.get(otherEleven.game_id)?.name}` } : { ok: true }
+  const elevenInfo = level < 6 ? { ok: false, why: '🔒 تنفتح في مستوى 6' } : otherEleven ? { ok: false, why: `عطيتها لـ ${idx.gamesById.get(otherEleven.game_id)?.name}` } : { ok: true }
 
   return (
     <div className="page">

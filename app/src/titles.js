@@ -125,7 +125,7 @@ export function unlockHistory(idx, pid) {
     const ach = new Set(lv.achievements.flatMap(a => a.keys || []))
     const titles = new Set(ts.filter(t => t.done).map(t => t.id))
     if (lv.level > prev.level) {
-      out.push({ at: d, kind: 'level', icon: '⬆️', name: `وصلت ليفل ${lv.level}`, desc: lv.title })
+      out.push({ at: d, kind: 'level', icon: '⬆️', name: `وصلت مستوى ${lv.level}`, desc: lv.title })
       for (const r of REWARDS.filter(r => r.level > prev.level && r.level <= lv.level)) out.push({ at: d, kind: 'reward', icon: r.icon, name: r.name, desc: r.desc })
     }
     for (const a of lv.achievements) for (const k of a.keys || []) if (!prev.ach.has(k)) {
@@ -139,7 +139,7 @@ export function unlockHistory(idx, pid) {
   return out.sort((a, b) => b.at.localeCompare(a.at) || order[a.kind] - order[b.kind])
 }
 
-// أحداث الفتح لكل الشلة في آخر أيام (إنجازات، ألقاب، ليفلات) للأحداث الأخيرة
+// أحداث الفتح لكل الشلة في آخر أيام (إنجازات، ألقاب، مستويات) للأحداث الأخيرة
 export function unlockEvents(idx, days = 14) {
   const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
   const set = new Set()
@@ -170,7 +170,7 @@ export function unlockEvents(idx, days = 14) {
       const pv = prev.get(pid) || { level: 1, ach: new Set(), titles: new Set() }
       const who = idx.playersById.get(pid)
       if (!who) continue
-      if (c.level > pv.level) out.push({ id: `lv${pid}${c.level}`, at: iso, who, by: pid, icon: '⬆️', text: `${who.name} وصل ليفل ${c.level}`, sub: c.lv.title, href: `#/player/${pid}` })
+      if (c.level > pv.level) out.push({ id: `lv${pid}${c.level}`, at: iso, who, by: pid, icon: '⬆️', text: `${who.name} وصل مستوى ${c.level}`, sub: c.lv.title, href: `#/player/${pid}` })
       for (const a of c.lv.achievements) for (const k of a.keys || []) if (!pv.ach.has(k)) {
         const t = a.group === 'tier' ? ` ${['🥉', '🥈', '🥇', '💎'][+k.split(':')[1]] || ''}` : ''
         out.push({ id: `ac${pid}${k}`, at: iso, who, by: pid, icon: a.icon, text: `${who.name} فتح إنجاز «${a.name}»${t}`, href: `#/player/${pid}` })

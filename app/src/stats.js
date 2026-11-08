@@ -8,7 +8,7 @@ const EXP_FALLBACK = {
 }
 const CAT_FIX = { 'The Vale of Eternity': 'family', '7 Wonders': 'family' }
 export function buildIndex(data) {
-  // اسم مستعار (ليفل 13): ساعتين، الاسم الأصلي يبقى في realName
+  // اسم مستعار (مستوى 13): ساعتين، الاسم الأصلي يبقى في realName
   const nicks = new Map()
   for (const x of data.actions || []) if (x.kind === 'nick' && x.target && x.data?.name && Date.now() - new Date(x.created_at).getTime() < 2 * 3600e3 && !nicks.has(x.target)) nicks.set(x.target, x.data.name)
   data = { ...data, players: data.players.map(p => (nicks.has(p.id) ? { ...p, realName: p.name, name: nicks.get(p.id) } : p)) }
@@ -31,7 +31,7 @@ export function buildIndex(data) {
     if (!resultsByPlay.has(r.play_id)) resultsByPlay.set(r.play_id, [])
     resultsByPlay.get(r.play_id).push(r)
   }
-  // تبديل المركز (ليفل 15): ياخذ مركز اللي قدّامه في قيم متعادل بالنقاط
+  // تبديل المركز (مستوى 15): ياخذ مركز اللي قدّامه في قيم متعادل بالنقاط
   for (const x of data.actions || []) if (x.kind === 'swap' && x.play_id && x.target) {
     const arr = resultsByPlay.get(x.play_id); if (!arr) continue
     const i = arr.findIndex(r => r.player_id === x.player_id), j = arr.findIndex(r => r.player_id === x.target)

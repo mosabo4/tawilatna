@@ -115,7 +115,7 @@ export const cooldownLeft = (idx, pid, kind, days) => {
   return left > 0 ? Math.ceil(left / DAY) : 0
 }
 
-// البورد على جهة لاعب (ليفل 7): يشتغل 12 ساعة من وقت ما يفعّله
+// البورد على جهة لاعب (مستوى 7): يشتغل 12 ساعة من وقت ما يفعّله
 export const boardSide = (idx, now = Date.now()) => (idx.actions || []).find(a => a.kind === 'board' && now - new Date(a.created_at).getTime() < 12 * 3600e3) || null
 
 // تنبيه ذهبي شغّال (24 ساعة)

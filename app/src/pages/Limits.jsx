@@ -43,11 +43,11 @@ export function LimitsList() {
             <span className="tc-icon">{c.icon}</span>
             <div className="tc-body">
               <div className="tc-top"><b>{c.name}</b>
-                <span className="tc-rar">{c.state === 'ready' ? (c.active ? '✅ شغّالة' : '✅ جاهزة') : c.state === 'wait' ? '⏳ منتظرة' : `🔒 ليفل ${c.level}`}</span>
+                <span className="tc-rar">{c.state === 'ready' ? (c.active ? '✅ شغّالة' : '✅ جاهزة') : c.state === 'wait' ? '⏳ منتظرة' : `🔒 مستوى ${c.level}`}</span>
               </div>
               <p>{c.desc.replace(/[،,]? ?مرة (بالأسبوع|بالشهر)\.?/, '').trim()}</p>
               {c.state === 'wait' && <div className="tc-prog"><span className="tc-bar"><span style={{ width: `${pct}%` }} /></span><small>تتجدد بعد {fmt(c.left)}</small></div>}
-              <div className="tc-foot"><small>مرة {c.days === 7 ? 'بالأسبوع' : 'بالشهر'}</small>{c.state === 'ready' && <small>من: {c.where}</small>}{c.state === 'lock' && <small>تفتح بليفل {c.level}</small>}</div>
+              <div className="tc-foot"><small>مرة {c.days === 7 ? 'بالأسبوع' : 'بالشهر'}</small>{c.state === 'ready' && <small>من: {c.where}</small>}{c.state === 'lock' && <small>تفتح بمستوى {c.level}</small>}</div>
             </div>
           </div>
         )

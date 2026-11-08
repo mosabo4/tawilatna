@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { usePerks } from './perks'
-// شخصيات الشلة الكرتونية (رسم أصلي بـ SVG) — كل وحدة تشبه صاحبها، وتتعدّل مع الليفلات
+// شخصيات الشلة الكرتونية (رسم أصلي بـ SVG) — كل وحدة تشبه صاحبها، وتتعدّل مع المستويات
 /* eslint-disable react/prop-types */
 
 // الشكل الأساسي لكل واحد (من صورهم)
@@ -15,7 +15,7 @@ export const BASE_LOOKS = {
 const FALLBACK = { skin: '#C99270', hair: '#1E1612', hairStyle: 'short', beard: null, outfit: '#5B6CFF', collar: 'shirt', hat: null, glasses: null, brows: 'soft', mouth: 'smile' }
 export const lookOf = (player, custom) => ({ ...(BASE_LOOKS[(player?.realName || player?.name)?.trim()] || { ...FALLBACK, outfit: player?.color || FALLBACK.outfit }), ...(custom || {}) })
 
-// خيارات التعديل (تنفتح مع الليفلات)
+// خيارات التعديل (تنفتح مع المستويات)
 export const CUSTOM = {
   outfit: { level: 2, label: 'لون اللبس', options: [null, '#F3F5FA', '#1F2026', '#25325C', '#7A1F2B', '#2E7D4F', '#C9A227', '#6B4FD8', '#E26D2A'] },
   glasses: { level: 3, label: 'نظارة', options: [null, 'sun', 'round', 'none'] },
