@@ -152,11 +152,14 @@ function PlayPowers({ play, winners, lucky }) {
   const acts = idx.actions || []
   const inPlay = play.results.some(r => r.player_id === me.id)
   const setup = (play.setup_by || []).filter(x => x !== me.id)
-  const thanked = acts.some(a => a.kind === 'thanks' && a.play_id === play.id && a.player_id === me.id)
   const luckyLeft = cooldownLeft(idx, me.id, 'lucky', 30)
   const rows = []
-  if (setup.length && inPlay && can('thanks')) rows.push(thanked ? <span key="t" className="pp-done">🙏 شكرت {setup.map(x => idx.playersById.get(x)?.name).join(' و')}</span>
-    : <button key="t" className="btn ghost small" disabled={busy} onClick={() => run('thanks', { target: setup[0], play: play.id }, `وصل الشكر لـ${idx.playersById.get(setup[0])?.name} 🙏`)}>🙏 اشكر {idx.playersById.get(setup[0])?.name} على التجهيز</button>)
+  if (setup.length && inPlay && can('thanks')) setup.forEach(t => {
+    const tn = idx.playersById.get(t)?.name
+    const done = acts.some(a => a.kind === 'thanks' && a.play_id === play.id && a.player_id === me.id && a.target === t)
+    rows.push(done ? <span key={'t' + t} className="pp-done">🙏 شكرت {tn}</span>
+      : <button key={'t' + t} className="btn ghost small" disabled={busy} onClick={() => run('thanks', { target: t, play: play.id }, `وصل الشكر لـ${tn} 🙏`)}>🙏 اشكر {tn} على التجهيز</button>)
+  })
   if (winners.length && !winners.includes(me.id) && !lucky && can('lucky')) rows.push(luckyLeft ? <span key="l" className="pp-done muted">🍀 ماسح الفوز يرجع بعد {luckyLeft} يوم</span>
     : <button key="l" className="btn ghost small" disabled={busy} onClick={() => run('lucky', { target: winners[0], play: play.id }, '🍀 انحط عليه «بالحظ»')}>🍀 فوزه بالحظ</button>)
   const mineR = play.results.find(r => r.player_id === me.id)

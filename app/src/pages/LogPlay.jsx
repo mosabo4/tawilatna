@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { Fragment, useMemo, useRef, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useStore, go } from '../store'
 import { api } from '../api'
 import { Avatar, TopBar, Cover, Confirm, today, Field, Empty, playersText } from '../ui'
@@ -418,17 +418,21 @@ export default function LogPlay({ id, presetGame, live }) {
                     <div>{teamSet.map((t, ti) => <button key={ti} type="button" style={{ '--tc': t.c }} className={teamOf[r.player_id] === ti ? 'on' : ''} aria-label={t.n} onClick={() => setTeamOf(m => ({ ...m, [r.player_id]: ti }))}>{t.i}</button>)}</div>
                   </li>
                 ))}</ul>
-                <div className={`lg-teams n${teamSet.length}`} style={{ '--n': teamSet.length }}>{teamSet.map((t, ti) => {
-                  const m = ids.filter(i => teamOf[i] === ti)
-                  return (
-                    <Fragment key={ti}>{ti === 1 && teamSet.length === 2 && <div className="lg-vs">VS</div>}
-                    <div className={`lg-team ${winTeam === ti ? 'won' : ''} ${winTeam != null && winTeam !== ti ? 'lost' : ''}`} style={{ '--tc': t.c }}>
-                      <header><span>{t.i}</span><b>{t.n}</b></header>
-                      <div className="lg-team-ppl">{m.length ? m.map(i => <span key={i} className="lg-ring"><Avatar player={pl(i)} size={44} /></span>) : <small>انتظار لاعبين…</small>}</div>
-                      <button type="button" disabled={!m.length} onClick={() => setWinTeam(ti)}>{winTeam === ti ? '🏆 فاز' : 'فاز؟'}</button>
-                    </div></Fragment>
-                  )
-                })}</div>
+                <div className={`lg-table-wrap n${teamSet.length}`}>
+                  {teamSet.map((t, ti) => {
+                    const m = ids.filter(i => teamOf[i] === ti)
+                    const side = ['bot', 'top', 'rgt', 'lft'][ti]
+                    return (
+                      <div key={ti} className={`lg-seat ${side} ${winTeam === ti ? 'won' : ''} ${winTeam != null && winTeam !== ti ? 'lost' : ''}`} style={{ '--tc': t.c }}>
+                        <div className="lg-seat-ppl">{m.length ? m.map(i => <button type="button" key={i} className="lg-ring" aria-label={`انقل ${name(i)}`} onClick={() => setTeamOf(o => ({ ...o, [i]: (ti + 1) % teamSet.length }))}><Avatar player={pl(i)} size={46} /></button>) : <small>كرسي فاضي</small>}</div>
+                        <button type="button" className="lg-seat-tag" disabled={!m.length} onClick={() => setWinTeam(ti)}>{t.i} {t.n} {winTeam === ti ? '🏆' : ''}</button>
+                      </div>
+                    )
+                  })}
+                  <div className="lg-table"><span>{game.name}</span>{teamSet.length === 2 && <b>VS</b>}</div>
+                </div>
+                {ids.some(i => teamOf[i] == null) && <div className="lg-bench"><small>ما جلسوا بعد:</small>{ids.filter(i => teamOf[i] == null).map(i => <button type="button" key={i} onClick={() => setTeamOf(o => ({ ...o, [i]: 0 }))}><Avatar player={pl(i)} size={34} /></button>)}</div>}
+                <p className="lg-tip">اضغط على صورة اللاعب في الطاولة ينتقل للفريق اللي بعده، واضغط اسم الفريق لتختاره فايز.</p>
               </>
             )}
 
