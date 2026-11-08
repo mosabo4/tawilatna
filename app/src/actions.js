@@ -45,14 +45,14 @@ export function resolveActions(idx) {
     else if (a.kind === 'risk') {
       const p = after(idx, a.created_at, 2, x => x.game_id === a.game_id && x.results.some(r => r.player_id === a.player_id))
       const ok = p ? pos(p, a.player_id) === 1 : null
-      if (p) add(a.player_id, 'risk', ok ? 15 : -10)
+      if (p) add(a.player_id, 'risk', ok ? 300 : -50)
       risks.push({ ...a, play: p, ok })
     } else if (a.kind === 'godfather' && a.target) {
       const d = nextDay(idx, a.created_at, [a.player_id, a.target])
       if (d) {
         const mine = idx.plays.filter(p => p.played_on === d && p.results.some(r => r.player_id === a.player_id))
         const earned = mine.length * 10 + mine.filter(p => pos(p, a.player_id) === 1 && p.results.length > 1).length * 5
-        add(a.target, 'godfather', Math.round(earned / 2)); add(a.player_id, 'godfather', 20)
+        add(a.target, 'godfather', Math.round(earned / 2))
       }
     } else if (a.kind === 'box') {
       const amt = Math.max(20, Math.min(100, Number(a.data?.amount) || 0))

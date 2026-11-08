@@ -151,16 +151,12 @@ function PlayPowers({ play, winners, lucky }) {
   const run = async (...a) => { setBusy(true); try { await doAction(...a) } catch { /* toast */ } finally { setBusy(false) } }
   const acts = idx.actions || []
   const inPlay = play.results.some(r => r.player_id === me.id)
-  const lost = inPlay && !winners.includes(me.id) && winners.length > 0
   const setup = (play.setup_by || []).filter(x => x !== me.id)
   const thanked = acts.some(a => a.kind === 'thanks' && a.play_id === play.id && a.player_id === me.id)
-  const asked = acts.find(a => a.kind === 'rematch' && a.play_id === play.id && a.player_id === me.id)
   const luckyLeft = cooldownLeft(idx, me.id, 'lucky', 30)
   const rows = []
   if (setup.length && inPlay && can('thanks')) rows.push(thanked ? <span key="t" className="pp-done">🙏 شكرت {setup.map(x => idx.playersById.get(x)?.name).join(' و')}</span>
     : <button key="t" className="btn ghost small" disabled={busy} onClick={() => run('thanks', { target: setup[0], play: play.id }, `وصل الشكر لـ${idx.playersById.get(setup[0])?.name} 🙏`)}>🙏 اشكر {idx.playersById.get(setup[0])?.name} على التجهيز</button>)
-  if (lost && can('rematch')) rows.push(asked ? <span key="r" className="pp-done">🔁 طلبت ريماتش من {idx.playersById.get(winners[0])?.name}</span>
-    : <button key="r" className="btn ghost small" disabled={busy} onClick={() => run('rematch', { target: winners[0], play: play.id }, 'انرسل طلب الريماتش 🔁')}>🔁 أطلب ريماتش</button>)
   if (winners.length && !winners.includes(me.id) && !lucky && can('lucky')) rows.push(luckyLeft ? <span key="l" className="pp-done muted">🍀 ماسح الفوز يرجع بعد {luckyLeft} يوم</span>
     : <button key="l" className="btn ghost small" disabled={busy} onClick={() => run('lucky', { target: winners[0], play: play.id }, '🍀 انحط عليه «بالحظ»')}>🍀 فوزه بالحظ</button>)
   const mineR = play.results.find(r => r.player_id === me.id)
