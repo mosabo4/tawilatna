@@ -197,7 +197,7 @@ export default function Games() {
             </div>
           )}
           <CabinetHint total={all.length} lit={lit} players={players} />
-          <Cabinet groups={shelves} isDim={g => !matches(g)} onPick={editShelf ? g => setPicked(g) : null} pickedId={picked?.id} />
+          <Cabinet groups={!editShelf && lit !== all.length ? shelves.map(x => ({ ...x, games: x.games.filter(matches) })).filter(x => x.games.length) : shelves} isDim={g => !matches(g)} onPick={editShelf ? g => setPicked(g) : null} pickedId={picked?.id} />
           {editShelf && picked && (() => {
             const shelf = shelves.find(x => x.games.some(g => g.game.id === picked.id))
             const list = shelf ? shelf.games.map(g => g.game) : [picked]

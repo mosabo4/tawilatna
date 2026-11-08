@@ -73,6 +73,6 @@ export default function Cabinet({ groups, isDim, onPick, pickedId }) {
 
 export function CabinetHint({ total, lit, players }) {
   if (!players && lit === total) return null
-  return <p className="cab-hint">{lit ? `${lit} لعبة تطابق التصفية${players ? ` (لـ ${players === 2 ? "1v1" : range(players) + " لاعبين"})` : ''}، والباقي مطفي على الرف.` : 'ولا لعبة تطابق. جرّب بحث ثاني.'}</p>
+  return <p className="cab-hint">{lit ? `${lit} لعبة تطابق التصفية${players ? ` (لـ ${players === 2 ? "1v1" : range(players) + " لاعبين"})` : ''}، والباقي مخفي.` : 'ولا لعبة تطابق. جرّب بحث ثاني.'}</p>
 }
 
