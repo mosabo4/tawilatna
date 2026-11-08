@@ -26,7 +26,6 @@ export default function Guide() {
     <div className="rc-cover end" key="cover">
       <small>طاولتنا</small>
       <h1>شرح<br /><span>الموقع الجديد</span></h1>
-      <div className="gd-crew">{crew.map(l => <Character key={l.player.id} player={l.player} pose="cheer" size={90} />)}</div>
       <p>كل اللي تحتاج تعرفه: النقاط، الليفلات، الجوائز، الإنجازات، والألقاب</p>
       <em>اضغط عشان نبدأ ←</em>
     </div>,
