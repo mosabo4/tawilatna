@@ -78,7 +78,6 @@ export function Friday() {
   const [busyA, setBusyA] = useState(false)
   const run = async (...a) => { setBusyA(true); try { await doAction(...a) } catch { /* toast */ } finally { setBusyA(false) } }
   const voters = new Set(picks.map(p => p.player_id))
-  const top = Math.max(1, ...ranked.map(r => r.votes))
   const live = ranked.filter(r => !r.veto)
   const leader = live[0]
   const tie = leader && live.filter(r => r.votes === leader.votes).length > 1
@@ -91,7 +90,7 @@ export function Friday() {
   const second = live[1]
   const lead = leader ? leader.votes - (second?.votes || 0) : 0
   const status = !leader ? null
-    : tie ? { i: '🤝', t: <>تعادل بين {live.filter(r => r.votes === leader.votes).slice(0, 3).map((r, k) => <span key={r.game.id}>{k > 0 && ' و'}<bdi>{r.game.name}</bdi></span>)}</>, d: 'صوت واحد يحسمها' }
+    : tie ? { i: '🤝', t: <>تعادل بين {live.filter(r => r.votes === leader.votes).length} ألعاب</>, d: 'صوت واحد يحسمها' }
     : lead > silent.length ? { i: '✅', t: <>انحسمت: <bdi>{leader.game.name}</bdi></>, d: 'حتى لو الباقين صوّتوا لغيرها تبقى الأولى' }
     : majority ? { i: '👑', t: <>أغلبية لـ<bdi>{leader.game.name}</bdi></>, d: silent.length ? `بس لسا ${silent.length} ما صوّتوا` : 'الكل صوّت' }
     : { i: '🏁', t: 'السباق مفتوح', d: <><bdi>{leader.game.name}</bdi> تتقدم بـ{lead} {lead === 1 ? 'صوت' : 'أصوات'}{silent.length ? `، و${silent.length} لسا ما صوّتوا` : ''}</> }
@@ -112,6 +111,21 @@ export function Friday() {
     return out
   })()
 
+  const topLeaders = leader ? live.filter(r => r.votes === leader.votes) : []
+  const duel = tie ? topLeaders.slice(0, 4) : live.slice(0, 2)
+  const chase = tie ? live.filter(r => r.votes < leader.votes).slice(0, 3) : live.slice(2, 5)
+  const [spin, setSpin] = useState(null)
+  const draw = () => {
+    let n = 0
+    const t = setInterval(() => { n++; setSpin({ g: topLeaders[Math.floor(Math.random() * topLeaders.length)].game, done: n > 14 }); if (n > 14) clearInterval(t) }, 110)
+  }
+  const fitOf = g => (!g.min_players || (total >= g.min_players && total <= (g.max_players || 99)))
+  const rookies = g => { const ps = byGame.get(g.id) || []; return ps.filter(p => p && !idx.plays.some(pl => pl.game_id === g.id && pl.results.some(r => r.player_id === p.id))).length }
+  const night = live.slice(0, 3)
+  const nightMin = night.reduce((t, r) => t + (r.game.play_minutes || 0), 0)
+  const fmtMin = m => (m >= 60 ? `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')} ساعة` : `${m} دقيقة`)
+  const myPicks = [...mine].map(id => idx.gamesById.get(id)).filter(Boolean)
+
   return (
     <div className="page vt">
       <div className="stack">
@@ -128,30 +142,57 @@ export function Friday() {
               )
             })}
             <div className="vt-podium">
-              {leader ? <><Cover game={leader.game} className="xs" /><b>{leader.game.name}</b><small>{tie ? '🤝 تعادل' : majority ? '👑 أغلبية' : '🏆 الأكثر أصواتاً'} · {leader.votes}</small></> : <small>ما فيه أصوات</small>}
+              {leader ? <><Cover game={leader.game} className="xs" /><b>{tie ? `${topLeaders.length} ألعاب متعادلة` : leader.game.name}</b><small>{tie ? '🤝' : majority ? '👑 أغلبية' : '🏆 المتصدرة'} · {leader.votes}</small></> : <small>ما فيه أصوات</small>}
             </div>
           </div>
-          {me && <div className="vt-slots"><span>أصواتك</span>{Array.from({ length: 3 }, (_, k) => <i key={k} className={k < mine.size ? 'used' : k < limit ? 'free' : 'lockd'}>{k < mine.size ? '✓' : k < limit ? '' : '🔒'}</i>)}<small>{mine.size} من {limit}{nextLv ? ` · مستوى ${nextLv} يفتح خانة` : ''}</small></div>}
           {status && <div className={`vt-status ${status.i === '✅' ? 'done' : ''}`}><span>{status.i}</span><div><b>{status.t}</b><small>{status.d}</small></div></div>}
-          {ranked.length > 0 && <div className="vt-legend">{live.slice(0, 5).map(r => <span key={r.game.id}><i style={{ background: colorOf.get(r.game.id) }} />{r.game.name}<b>{r.votes}</b></span>)}{live.length > 5 && <span>+{live.length - 5}</span>}</div>}
+          {ranked.length > 0 && <div className="vt-legend">{live.slice(0, 6).map(r => <span key={r.game.id}><i style={{ background: colorOf.get(r.game.id) }} /><bdi>{r.game.name}</bdi><b>{r.votes}</b></span>)}{live.length > 6 && <span>+{live.length - 6}</span>}</div>}
           {silent.length > 0 && voters.size > 0 && <div className="vt-silent"><small>لسا ما صوّتوا:</small>{silent.map(p => <Avatar key={p.id} player={p} size={26} />)}</div>}
         </section>
 
-        {live.length >= 2 && (
+        {me && (
+          <section className="vt-bal glass">
+            <div className="vt-bal-top"><b>🗳️ ورقتك</b><small>{mine.size} من {limit}{nextLv ? ` · مستوى ${nextLv} يفتح خانة` : ''}</small></div>
+            <div className="vt-slotrow">
+              {Array.from({ length: 3 }, (_, k) => {
+                const g = myPicks[k]
+                if (g) return <div key={k} className="vt-bslot filled"><Cover game={g} className="xs" /><b>{g.name}</b><button type="button" onClick={() => toggle(g.id)} disabled={busy === g.id} aria-label={`فك صوتك عن ${g.name}`}>✕ فك</button></div>
+                if (k < limit) return <a key={k} href="#/games" className="vt-bslot free"><span>＋</span><small>خانة فاضية<br />اختر لعبة من الدولاب</small></a>
+                return <div key={k} className="vt-bslot lockd"><span>🔒</span><small>مستوى {levelOfReward(k === 1 ? 'slot2' : 'slot3')}</small></div>
+              })}
+            </div>
+          </section>
+        )}
+
+        {duel.length >= 2 && (
           <section className="vt-h2h glass">
-            <h3>⚔️ المنافسة على الصدارة</h3>
-            <div className="vt-h2h-row">
-              {[live[0], live[1]].map((r, k) => (
-                <a key={r.game.id} href={`#/game/${r.game.id}`} className={`vt-fighter ${k === 0 && !tie ? 'lead' : ''}`} style={{ '--bc': colorOf.get(r.game.id) }}>
+            <h3>⚔️ {tie ? `تعادل على الصدارة (${topLeaders.length})` : 'المنافسة على الصدارة'}</h3>
+            <div className={`vt-h2h-row n${duel.length}`}>
+              {duel.map((r, k) => (
+                <a key={r.game.id} href={`#/game/${r.game.id}`} className={`vt-fighter ${k === 0 && !tie ? 'lead' : ''} ${tie ? 'lead' : ''}`} style={{ '--bc': colorOf.get(r.game.id) }}>
                   <Cover game={r.game} className="sm" />
                   <b>{r.game.name}</b>
                   <strong>{r.votes}</strong>
-                  <small>{k === 0 ? (tie ? 'متعادلة' : 'المتصدرة') : tie ? 'متعادلة' : `متأخرة بـ${lead}`}</small>
+                  <small>{tie ? 'متعادلة' : k === 0 ? 'المتصدرة' : `متأخرة بـ${lead}`}</small>
                 </a>
               ))}
-              <span className="vt-vs">VS</span>
+              {duel.length === 2 && <span className="vt-vs">VS</span>}
             </div>
-            {live[2] && <p className="vt-chase">🏃 وراهم: {live.slice(2, 5).map(r => `${r.game.name} (${r.votes})`).join('، ')}</p>}
+            {tie && (
+              <div className="vt-draw">
+                <button type="button" className="btn small ghost" onClick={draw}>🎲 اقرع بين المتعادلة</button>
+                {spin && <span className={spin.done ? 'done' : ''}>{spin.done ? '🎯 القرعة اختارت: ' : '…'}<bdi>{spin.g.name}</bdi></span>}
+              </div>
+            )}
+            {chase.length > 0 && <p className="vt-chase">🏃 وراهم: {chase.map((r, k) => <span key={r.game.id}>{k > 0 && '، '}<bdi>{r.game.name}</bdi> ({r.votes})</span>)}</p>}
+          </section>
+        )}
+
+        {night.length > 0 && (
+          <section className="vt-night glass">
+            <h3>🌙 جدول الليلة المقترح</h3>
+            <ol>{night.map((r, k) => <li key={r.game.id}><span className="vt-nk">{k + 1}</span><Cover game={r.game} className="xs" /><b>{r.game.name}</b><small>{r.game.play_minutes ? fmtMin(r.game.play_minutes) : '—'}</small></li>)}</ol>
+            {nightMin > 0 && <p className="vt-total">⏱️ المجموع تقريباً: {fmtMin(nightMin)}</p>}
           </section>
         )}
 
@@ -164,39 +205,49 @@ export function Friday() {
         )}
 
         {ranked.length > 0 && (
-          <ol className="vt-list">
-            {ranked.map(({ game, ps, votes, veto }) => {
-              const on = mine.has(game.id)
-              return (
-                <li key={game.id} className={`vt-card ${veto ? 'vetoed' : ''} ${on ? 'mine' : ''}`} style={{ '--w': `${(votes / top) * 100}%`, '--bc': colorOf.get(game.id) || '#666' }}>
-                  <a className="vt-main" href={`#/game/${game.id}`}>
-                    <span className="vt-rk"><i className="vt-dot" />{veto ? '🚫' : ''}</span>
-                    <Cover game={game} className="xs" />
-                    <span className="nm"><b>{game.name}</b><small>{veto ? `فيتو من ${idx.playersById.get(veto.player_id)?.name}` : playersText(game)}</small></span>
-                    <strong className="vt-n">{votes}</strong>
-                  </a>
-                  {!veto && <div className="vt-lane" aria-hidden="true"><i style={{ width: `${Math.min(100, (votes / Math.max(1, total)) * 100)}%` }} /><u /></div>}
-                  <div className="vt-foot">
-                    <span className="vt-who">{ps.map(p => <span key={p.id} className="vt-av" title={p.name}><Avatar player={p} size={30} /><em>{p.name}</em></span>)}</span>
-                    {me && !veto && <button className={`vt-join ${on ? 'on' : ''} ${full && !on ? 'full' : ''}`} disabled={busy === game.id} onClick={() => toggle(game.id)} aria-pressed={on}>{on ? '✓ في كتلتك' : full ? '🔒 حدّك وصل' : '🏛️ انضم لكتلتهم'}</button>}
-                  </div>
-                  {me && !veto && (can('veto') || can('opener')) && (
-                    <div className="fr-acts">
-                      {can('veto') && <button className="chip" disabled={busyA || vetoLeft > 0} onClick={() => run('veto', { game: game.id, data: { week } }, '🚫 انشالت من الجلسة')}>🚫 فيتو{vetoLeft ? ` (${vetoLeft} يوم)` : ''}</button>}
-                      {can('opener') && !opener && <button className="chip" disabled={busyA || openLeft > 0} onClick={() => run('opener', { game: game.id, data: { week } }, '🎬 صارت لعبة الافتتاح')}>🎬 افتتح بها{openLeft ? ` (${openLeft} يوم)` : ''}</button>}
+          <>
+            <h3 className="vt-h">الكتل</h3>
+            <ol className="vt-list">
+              {ranked.map(({ game, ps, votes, veto }) => {
+                const on = mine.has(game.id)
+                const rk = rookies(game)
+                return (
+                  <li key={game.id} className={`vt-card ${veto ? 'vetoed' : ''} ${on ? 'mine' : ''}`} style={{ '--bc': colorOf.get(game.id) || '#666' }}>
+                    <a className="vt-main" href={`#/game/${game.id}`}>
+                      <span className="vt-rk"><i className="vt-dot" />{veto ? '🚫' : ''}</span>
+                      <Cover game={game} className="xs" />
+                      <span className="nm"><b>{game.name}</b><small>{veto ? `فيتو من ${idx.playersById.get(veto.player_id)?.name}` : playersText(game)}</small></span>
+                      <strong className="vt-n">{votes}</strong>
+                    </a>
+                    {!veto && (
+                      <div className="vt-chips">
+                        <span className={fitOf(game) ? 'ok' : 'warn'}>{fitOf(game) ? `✅ تنفع لعدد ${total}` : `⚠️ ما تنفع لعدد ${total}`}</span>
+                        {game.play_minutes && <span>⏱️ {fmtMin(game.play_minutes)}</span>}
+                        {rk > 0 && <span>✨ {rk} أول مرة</span>}
+                      </div>
+                    )}
+                    {!veto && <div className="vt-lane" aria-hidden="true"><i style={{ width: `${Math.min(100, (votes / Math.max(1, total)) * 100)}%` }} /><u /></div>}
+                    <div className="vt-foot">
+                      <span className="vt-who">{ps.map(p => <span key={p.id} className="vt-av" title={p.name}><Avatar player={p} size={30} /><em>{p.name}</em></span>)}</span>
+                      {me && !veto && <button className={`vt-join ${on ? 'on' : ''} ${full && !on ? 'full' : ''}`} disabled={busy === game.id} onClick={() => toggle(game.id)} aria-pressed={on}>{on ? '✓ في كتلتك' : full ? '🔒 حدّك وصل' : '🏛️ انضم لكتلتهم'}</button>}
                     </div>
-                  )}
-                </li>
-              )
-            })}
-          </ol>
+                    {me && !veto && (can('veto') || can('opener')) && (
+                      <div className="fr-acts">
+                        {can('veto') && <button className="chip" disabled={busyA || vetoLeft > 0} onClick={() => run('veto', { game: game.id, data: { week } }, '🚫 انشالت من الجلسة')}>🚫 فيتو{vetoLeft ? ` (${vetoLeft} يوم)` : ''}</button>}
+                        {can('opener') && !opener && <button className="chip" disabled={busyA || openLeft > 0} onClick={() => run('opener', { game: game.id, data: { week } }, '🎬 صارت لعبة الافتتاح')}>🎬 افتتح بها{openLeft ? ` (${openLeft} يوم)` : ''}</button>}
+                      </div>
+                    )}
+                  </li>
+                )
+              })}
+            </ol>
+          </>
         )}
 
         {me ? (
           <Section title="تبي تقترح لعبة جديدة؟" action={<a className="more" href="#/games">الدولاب ←</a>}>
             <p className="hint pad-x">افتح الدولاب، اضغط على اللعبة اللي تبيها واختر «أبي أجربها الجلسة الجاية». وهذي ألعاب ما جربتها للحين:</p>
             <div className="vt-strip">{unplayed.map(g => <a key={g.id} href={`#/game/${g.id}`}><Cover game={g} className="xs" /><small>{g.name}</small></a>)}</div>
-            <p className="hint pad-x">🗳️ تصوّت على لعبة وحدة، ومع مستوى {levelOfReward('slot2')} لعبتين، ومع مستوى {levelOfReward('slot3')} ثلاث ألعاب.</p>
             <p className="hint pad-x pad-b">التصويت يتصفّر لحاله أول ما تسجلون أقيام الجلسة.</p>
           </Section>
         ) : <Empty title="ادخل باسمك" text="عشان تصوّت على الألعاب اللي ودك تجربها." />}
