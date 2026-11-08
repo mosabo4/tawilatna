@@ -2,8 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore, go } from '../store'
 import { Avatar } from '../ui'
-import { Character } from '../characters'
-import { XP_RULES, REWARDS, xpFor } from '../levels'
+import { XP_RULES, xpFor } from '../levels'
 import { useLevels } from './Levels'
 import { TIER, SECRET_BADGES } from '../achievements'
 import { RARITY, TITLE_DEFS } from '../titles'
@@ -18,9 +17,7 @@ export default function Guide() {
   const touch = useRef(null)
   const crew = useMemo(() => [...levels.values()].sort((a, b) => b.xp - a.xp), [levels])
   const someone = crew[0]?.player
-  const victim = crew.at(-1)?.player
   const rules = XP_RULES.filter(r => r.xp > 0 && !['thankGive'].includes(r.id))
-  const pick = ids => ids.map(id => REWARDS.find(r => r.id === id)).filter(Boolean)
   const titleEx = ['sultan', 'general', 'teacher', 's67'].map(id => TITLE_DEFS.find(t => t.id === id)).filter(Boolean)
 
   const slides = [
@@ -103,33 +100,14 @@ export default function Guide() {
     </div>,
 
     <div key="rewards">
-      <h2>الجوائز <small>أمثلة</small></h2>
+      <h2>جوائز وتحديات <small>تنفتح مع ليفلك</small></h2>
       <div className="gd-grid">
-        {pick(['color', 'tease', 'scene', 'baby', 'challenge', 'predict', 'veto', 'lucky', 'immune', 'hall']).map(r => <Card key={r.id} icon={r.icon} title={`ليفل ${r.level} · ${r.name}`}>{r.desc}</Card>)}
+        <Card icon="🎁" title="جوائز">كل ما ارتفع ليفلك تنفتح لك جوائز جديدة تستخدمها مع الشلة</Card>
+        <Card icon="⚔️" title="تحديات وتوقعات">تتحدون بعض وتتوقعون النتائج وتاخذون XP</Card>
+        <Card icon="😈" title="طقطقة">أشياء خفيفة تضحكون فيها على بعض، وفيها حماية لمن يبي</Card>
+        <Card icon="⏳" title="تتجدد">بعض الجوائز تتجدد كل أسبوع أو شهر، وتشوفها في «جوائزي المحدودة» بصفحة أنا</Card>
       </div>
-    </div>,
-
-    <div key="limits">
-      <h2>جوائز تتجدد <small>مرة بالأسبوع أو بالشهر</small></h2>
-      <div className="gd-grid">
-        <Card icon="📅" title="مرة بالأسبوع">مثل صندوق الحظ، الطقطقة، تجاوز الدور، واختيار الفريق</Card>
-        <Card icon="🗓️" title="مرة بالشهر">مثل الفيتو، الحصانة، والعرّاب</Card>
-        <Card icon="⏳" title="بعد ما تستخدمها">تتجدد بعد المدة، وتشوف الباقي في «جوائزي المحدودة» بصفحة أنا</Card>
-      </div>
-    </div>,
-
-    <div key="tease" className="gd-split">
-      <div>
-        <h2>الطقطقة 😈</h2>
-        <div className="gd-list">
-          <Card icon="😭" title="ملصق">تلزّقه على صورة واحد 3 أيام</Card>
-          <Card icon="👶" title="البيبي">شخصيته تصير بيبي بحفاظة يوم كامل</Card>
-          <Card icon="🏷️" title="تغيير لقبه">تكتب له لقب يشوفه الكل يوم كامل</Card>
-          <Card icon="🎭" title="اسم مستعار">تغيّر اسمه ساعتين</Card>
-          <Card icon="🛡️" title="والحل؟">الحصانة: أسبوع محد يقدر يقرّب لك</Card>
-        </div>
-      </div>
-      {victim && <div className="gd-hero"><Character player={victim} pose="baby" size={170} /><small>مثال: {victim.name} لما يصير بيبي</small></div>}
+      <p className="gd-note">تكتشفونها بالتدريج وأنتم تلعبون</p>
     </div>,
 
     <div key="ach">
@@ -163,8 +141,7 @@ export default function Guide() {
       <div className="gd-grid">
         <Card icon="🙏" title="بعد اللعبة الثقيلة">كل المجهّزين تقدر تشكرهم من صفحة القيم: هو +20 وأنت +10</Card>
         <Card icon="🗳️" title="قبل: الجلسة الجاية">كل واحد يختار وش يبي يلعب، والأكثر طلباً يطلع فوق</Card>
-        <Card icon="📋" title="أثناء: قرارات الليلة">اختيار شريك، تجاوز الدور، ضمان الخاسر، وDouble or Nothing</Card>
-        <Card icon="🔮" title="أثناء: التوقعات">توقّع الفايز قبل القيم، وإذا صح تاخذ XP</Card>
+        <Card icon="📋" title="أثناء: قرارات وتوقعات">جوائز وتحديات تستخدمونها وقت اللعب</Card>
         <Card icon="⚡" title="بعد: XP الليلة">كم أخذ كل واحد، ومين ارتفع ليفله</Card>
       </div>
     </div>,
