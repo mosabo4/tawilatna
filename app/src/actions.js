@@ -1,6 +1,7 @@
 // نتائج أفعال الجوائز: التوقعات، الرهان، التحديات، الريماتش، الشكر، الفيتو...
 // كل شي يتحسب من جدول actions + الأقيام المسجلة
 
+import { winXp } from './winxp'
 const tsOf = p => p.created_at || `${p.played_on}T12:00:00`
 const DAY = 864e5
 export const TEASE_MS = 3 * DAY
@@ -79,7 +80,7 @@ export function resolveActions(idx) {
       const p = idx.plays.find(x => x.id === a.play_id)
       if (p) {
         const first = !idx.plays.some(x => x.game_id === p.game_id && x.id !== p.id && tsOf(x) < tsOf(p) && x.results.some(r => r.player_id === a.target))
-        add(a.target, 'lucky', -Math.round((10 + 5 + (first ? 15 : 0)) / 2))
+        add(a.target, 'lucky', -Math.round((10 + winXp(p, idx.gamesById.get(p.game_id)) + (first ? 30 : 0)) / 2))
       }
     } else if (a.kind === 'thanks' && a.target) { add(a.target, 'thanks', 20); add(a.player_id, 'thankGive', 10) }
   }

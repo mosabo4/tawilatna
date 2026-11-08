@@ -65,7 +65,7 @@ export default function Guide() {
 
     <div key="xp">
       <h2>الـXP <small>تجمعه بالحضور والتفاعل، مو بالفوز بس</small></h2>
-      <div className="gd-xp">{rules.map(r => <div key={r.id}><span>{r.icon}</span><small>{r.label.replace(/ \(.*\)$/, '')}</small><b>+{r.xp}</b></div>)}</div>
+      <div className="gd-xp">{rules.map(r => <div key={r.id}><span>{r.icon}</span><small>{r.label.replace(/ \(.*\)$/, '')}</small><b>+{r.range || r.xp}</b></div>)}</div>
       <p className="gd-note">وفوقها: الإنجازات، صندوق الحظ، الهدايا، والتوقعات</p>
     </div>,
 

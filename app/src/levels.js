@@ -1,15 +1,16 @@
 // نظام الليفلات: يقيس التفاعل والحضور (مو المهارة). كل شي يتحسب من البيانات المسجلة.
 import { counts } from './stats'
 import { resolveActions } from './actions'
+import { winXp } from './winxp'
 import { achContext, achStats, evalAchievements } from './achievements'
 
 export const XP_RULES = [
   { id: 'session', icon: '📅', label: 'حضور جلسة (كل يوم لعب)', xp: 30 },
   { id: 'play', icon: '🎲', label: 'كل قيم تلعبه', xp: 10 },
-  { id: 'newgame', icon: '🆕', label: 'لعبة تجربها لأول مرة', xp: 15 },
-  { id: 'rate', icon: '⭐', label: 'تقييم لعبة', xp: 5 },
+  { id: 'newgame', icon: '🆕', label: 'لعبة تجربها لأول مرة', xp: 30 },
+  { id: 'rate', icon: '⭐', label: 'تقييم لعبة', xp: 10 },
   { id: 'comment', icon: '💬', label: 'تعليق على لعبة', xp: 5 },
-  { id: 'win', icon: '🏆', label: 'الفوز في قيم', xp: 5 },
+  { id: 'win', icon: '🏆', label: 'الفوز في قيم: حسب صعوبة اللعبة ومدتها', xp: 5, range: '5 – 40' },
   { id: 'picks', icon: '🙋', label: 'تختار ألعاب للجلسة الجاية (مرة لكل جلسة)', xp: 5 },
   { id: 'post', icon: '📝', label: 'كتابة في اللوحة (3 باليوم بالكثير)', xp: 2 },
   { id: 'streak', icon: '🔥', label: 'كل 3 جلسات ورا بعض', xp: 50 },
@@ -109,7 +110,7 @@ export function computeLevels(idx) {
     const mine = chrono.filter(p => p.results.some(r => r.player_id === pl.id))
     const myDays = new Set(mine.map(p => p.played_on))
     const seen = new Set(), cats = new Set(), winCats = new Set(), mates = new Set()
-    let wins = 0, run = 0, bestWinStreak = 0, bigWin = false
+    let wins = 0, winPts = 0, run = 0, bestWinStreak = 0, bigWin = false
     for (const p of mine) {
       const r = p.results.find(x => x.player_id === pl.id)
       const g = G.get(p.game_id)
@@ -117,7 +118,7 @@ export function computeLevels(idx) {
       if (g?.category) cats.add(g.category)
       for (const o of p.results) if (o.player_id !== pl.id) mates.add(o.player_id)
       if (counts(p, g)) {
-        if (r.position === 1) { wins++; run++; bestWinStreak = Math.max(bestWinStreak, run); if (g?.category) winCats.add(g.category); if (p.results.length >= 5) bigWin = true } else run = 0
+        if (r.position === 1) { wins++; winPts += winXp(p, g); run++; bestWinStreak = Math.max(bestWinStreak, run); if (g?.category) winCats.add(g.category); if (p.results.length >= 5) bigWin = true } else run = 0
       }
     }
     // جلسات ورا بعض = أيام لعب الشلة المتتالية اللي حضرها
@@ -139,7 +140,7 @@ export function computeLevels(idx) {
     }
     const parts = {
       session: s.sessions * XP.session, play: s.plays * XP.play, newgame: s.games * XP.newgame, rate: ratings * XP.rate,
-      comment: comments * XP.comment, win: wins * XP.win, picks: pickWeeks * XP.picks, post: posts * XP.post, streak: streaks * XP.streak, setup: setups * XP.setup, cleanup: cleanups * XP.cleanup,
+      comment: comments * XP.comment, win: winPts, picks: pickWeeks * XP.picks, post: posts * XP.post, streak: streaks * XP.streak, setup: setups * XP.setup, cleanup: cleanups * XP.cleanup,
       thanks: ax.get(pl.id)?.thanks || 0, thankGive: ax.get(pl.id)?.thankGive || 0, predict: ax.get(pl.id)?.predict || 0,
       gift: ax.get(pl.id)?.gift || 0, lucky: ax.get(pl.id)?.lucky || 0, luckbox: ax.get(pl.id)?.luckbox || 0, risk: ax.get(pl.id)?.risk || 0,
       godfather: ax.get(pl.id)?.godfather || 0, box: ax.get(pl.id)?.box || 0, guarantee: ax.get(pl.id)?.guarantee || 0, fullhouse: fullDays.filter(d => myDays.has(d)).length * XP.fullhouse,
@@ -203,7 +204,7 @@ export function xpLog(idx, pid) {
     ev.push({ at, type: 'play', xp: XP.play, text: `لعب ${name}` })
     if (!seenGames.has(p.game_id)) { seenGames.add(p.game_id); ev.push({ at, type: 'newgame', xp: XP.newgame, text: `جرّب ${name} لأول مرة` }) }
     const r = p.results.find(x => x.player_id === pid)
-    if (counts(p, g) && r.position === 1) ev.push({ at, type: 'win', xp: XP.win, text: `فاز في ${name}` })
+    if (counts(p, g) && r.position === 1) ev.push({ at, type: 'win', xp: winXp(p, g), text: `فاز في ${name}` })
   }
   for (const p of idx.plays) {
     if ((p.setup_by || []).includes(pid)) ev.push({ at: tsOf(p), type: 'setup', xp: XP.setup, text: `جهّز ${G.get(p.game_id)?.name || 'لعبة'}` })
