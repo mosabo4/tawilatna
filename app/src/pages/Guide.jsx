@@ -10,6 +10,21 @@ import { SCORING } from '../scoring'
 
 const Card = ({ icon, title, children }) => <div className="gd-card"><span className="gd-ic">{icon}</span><div><b>{title}</b><small>{children}</small></div></div>
 
+const EX = {
+  rank: (a, b, c) => <><span>🥇</span>{a}<span>🥈</span>{b}<span>🥉</span>{c}</>,
+  points: (a, b, c) => <>{[[a, 30], [b, 22], [c, 15]].map(([x, n], i) => <em key={i}>{x}<b>{n}</b></em>)}</>,
+  low: (a, b, c) => <>{[[c, 8], [b, 15], [a, 30]].map(([x, n], i) => <em key={i}>{x}<b>{n}</b></em>)}</>,
+  winner: (a, b, c) => <><span className="gd-win">👑{a}</span><span className="gd-dim">{b}</span><span className="gd-dim">{c}</span></>,
+  elim: (a, b, c) => <><span className="gd-dim">💀{c}</span><span className="gd-dim">💀{b}</span><span className="gd-win">👑{a}</span></>,
+  teams: (a, b, c, d) => <><span className="gd-tm" style={{ '--tc': '#E5484D' }}>{a}{b}</span><i>VS</i><span className="gd-tm" style={{ '--tc': '#3E7BFA' }}>{c}{d}</span></>,
+  coop: (a, b, c, d) => <><span className="gd-tm" style={{ '--tc': '#2FB36B' }}>{a}{b}{c}{d}</span><span>🎉</span></>,
+}
+function ModeCard({ k, crew }) {
+  const av = crew.slice(0, 4).map(l => <Avatar key={l.player.id} player={l.player} size={34} />)
+  const m = SCORING[k]
+  return <div className="gd-card gd-mode"><span className="gd-ic">{m.icon}</span><div><b>{m.name}</b><small>{m.hint}</small><div className="gd-ex">{av.length >= 4 && EX[k](...av)}</div></div></div>
+}
+
 export default function Guide() {
   const { idx, me } = useStore()
   const levels = useLevels()
@@ -51,27 +66,19 @@ export default function Guide() {
       <p className="gd-note">وفي الآخر تختار «كيف كانت الجلسة؟» 😂🔥🤯 ويطلع لكم احتفال بالفايز 🎉</p>
     </div>,
 
-    <div key="modes">
-      <h2>كل لعبة لها طريقتها <small>والصفحة تتغير معها</small></h2>
-      <div className="gd-grid gd-modes">
-        {Object.values(SCORING).map(m => <Card key={m.name} icon={m.icon} title={m.name}>{m.hint}</Card>)}
+    <div key="modes1">
+      <h2>كل لعبة تتسجل على حسب نوعها <small>1 من 2</small></h2>
+      <div className="gd-grid">
+        {['rank', 'points', 'low', 'winner'].map(k => <ModeCard key={k} k={k} crew={crew} />)}
       </div>
     </div>,
 
-    <div key="teams">
-      <h2>ألعاب الفرق <small>كأننا حول الطاولة</small></h2>
-      {crew.length >= 4 && (
-        <div className="lg-table-wrap n2 gd-table">
-          {[[0, 'bot', '🔴 الأحمر', '#E5484D', true], [1, 'top', '🔵 الأزرق', '#3E7BFA', false]].map(([t, side, label, c, won]) => (
-            <div key={t} className={`lg-seat ${side} ${won ? 'won' : 'lost'}`} style={{ '--tc': c }}>
-              <div className="lg-seat-ppl">{crew.slice(t * 2, t * 2 + 2).map(l => <span key={l.player.id} className="lg-ring"><Avatar player={l.player} size={46} /></span>)}</div>
-              <span className="lg-seat-tag">{label} {won ? '🏆' : ''}</span>
-            </div>
-          ))}
-          <div className="lg-table"><span>مثال</span><b>VS</b></div>
-        </div>
-      )}
-      <p className="gd-note">توزّعون اللاعبين على الفرق بالضغط أو «قسّم عشوائي»، وتختارون الفريق الفايز. أفالون له «الخير والشر» وسابوتور «المنقّبين والمخرّبين»</p>
+    <div key="modes2">
+      <h2>كل لعبة تتسجل على حسب نوعها <small>2 من 2</small></h2>
+      <div className="gd-grid">
+        {['elim', 'teams', 'coop'].map(k => <ModeCard key={k} k={k} crew={crew} />)}
+      </div>
+      <p className="gd-note">والصفحة تغيّر خاناتها لحالها حسب اللعبة اللي اخترتها</p>
     </div>,
 
     <div key="rank">
