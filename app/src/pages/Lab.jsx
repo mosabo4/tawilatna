@@ -166,75 +166,179 @@ function Month() {
 }
 
 // ---------- 3) الدوري الموسمي ----------
+const TWISTS = [
+  { id: 'shield', icon: '🛡️', name: 'جولة الدرع', desc: 'الفايز بكل لعبة ياخذ درع: لو جاء الأخير بعدين يقدر ينقذ نفسه مرة وحدة' },
+  { id: 'double', icon: '💎', name: 'نقاط مضاعفة', desc: 'كل النقاط في هذي المرحلة ×2' },
+  { id: 'ghost', icon: '👻', name: 'تحدي الأشباح', desc: 'اللي طلعوا يختارون للمتبقين شرط ظريف في اللعب (بدون كلام، بدون ما تشوف الأوراق…)' },
+  { id: 'rev', icon: '🔄', name: 'الأخير يبدأ', desc: 'صاحب أقل نقاط يبدأ الدور الأول ويختار مكانه' },
+  { id: 'king', icon: '👑', name: 'طقطقة المتصدر', desc: 'متصدر النقاط يلعب بدون أي مساعدة من أحد' },
+  { id: 'plain', icon: '🎲', name: 'جولة عادية', desc: 'بدون شروط، العب وبس' },
+]
+const EPI = ['كان يعتقد إنه فاهم اللعبة 🪦', 'راح ضحية الحظ… أو هكذا يقول 🎲', 'نقول عنه: لعب بشرف 🫡', 'كلنا نتذكر آخر حركة له 😭', 'سلّم المفتاح وراح يتفرج 🍿', 'وعد إنه راجع السنة الجاية 🔥']
+const hash = str => [...str].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7)
+
 function League() {
   const { lab, save, busy, idx } = useLab()
   const L = lab.league
+  const [as, setAs] = useState(null)
   const [f, setF] = useState({ name: 'دوري العيال', start: today(), end: '', ids: idx.players.map(p => p.id) })
   const pl = id => idx.playersById.get(id)
-  const used = new Set((L?.stages || []).map(s => s.game).filter(Boolean))
-  const mkStage = n => {
-    const pool = idx.games.filter(g => fits(g, n) && !used.has(g.id))
+  const gm = id => idx.gamesById.get(id)
+  const usedIds = new Set((L?.stages || []).flatMap(s => s.picked || []))
+  const mkStage = (n, used = usedIds) => {
+    const k = n >= 5 ? 2 : 1
+    let pool = idx.games.filter(g => !used.has(g.id) && fits(g, n) && (k < 2 || fits(g, n - 1) || fits(g, n)))
     const duel = pool.filter(g => g.category === 'duel')
-    const src = n === 2 ? (duel.length ? duel : pool) : pool.filter(g => g.category !== 'duel')
-    return { n, cands: shuffle(src).slice(0, 3).map(g => g.id), game: null, order: [] }
+    if (n === 2) pool = duel.length ? duel : pool; else pool = pool.filter(g => g.category !== 'duel')
+    const twist = n === 2 ? { id: 'final', icon: '🏆', name: 'النهائي', desc: 'لعبة وحدة، فايز وحد، وبطل الدوري' } : TWISTS[Math.floor(Math.random() * TWISTS.length)]
+    return { n, k, cands: shuffle(pool).slice(0, 3).map(g => g.id), votes: {}, picked: null, plays: [], order: [], twist }
   }
-  const create = () => save({ league: { name: f.name, start: f.start, end: f.end, status: 'active', players: f.ids, stages: [mkStage(f.ids.length)], out: [] } }, 'انبدا الدوري')
+  const create = () => save({ league: { name: f.name, start: f.start, end: f.end, status: 'active', players: f.ids, initial: f.ids.length, stages: [mkStage(f.ids.length, new Set())], out: [], pts: {}, shields: {} } }, 'انبدا الدوري')
   const alive = L ? L.players.filter(id => !L.out.some(o => o.id === id)) : []
   const stage = L?.stages?.[L.stages.length - 1]
-  const patch = p => save({ league: { ...L, stages: [...L.stages.slice(0, -1), { ...stage, ...p }] } }, 'تم')
-  const reroll = () => patch({ cands: mkStage(stage.n).cands })
-  const tapOrder = id => !stage.order.includes(id) && patch({ order: [...stage.order, id] })
-  const lock = () => {
-    const order = stage.order, loser = order[order.length - 1]
-    const out = [...L.out, { id: loser, n: stage.n, game: stage.game }]
-    const rest = alive.filter(x => x !== loser)
-    const done = stage.n === 2
-    const stages = [...L.stages.slice(0, -1), { ...stage, order, loser }]
-    if (done) save({ league: { ...L, stages, out, status: 'done', champion: order[0] } }, '🏆 انتهى الدوري')
-    else save({ league: { ...L, stages: [...stages, mkStage(rest.length)], out } }, `طلع ${pl(loser)?.name}`)
+  const asId = as || L?.players?.[0]
+  const putStage = (p, extra = {}) => save({ league: { ...L, ...extra, stages: [...L.stages.slice(0, -1), { ...stage, ...p }] } }, 'تم')
+  const toggleVote = gid => {
+    const cur = stage.votes[asId] || []
+    const nx = cur.includes(gid) ? cur.filter(x => x !== gid) : cur.length < stage.k ? [...cur, gid] : [...cur.slice(1), gid]
+    putStage({ votes: { ...stage.votes, [asId]: nx } })
   }
+  const tally = new Map((stage?.cands || []).map(id => [id, 0]))
+  Object.values(stage?.votes || {}).flat().forEach(id => tally.set(id, (tally.get(id) || 0) + 1))
+  const voted = Object.keys(stage?.votes || {}).length
+  const lockVote = () => {
+    const ranked = shuffle(stage.cands).sort((a, b) => tally.get(b) - tally.get(a))
+    putStage({ picked: ranked.slice(0, stage.k) })
+  }
+  const reroll = () => putStage({ cands: mkStage(stage.n).cands, votes: {} })
+  const tap = id => !stage.order.includes(id) && putStage({ order: [...stage.order, id] })
+  const shieldOf = id => L.shields?.[id] || 0
+  const cur = stage?.picked ? stage.plays.length : 0
+  const curGame = stage?.picked?.[cur]
+  const [useSh, setUseSh] = useState(false)
+  const lockPlay = () => {
+    const order = stage.order, n = order.length
+    const last = order[n - 1]
+    const saved = useSh && n > 2 && shieldOf(last) > 0
+    const loser = saved ? order[n - 2] : last
+    const mult = stage.twist.id === 'double' ? 2 : 1
+    const pts = { ...L.pts }; order.forEach((id, i) => { pts[id] = (pts[id] || 0) + (n - 1 - i) * mult })
+    const shields = { ...L.shields }
+    if (saved) shields[last] = shieldOf(last) - 1
+    if (stage.twist.id === 'shield' && n > 2) shields[order[0]] = (shields[order[0]] || 0) + 1
+    const out = [...L.out, { id: loser, n, game: curGame, st: L.stages.length, saved }]
+    const rest = alive.filter(x => x !== loser)
+    const play = { game: curGame, order, loser, saved }
+    const st = { ...stage, plays: [...stage.plays, play], order: [] }
+    const stages = [...L.stages.slice(0, -1), st]
+    setUseSh(false)
+    if (rest.length === 1) return save({ league: { ...L, stages, out, pts, shields, status: 'done', champion: rest[0] } }, '🏆 انتهى الدوري')
+    if (st.plays.length >= st.k) {
+      const used = new Set(stages.flatMap(x => x.picked || []))
+      return save({ league: { ...L, stages: [...stages, mkStage(rest.length, used)], out, pts, shields } }, `طلع ${pl(loser)?.name}`)
+    }
+    save({ league: { ...L, stages, out, pts, shields } }, `طلع ${pl(loser)?.name}`)
+  }
+  const dayLeft = L?.end ? Math.ceil((new Date(L.end) - new Date(today())) / 864e5) : null
   const status = L ? (L.status === 'done' ? 'انتهى' : today() < L.start ? 'ما بدأ بعد (حسب التاريخ)' : L.end && today() > L.end ? 'تجاوز تاريخ النهاية' : 'جاري') : ''
+  const board = L ? [...L.players].sort((a, b) => (L.out.some(o => o.id === a) - L.out.some(o => o.id === b)) || (L.pts[b] || 0) - (L.pts[a] || 0)) : []
+  const aliveBoard = board.filter(id => alive.includes(id))
+  const danger = aliveBoard.length > 2 ? aliveBoard[aliveBoard.length - 1] : null
+  const progress = L ? ((L.initial - alive.length) / Math.max(1, L.initial - 1)) * 100 : 0
+  const old = L && L.stages?.length && !stage?.votes
   return (
     <Section title="🏟️ الدوري الموسمي">
       <div className="pad lab-box">
-        <p className="hint">تحدد البداية والنهاية والمشاركين. كل مرحلة تطلع ألعاب عشوائية تناسب عدد الباقين، والأخير في الترتيب يطلع، ولين يبقى اثنين يلعبون النهائي على لعبة 1v1.</p>
         {!L && (
-          <div className="form">
-            <input className="input" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="اسم الدوري" />
-            <div className="lab-row"><label className="hint">يبدأ<input className="input" type="date" value={f.start} onChange={e => setF({ ...f, start: e.target.value })} /></label><label className="hint">ينتهي<input className="input" type="date" value={f.end} onChange={e => setF({ ...f, end: e.target.value })} /></label></div>
-            <div className="lab-who"><small>المشاركين ({f.ids.length}):</small>{idx.players.map(p => <button key={p.id} type="button" className={f.ids.includes(p.id) ? 'on' : ''} onClick={() => setF({ ...f, ids: f.ids.includes(p.id) ? f.ids.filter(x => x !== p.id) : [...f.ids, p.id] })}><Avatar player={p} size={30} /></button>)}</div>
-            <button className="btn primary" disabled={busy || f.ids.length < 2 || !f.name.trim()} onClick={create}>🚀 ابدأ الدوري</button>
-          </div>
-        )}
-        {L && (
           <>
-            <div className="lab-league-h"><b>{L.name}</b><small>{L.start}{L.end ? ` ← ${L.end}` : ''} · {status}</small></div>
-            <div className="lab-alive">{alive.map(id => <span key={id}><Avatar player={pl(id)} size={34} /><em>{pl(id)?.name}</em></span>)}</div>
-            {L.status === 'done' && <div className="lab-winner"><Avatar player={pl(L.champion)} size={56} /><div><small>🏆 بطل الدوري</small><b>{pl(L.champion)?.name}</b></div></div>}
+            <p className="hint">كل مرحلة: 3 ألعاب عشوائية، واللاعبين (حتى اللي طلعوا: «هيئة المحلفين») يصوّتون على اللي تنلعب. من 5 لاعبين فوق تنلعب لعبتين في المرحلة ويطلع واحد بكل لعبة، وبعدها لعبة وحدة لكل مرحلة لين النهائي.</p>
+            <div className="form">
+              <input className="input" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="اسم الدوري" />
+              <div className="lab-row"><label className="hint">يبدأ<input className="input" type="date" value={f.start} onChange={e => setF({ ...f, start: e.target.value })} /></label><label className="hint">ينتهي<input className="input" type="date" value={f.end} onChange={e => setF({ ...f, end: e.target.value })} /></label></div>
+              <div className="lab-who"><small>المشاركين ({f.ids.length}):</small>{idx.players.map(p => <button key={p.id} type="button" className={f.ids.includes(p.id) ? 'on' : ''} onClick={() => setF({ ...f, ids: f.ids.includes(p.id) ? f.ids.filter(x => x !== p.id) : [...f.ids, p.id] })}><Avatar player={p} size={30} /></button>)}</div>
+              <button className="btn primary" disabled={busy || f.ids.length < 2 || !f.name.trim()} onClick={create}>🚀 ابدأ الدوري</button>
+            </div>
+          </>
+        )}
+        {old && <><p className="hint">هذا دوري بالنظام القديم، احذفه وابدأ واحد جديد.</p><button className="btn danger-link" onClick={() => save({ league: null }, 'انحذف')}>احذفه</button></>}
+        {L && !old && (
+          <>
+            <div className={`lab-banner ${L.status === 'done' ? 'done' : ''}`}>
+              <b>{L.name}</b>
+              <small>{L.start}{L.end ? ` ← ${L.end}` : ''} · {status}{dayLeft != null && L.status !== 'done' && dayLeft >= 0 ? ` · باقي ${dayLeft} يوم` : ''}</small>
+              <div className="lab-prog"><i style={{ width: `${progress}%` }} /></div>
+              <small>{alive.length} باقين من {L.initial}</small>
+            </div>
+
+            <ol className="lab-ladder">
+              {L.stages.map((st, i) => <li key={i} className={i === L.stages.length - 1 && L.status !== 'done' ? 'now' : 'past'}><b>{st.n === 2 ? '🏆' : st.n}</b><small>{st.n === 2 ? 'نهائي' : `${st.k} ${st.k === 2 ? 'لعبتين' : 'لعبة'}`}</small></li>)}
+              {L.status !== 'done' && alive.length > 2 && <li className="fut"><b>…</b></li>}
+              {L.status !== 'done' && !L.stages.some(s => s.n === 2) && <li className="fut"><b>🏆</b></li>}
+            </ol>
+
+            {L.status === 'done' && (
+              <div className="lab-champ">
+                <span className="lab-conf" aria-hidden="true">🎉 ✨ 🎊 ✨ 🎉</span>
+                <Avatar player={pl(L.champion)} size={84} frame="gold" />
+                <small>🏆 بطل {L.name}</small><b>{pl(L.champion)?.name}</b>
+                <small>وصيفه: {pl(L.out[L.out.length - 1]?.id)?.name} · {L.pts[L.champion] || 0} نقطة</small>
+              </div>
+            )}
+
+            <div className="lab-arena">
+              {board.map((id, i) => {
+                const o = L.out.find(x => x.id === id)
+                return (
+                  <div key={id} className={`lab-pl ${o ? 'out' : ''} ${id === danger ? 'danger' : ''}`}>
+                    <Avatar player={pl(id)} size={40} />
+                    <em>{pl(id)?.name}</em>
+                    <b>{L.pts[id] || 0}</b>
+                    <i>{o ? '🪦' : i === 0 ? '👑' : id === danger ? '🔥' : ''}{shieldOf(id) > 0 && !o ? '🛡️'.repeat(shieldOf(id)) : ''}</i>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="hint">👑 المتصدر بالنقاط · 🔥 الأضعف (على الحافة) · 🛡️ درع ينقذ من الطلوع · النقاط = عدد اللي تغلبهم في كل لعبة</p>
+
             {L.status === 'active' && stage && (
               <div className="lab-stage">
-                <h4>المرحلة: {stage.n} لاعبين{stage.n === 2 ? ' · النهائي' : ''}</h4>
-                {!stage.game ? (
+                <div className="lab-twist"><span>{stage.twist.icon}</span><div><b>{stage.twist.name}</b><small>{stage.twist.desc}</small></div></div>
+                <h4>المرحلة {L.stages.length} · {stage.n} لاعبين · {stage.k === 2 ? 'لعبتين (يطلع واحد بكل لعبة)' : 'لعبة وحدة (يطلع واحد)'}</h4>
+                {!stage.picked ? (
                   <>
-                    <p className="hint">اختر لعبة المرحلة:</p>
-                    <div className="lab-grid">{stage.cands.map(id => idx.gamesById.get(id) && <GameChip key={id} g={idx.gamesById.get(id)} disabled={busy} onClick={() => patch({ game: id })} />)}</div>
-                    {!stage.cands.length && <p className="hint">ما فيه لعبة مناسبة لهذا العدد.</p>}
-                    <button className="btn small ghost" disabled={busy} onClick={reroll}>🎲 غيّر الخيارات</button>
+                    <p className="hint">🗳️ صوّتوا على {stage.k === 2 ? 'لعبتين' : 'لعبة'} من ال3 (يصوّت كل المشاركين حتى اللي طلعوا):</p>
+                    <Who value={asId} onChange={setAs} list={L.players.map(pl)} />
+                    <div className="lab-grid">{stage.cands.map(id => gm(id) && <GameChip key={id} g={gm(id)} on={(stage.votes[asId] || []).includes(id)} disabled={busy} onClick={() => toggleVote(id)}><i className="lab-bar"><u style={{ width: `${voted ? (tally.get(id) / voted) * 100 : 0}%` }} /></i><em>{tally.get(id)} صوت</em></GameChip>)}</div>
+                    {!stage.cands.length && <p className="hint">ما فيه ألعاب كافية لهذا العدد.</p>}
+                    <div className="lab-row"><button className="btn gold" disabled={busy || !voted} onClick={lockVote}>🔒 أقفل التصويت ({voted}/{L.players.length})</button><button className="btn small ghost" disabled={busy} onClick={reroll}>🎲 غيّر الخيارات</button></div>
                   </>
                 ) : (
                   <>
-                    <div className="lab-winner"><Cover game={idx.gamesById.get(stage.game)} className="sm" /><div><small>لعبة المرحلة</small><b>{idx.gamesById.get(stage.game)?.name}</b></div></div>
-                    <p className="hint">اضغط اللاعبين بترتيب النهاية من الأول للأخير. الأخير يطلع.</p>
-                    <div className="lab-alive">{alive.map(id => { const k = stage.order.indexOf(id); return <button key={id} type="button" className={k >= 0 ? 'on' : ''} onClick={() => tapOrder(id)}><Avatar player={pl(id)} size={34} /><em>{k >= 0 ? `#${k + 1}` : pl(id)?.name}</em></button> })}</div>
-                    <div className="lab-row">
-                      <button className="btn gold" disabled={busy || stage.order.length !== alive.length} onClick={lock}>ثبّت النتيجة</button>
-                      <button className="btn small ghost" onClick={() => patch({ order: [], game: null })}>ارجع</button>
-                    </div>
+                    <div className="lab-picked">{stage.picked.map((id, i) => gm(id) && <div key={id} className={`lab-pk ${i === cur ? 'now' : i < cur ? 'done' : ''}`}><Cover game={gm(id)} className="xs" /><b>{gm(id).name}</b><small>{i < cur ? `✔ طلع ${pl(stage.plays[i].loser)?.name}${stage.plays[i].saved ? ' (بعد الدرع)' : ''}` : i === cur ? '▶ الحين' : 'بعدها'}</small></div>)}</div>
+                    {curGame && (
+                      <>
+                        <p className="hint">اضغط اللاعبين بترتيب نهاية «{gm(curGame)?.name}» من الأول للأخير:</p>
+                        <div className="lab-alive">{alive.map(id => { const k = stage.order.indexOf(id); return <button key={id} type="button" className={k >= 0 ? 'on' : ''} onClick={() => tap(id)}><Avatar player={pl(id)} size={36} /><em>{k >= 0 ? `#${k + 1}` : pl(id)?.name}</em></button> })}</div>
+                        {stage.order.length === alive.length && alive.length > 2 && shieldOf(stage.order[stage.order.length - 1]) > 0 && (
+                          <label className="switch"><input type="checkbox" checked={useSh} onChange={e => setUseSh(e.target.checked)} /><span>🛡️ {pl(stage.order[stage.order.length - 1])?.name} يستخدم درعه وينقذ نفسه (يطلع اللي قبله)</span></label>
+                        )}
+                        <div className="lab-row">
+                          <button className="btn gold" disabled={busy || stage.order.length !== alive.length} onClick={lockPlay}>{alive.length === 2 ? '🏆 أعلن البطل' : '🪦 ثبّت واطلّع الأخير'}</button>
+                          <button className="btn small ghost" onClick={() => putStage({ order: [] })}>صفّر الترتيب</button>
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
               </div>
             )}
-            {L.out.length > 0 && <ol className="lab-hist">{L.out.map((o, i) => <li key={i}>طلع {pl(o.id)?.name} في مرحلة {o.n} · <bdi>{idx.gamesById.get(o.game)?.name}</bdi></li>)}</ol>}
+
+            {L.out.length > 0 && (
+              <div className="lab-yard">
+                <h4>🪦 المقبرة</h4>
+                <ul>{[...L.out].reverse().map((o, i) => <li key={i}><Avatar player={pl(o.id)} size={30} /><div><b>{pl(o.id)?.name}</b><small>طلع بمرحلة {o.st} على <bdi>{gm(o.game)?.name}</bdi> · {EPI[hash(o.id + o.st) % EPI.length]}</small></div></li>)}</ul>
+              </div>
+            )}
             <button className="link-btn danger" disabled={busy} onClick={() => save({ league: null }, 'انحذف الدوري')}>احذف الدوري</button>
           </>
         )}
