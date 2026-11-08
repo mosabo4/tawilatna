@@ -347,16 +347,105 @@ function League() {
   )
 }
 
+// ---------- 4) المرشّحون والمصوّتون (أدوار تتبدّل كل جلسة) ----------
+function Rota() {
+  const { lab, save, busy, idx, me } = useLab()
+  const R = lab.rota || { sessions: [] }
+  const S = R.sessions || []
+  const cur = S.length && S[S.length - 1].phase !== 'done' ? S[S.length - 1] : null
+  const pl = id => idx.playersById.get(id)
+  const gm = id => idx.gamesById.get(id)
+  const n = idx.players.length
+  const maxK = Math.max(2, Math.floor(n / 2))
+  const [k, setK] = useState(Math.min(3, maxK))
+  const [as, setAs] = useState(null)
+  const [pick, setPick] = useState('')
+  const chosen = new Map(idx.players.map(p => [p.id, 0]))
+  S.forEach(x => x.choosers.forEach(id => chosen.set(id, (chosen.get(id) || 0) + 1)))
+  const putSessions = (sessions, msg) => save({ rota: { sessions } }, msg)
+  const start = () => {
+    const order = shuffle(idx.players.map(p => p.id)).sort((a, b) => chosen.get(a) - chosen.get(b))
+    const choosers = order.slice(0, k), voters = order.slice(k)
+    putSessions([...S, { id: Date.now(), date: today(), k, choosers, voters, noms: {}, votes: {}, phase: 'nominate' }], 'بدأت جلسة جديدة')
+  }
+  const upd = p => putSessions([...S.slice(0, -1), { ...cur, ...p }], 'تم')
+  const asId = as && (cur?.choosers.includes(as) || cur?.voters.includes(as)) ? as : (cur?.phase === 'vote' ? cur?.voters[0] : cur?.choosers[0])
+  const mine = cur?.noms[asId] || []
+  const allNoms = cur ? [...new Set(Object.values(cur.noms).flat())] : []
+  const nominate = () => pick && !mine.includes(pick) && mine.length < 2 && (upd({ noms: { ...cur.noms, [asId]: [...mine, pick] } }), setPick(''))
+  const tally = new Map(allNoms.map(id => [id, 0])); if (cur) Object.values(cur.votes).forEach(id => tally.set(id, (tally.get(id) || 0) + 1))
+  const finish = () => {
+    const max = Math.max(0, ...tally.values()); const lead = [...tally].filter(([, c]) => c === max).map(x => x[0])
+    upd({ phase: 'done', winner: lead[Math.floor(Math.random() * lead.length)], tie: lead.length > 1, tally: Object.fromEntries(tally) })
+  }
+  const nomBy = gid => cur.choosers.filter(id => (cur.noms[id] || []).includes(gid))
+  return (
+    <Section title="🎭 مرشّحون ومصوّتون">
+      <div className="pad lab-box">
+        <p className="hint">كل جلسة: مجموعة صغيرة «المرشّحين» تختار الألعاب، والباقين «المصوّتين» يصوّتون بينها بس، ما يقدرون يطلعون ألعاب جديدة. الأدوار تتبدّل كل جلسة، والعدد يتغير، واللي قليل ترشيحه سابقاً ياخذ أولوية.</p>
+        {!cur && (
+          <>
+            <label className="hint">عدد المرشّحين هالجلسة: <b>{k}</b> (والمصوّتين {n - k})
+              <input type="range" min="2" max={maxK} value={k} onChange={e => setK(+e.target.value)} style={{ width: '100%' }} />
+            </label>
+            <button className="btn small ghost" onClick={() => setK(2 + Math.floor(Math.random() * (maxK - 1)))}>🎲 عشوائي</button>
+            <button className="btn primary" disabled={busy || n < 3} onClick={start}>🎬 ابدأ جلسة جديدة</button>
+          </>
+        )}
+        {cur && (
+          <>
+            <div className="lab-roles">
+              <div><h4>🎯 المرشّحون ({cur.choosers.length})</h4><div className="lab-alive">{cur.choosers.map(id => <span key={id}><Avatar player={pl(id)} size={34} /><em>{pl(id)?.name}</em></span>)}</div></div>
+              <div><h4>🗳️ المصوّتون ({cur.voters.length})</h4><div className="lab-alive">{cur.voters.map(id => <span key={id}><Avatar player={pl(id)} size={34} /><em>{pl(id)?.name}</em></span>)}</div></div>
+            </div>
+            {cur.phase === 'nominate' && (
+              <>
+                <Who value={asId} onChange={setAs} list={cur.choosers.map(pl)} />
+                <div className="lab-row">
+                  <select className="input" value={pick} onChange={e => setPick(e.target.value)}><option value="">اختر لعبة…</option>{idx.games.filter(g => fits(g, n)).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}</select>
+                  <button className="btn small primary" disabled={busy || !pick || mine.length >= 2} onClick={nominate}>رشّح</button>
+                </div>
+                <p className="hint">{pl(asId)?.name}: {mine.length} من 2</p>
+                <div className="lab-grid">{allNoms.map(id => gm(id) && <GameChip key={id} g={gm(id)} disabled><em>{nomBy(id).map(x => pl(x)?.name).join('، ')}</em></GameChip>)}</div>
+                <button className="btn gold" disabled={busy || allNoms.length < 2} onClick={() => upd({ phase: 'vote' })}>🔒 أقفل الترشيح وافتح التصويت</button>
+              </>
+            )}
+            {cur.phase === 'vote' && (
+              <>
+                <Who value={asId} onChange={setAs} list={cur.voters.map(pl)} />
+                <div className="lab-grid">{allNoms.map(id => gm(id) && <GameChip key={id} g={gm(id)} on={cur.votes[asId] === id} disabled={busy} onClick={() => upd({ votes: { ...cur.votes, [asId]: id } })}><i className="lab-bar"><u style={{ width: `${Object.keys(cur.votes).length ? (tally.get(id) / Object.keys(cur.votes).length) * 100 : 0}%` }} /></i><em>{tally.get(id)} صوت</em></GameChip>)}</div>
+                <p className="hint">صوّت {Object.keys(cur.votes).length} من {cur.voters.length}</p>
+                <button className="btn gold" disabled={busy || !Object.keys(cur.votes).length} onClick={finish}>🏁 أعلن الفايزة</button>
+              </>
+            )}
+          </>
+        )}
+        {S.length > 0 && !cur && S[S.length - 1].winner && gm(S[S.length - 1].winner) && (
+          <div className="lab-winner"><Cover game={gm(S[S.length - 1].winner)} className="sm" /><div><small>🎯 لعبة الجلسة</small><b>{gm(S[S.length - 1].winner).name}</b>{S[S.length - 1].tie && <small>(حسمتها القرعة)</small>}</div></div>
+        )}
+        {S.length > 0 && (
+          <>
+            <h4>📊 كم مرة رشّح كل واحد</h4>
+            <div className="lab-alive">{[...idx.players].sort((a, b) => chosen.get(b.id) - chosen.get(a.id)).map(p => <span key={p.id}><Avatar player={p} size={30} /><em>{p.name} · {chosen.get(p.id)}</em></span>)}</div>
+            <ul className="lab-hist">{[...S].reverse().filter(x => x.phase === 'done').map(x => <li key={x.id}>{x.date} · {x.k} مرشّحين / {x.voters.length} مصوّتين · <bdi>{gm(x.winner)?.name}</bdi></li>)}</ul>
+            <button className="link-btn danger" disabled={busy} onClick={() => save({ rota: null }, 'صُفّرت')}>صفّر السجل</button>
+          </>
+        )}
+      </div>
+    </Section>
+  )
+}
+
 export default function Lab() {
   const { me } = useStore()
   const [tab, setTab] = useState('election')
   if (!me?.is_admin) return <Empty title="هذي للمسؤول بس" />
-  const tabs = [['election', '🗳️ الانتخابات'], ['month', '🏆 لعبة الشهر'], ['league', '🏟️ الدوري']]
+  const tabs = [['election', '🗳️ الانتخابات'], ['month', '🏆 لعبة الشهر'], ['league', '🏟️ الدوري'], ['rota', '🎭 الأدوار']]
   return (
     <>
       <p className="hint pad-x">🔬 تجارب خاصة فيك، ما أحد غيرك يشوفها. تقدر تتصرف باسم أي لاعب عشان تجرّب.</p>
       <div className="lab-tabs">{tabs.map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
-      {tab === 'election' ? <Election /> : tab === 'month' ? <Month /> : <League />}
+      {tab === 'election' ? <Election /> : tab === 'month' ? <Month /> : tab === 'rota' ? <Rota /> : <League />}
     </>
   )
 }

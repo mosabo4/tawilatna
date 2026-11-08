@@ -165,7 +165,7 @@ export default function Me({ sub }) {
           {link('⏳', 'جوائزي المحدودة', '#/me/limits', 'مرة بالأسبوع وبالشهر')}
           {link('🌐', 'صفحتي العامة', `#/player/${me.id}`, 'كيف يشوفني الباقين')}
         </nav>
-        {me.is_admin && <nav className="me-links">{link('🛠️', 'أدوات المسؤول', '#/me/admin', 'الملخص، القفل، اللاعبين، الشخصيات', 'admin')}{link('🔬', 'المختبر', '#/me/lab', 'انتخابات، لعبة الشهر، الدوري (تجريبي)', 'admin')}</nav>}
+        {me.is_admin && <nav className="me-links">{link('🛠️', 'أدوات المسؤول', '#/me/admin', 'الملخص، القفل، اللاعبين، الشخصيات', 'admin')}{link('🔬', 'المختبر', '#/me/lab', 'انتخابات، لعبة الشهر، الدوري، الأدوار (تجريبي)', 'admin')}</nav>}
         <p className="hint pad-x">رمزك ثابت. لو نسيته، المسؤول يقدر يعطيك رمز جديد.</p>
         <button className="btn danger-link" onClick={() => { logout(); go('/') }}>اطلع من الحساب</button>
       </div>
