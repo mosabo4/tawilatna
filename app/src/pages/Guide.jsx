@@ -7,6 +7,7 @@ import { XP_RULES, REWARDS, xpFor } from '../levels'
 import { useLevels } from './Levels'
 import { TIER, SECRET_BADGES } from '../achievements'
 import { RARITY, TITLE_DEFS } from '../titles'
+import { SCORING } from '../scoring'
 
 const Card = ({ icon, title, children }) => <div className="gd-card"><span className="gd-ic">{icon}</span><div><b>{title}</b><small>{children}</small></div></div>
 
@@ -43,13 +44,37 @@ export default function Guide() {
     </div>,
 
     <div key="log">
-      <h2>تسجيل القيم <small>كل شي يبدأ من هنا</small></h2>
+      <h2>تسجيل القيم <small>4 خطوات وخلاص</small></h2>
       <ol className="gd-steps">
-        <li><b>اختر اللعبة</b><small>كل لعبة لها طريقة فوز: مراكز، نقاط، أقل نقاط، إقصاء، فرق، أو تعاوني</small></li>
-        <li><b>اختر اللاعبين ورتّبهم</b><small>أو حط نقاط كل واحد والترتيب يطلع لحاله</small></li>
-        <li><b>وقت البداية والنهاية</b><small>عشان نعرف كم تاخذ كل لعبة عندنا</small></li>
-        <li><b>مين جهّز ومين رتّب</b><small>في الألعاب الثقيلة، اللي يجهّز ياخذ +20 XP واللي يرتّب +15</small></li>
+        <li><b>وش لعبتوا؟</b><small>تختار من «لعبتوها قريب» أو تدوّر، والأيقونة على الغلاف تقول طريقة الفوز</small></li>
+        <li><b>مين لعب؟</b><small>تضغط على الصور، وزر «🎯 من يبدأ؟» يقرع بينكم</small></li>
+        <li><b>مين فاز؟</b><small>تتغير الخانات حسب اللعبة، وتشوف المنصة قبل ما تحفظ</small></li>
+        <li><b>متى وكم طولتوا؟</b><small>تسحب 🟢 و🏁 على الشريط، أو تختار المدة بضغطة</small></li>
       </ol>
+      <p className="gd-note">وفي الآخر تختار «كيف كانت الجلسة؟» 😂🔥🤯 ويطلع لكم احتفال بالفايز 🎉</p>
+    </div>,
+
+    <div key="modes">
+      <h2>كل لعبة لها طريقتها <small>والصفحة تتغير معها</small></h2>
+      <div className="gd-grid gd-modes">
+        {Object.values(SCORING).map(m => <Card key={m.name} icon={m.icon} title={m.name}>{m.hint}</Card>)}
+      </div>
+    </div>,
+
+    <div key="teams">
+      <h2>ألعاب الفرق <small>كأننا حول الطاولة</small></h2>
+      {crew.length >= 4 && (
+        <div className="lg-table-wrap n2 gd-table">
+          {[[0, 'bot', '🔴 الأحمر', '#E5484D', true], [1, 'top', '🔵 الأزرق', '#3E7BFA', false]].map(([t, side, label, c, won]) => (
+            <div key={t} className={`lg-seat ${side} ${won ? 'won' : 'lost'}`} style={{ '--tc': c }}>
+              <div className="lg-seat-ppl">{crew.slice(t * 2, t * 2 + 2).map(l => <span key={l.player.id} className="lg-ring"><Avatar player={l.player} size={46} /></span>)}</div>
+              <span className="lg-seat-tag">{label} {won ? '🏆' : ''}</span>
+            </div>
+          ))}
+          <div className="lg-table"><span>مثال</span><b>VS</b></div>
+        </div>
+      )}
+      <p className="gd-note">توزّعون اللاعبين على الفرق بالضغط أو «قسّم عشوائي»، وتختارون الفريق الفايز. أفالون له «الخير والشر» وسابوتور «المنقّبين والمخرّبين»</p>
     </div>,
 
     <div key="rank">
@@ -136,6 +161,7 @@ export default function Guide() {
     <div key="session">
       <h2>الجلسة <small>قبل وأثناء وبعد</small></h2>
       <div className="gd-grid">
+        <Card icon="🙏" title="بعد اللعبة الثقيلة">كل المجهّزين تقدر تشكرهم من صفحة القيم: هو +20 وأنت +10</Card>
         <Card icon="🗳️" title="قبل: الجلسة الجاية">كل واحد يختار وش يبي يلعب، والأكثر طلباً يطلع فوق</Card>
         <Card icon="📋" title="أثناء: قرارات الليلة">اختيار شريك، تجاوز الدور، ضمان الخاسر، وDouble or Nothing</Card>
         <Card icon="🔮" title="أثناء: التوقعات">توقّع الفايز قبل القيم، وإذا صح تاخذ XP</Card>
@@ -155,6 +181,7 @@ export default function Guide() {
 
     <div className="rc-cover end" key="end">
       <h1>يلا<br /><span>نلعب 🎲</span></h1>
+      <div className="gd-crew">{crew.map(l => <Avatar key={l.player.id} player={l.player} size={46} />)}</div>
       <p>أي شي ما فهمته؟ اسأل {idx.players.find(p => p.is_admin)?.name || 'المسؤول'}</p>
     </div>,
   ]
