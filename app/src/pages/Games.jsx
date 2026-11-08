@@ -243,7 +243,7 @@ export function GameView({ id }) {
   const elevenInfo = level < 6 ? { ok: false, why: '🔒 تنفتح في ليفل 6' } : otherEleven ? { ok: false, why: `عطيتها لـ ${idx.gamesById.get(otherEleven.game_id)?.name}` } : { ok: true }
 
   return (
-    <div className="page has-action">
+    <div className="page">
       <TopBar title={game.name} backTo="/games" right={canEdit && <button className="btn small ghost" onClick={() => go(`/game/${id}/edit`)}>تعديل</button>} />
       <div className="stack">
         <TableHero game={game} />
@@ -304,7 +304,6 @@ export function GameView({ id }) {
             : <p className="muted pad">ما انلعبت للحين. أول قيم لها يكون تاريخي.</p>}
         </Section>
       </div>
-      {me && <div className="action-bar"><button className="btn primary wide" onClick={() => go(`/log?game=${id}`)}>سجّل قيم لهذي اللعبة</button></div>}
     </div>
   )
 }
