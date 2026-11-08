@@ -1,15 +1,21 @@
 // آخر الأحداث والتنبيهات: تنبني من البيانات الموجودة
+import { unlockEvents } from './titles'
 const KEY = 'tw-seen'
 export const getSeen = () => { try { return localStorage.getItem(KEY) || '1970' } catch { return '1970' } }
 export const markSeen = () => { try { localStorage.setItem(KEY, new Date().toISOString()) } catch { /* ignore */ } }
 
+const cache = new WeakMap()
 export function buildEvents(idx) {
+  if (!cache.has(idx)) cache.set(idx, build(idx))
+  return cache.get(idx)
+}
+function build(idx) {
   const P = idx.playersById, G = idx.gamesById
   const ev = []
   for (const p of idx.plays.slice(0, 60)) {
     const g = G.get(p.game_id); const w = p.results.filter(r => r.position === 1).map(r => P.get(r.player_id)).filter(Boolean)
-    if (!w.length) continue
-    ev.push({ id: 'p' + p.id, at: p.created_at || p.played_on, who: w[0], by: p.created_by, icon: '🏆', text: `${w.map(x => x.name).join(' و')} فاز في ${g?.name || 'قيم'}`, sub: `${p.results.length} لاعبين`, href: `#/play/${p.id}` })
+    const who = P.get(p.created_by) || w[0]
+    ev.push({ id: 'p' + p.id, at: p.created_at || p.played_on, who, by: p.created_by, icon: '🎲', text: `${who ? who.name + ' سجّل' : 'انسجل'} قيم ${g?.name || ''}`, sub: `${w.length ? '🏆 ' + w.map(x => x.name).join(' و') + ' · ' : ''}${p.results.length} لاعبين`, href: `#/play/${p.id}` })
   }
   for (const x of (idx.posts || []).slice(0, 40)) {
     const who = P.get(x.player_id); if (!who) continue
@@ -28,6 +34,7 @@ export function buildEvents(idx) {
     const who = P.get(g.added_by)
     ev.push({ id: 'g' + g.id, at: g.created_at, who, by: g.added_by, icon: '📦', text: `انضافت لعبة جديدة: ${g.name}`, href: `#/game/${g.id}` })
   }
+  try { ev.push(...unlockEvents(idx)) } catch { /* لا نكسر الصفحة */ }
   return ev.filter(e => e.at).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 80)
 }
 

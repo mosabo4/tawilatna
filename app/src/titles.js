@@ -138,3 +138,46 @@ export function unlockHistory(idx, pid) {
   const order = { level: 0, reward: 1, title: 2, ach: 3 }
   return out.sort((a, b) => b.at.localeCompare(a.at) || order[a.kind] - order[b.kind])
 }
+
+// أحداث الفتح لكل الشلة في آخر أيام (إنجازات، ألقاب، ليفلات) للأحداث الأخيرة
+export function unlockEvents(idx, days = 14) {
+  const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
+  const set = new Set()
+  for (const p of idx.plays) set.add((p.created_at || p.played_on).slice(0, 10))
+  for (const r of idx.ratings) if (r.updated_at) set.add(r.updated_at.slice(0, 10))
+  for (const c of idx.comments || []) if (c.updated_at) set.add(c.updated_at.slice(0, 10))
+  for (const p of idx.posts || []) set.add(p.created_at.slice(0, 10))
+  const all = [...set].sort()
+  const recent = all.filter(d => d >= since).slice(-10)
+  if (!recent.length) return []
+  const base = all.filter(d => d < recent[0]).at(-1)
+  const state = (d) => {
+    const snap = idxBefore(idx, `${d}T23:59:59.999Z`)
+    const levels = computeLevels(snap); const ts = computeTitles(snap, levels)
+    const m = new Map()
+    for (const [pid, lv] of levels) m.set(pid, { level: lv.level, lv, ach: new Set(lv.achievements.flatMap(a => a.keys || [])), titles: new Set((ts.get(pid) || []).filter(t => t.done).map(t => t.id)), ts: ts.get(pid) || [] })
+    return m
+  }
+  let prev = state(base || recent[0])
+  const out = []
+  const now = Date.now()
+  for (const d of recent) {
+    if (!base && d === recent[0]) continue
+    const cur = state(d)
+    const at = Math.min(new Date(`${d}T23:59:59Z`).getTime(), now)
+    const iso = new Date(at).toISOString()
+    for (const [pid, c] of cur) {
+      const pv = prev.get(pid) || { level: 1, ach: new Set(), titles: new Set() }
+      const who = idx.playersById.get(pid)
+      if (!who) continue
+      if (c.level > pv.level) out.push({ id: `lv${pid}${c.level}`, at: iso, who, by: pid, icon: '⬆️', text: `${who.name} وصل ليفل ${c.level}`, sub: c.lv.title, href: `#/player/${pid}` })
+      for (const a of c.lv.achievements) for (const k of a.keys || []) if (!pv.ach.has(k)) {
+        const t = a.group === 'tier' ? ` ${['🥉', '🥈', '🥇', '💎'][+k.split(':')[1]] || ''}` : ''
+        out.push({ id: `ac${pid}${k}`, at: iso, who, by: pid, icon: a.icon, text: `${who.name} فتح إنجاز «${a.name}»${t}`, href: `#/player/${pid}` })
+      }
+      for (const t of c.ts) if (c.titles.has(t.id) && !pv.titles.has(t.id) && t.id !== 'visitor') out.push({ id: `ti${pid}${t.id}`, at: iso, who, by: pid, icon: t.icon, text: `${who.name} فتح لقب «${t.name}»`, sub: t.desc, href: `#/player/${pid}` })
+    }
+    prev = cur
+  }
+  return out.slice(-60)
+}
