@@ -94,7 +94,7 @@ function Admin() {
   return (
     <>
       <Section title="ملخص الشهر 🎬"><RecapLauncher /></Section>
-      <Section title="شرح الموقع 📖"><div className="pad form"><p className="hint" style={{ margin: 0 }}>عرض يشرح للشلة نظام الموقع: النقاط، الليفلات، الجوائز، الإنجازات، الألقاب، وتحدي اليوم.</p><button className="btn primary" onClick={() => { document.documentElement.requestFullscreen?.().catch(() => {}); go('/guide') }}>▶ اعرض الشرح</button></div></Section>
+      <Section title="شرح الموقع 📖"><div className="pad form"><p className="hint" style={{ margin: 0 }}>عرض يشرح للشلة نظام الموقع: النقاط، الليفلات، الجوائز، الإنجازات، الألقاب.</p><button className="btn primary" onClick={() => { document.documentElement.requestFullscreen?.().catch(() => {}); go('/guide') }}>▶ اعرض الشرح</button></div></Section>
       <Section title="دخول الشلة"><LockToggle /></Section>
       <Section title="إدارة اللاعبين" action={editing !== 'new' && <button className="btn small ghost" onClick={() => setEditing('new')}>أضف لاعب</button>}>
         {editing === 'new' && <PlayerEditor onDone={() => setEditing(null)} />}

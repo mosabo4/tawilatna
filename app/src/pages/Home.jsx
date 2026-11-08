@@ -10,7 +10,7 @@ import { api } from '../api'
 import { getLive, livePlays } from '../live'
 import { usePerks } from '../perks'
 import { goldenAlert, hotSeat } from '../actions'
-import { missionOf, todayKey, idxBefore, levelOfReward } from '../levels'
+import { idxBefore, levelOfReward } from '../levels'
 
 export default function Home() {
   const { idx, me } = useStore()
@@ -53,10 +53,6 @@ export default function Home() {
     if (near && near.progress[0] / near.progress[1] >= 0.5) needs.push({ icon: near.icon, title: `قرّبت من «${near.name}»`, sub: `${near.desc} · ${Math.min(...near.progress)}/${near.progress[1]}`, href: '#/progress/ach', btn: `+${near.nextXp} XP` })
   }
   const legends = levels ? [...levels.values()].filter(l => l.level >= 20) : []
-  if (me) {
-    const m = missionOf(todayKey()); const done = m.test(idx, me.id, todayKey())
-    needs.unshift({ icon: '🎯', title: `تحدي اليوم: ${m.text}`, sub: done ? 'خلّصته ✓ ' : 'مهمة اليوم لك وللشلة', href: { rate: '#/me/games', comment: '#/games', post: '#/board', pick: '#/friday', play: '#/live', react: '#/board' }[m.id], btn: done ? '✓ +15' : '+15 XP', hot: !done })
-  }
   const nm = id => idx.playersById.get(id)?.name
   const announces = (fx?.challenges || []).filter(c => c.winner && c.play && Date.now() - new Date(c.play.created_at || c.play.played_on).getTime() < 864e5 && (levels?.get(c.winner)?.level || 0) >= levelOfReward('announce'))
   const hs = hotSeat(idx)

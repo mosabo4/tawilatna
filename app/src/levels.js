@@ -21,7 +21,6 @@ export const XP_RULES = [
   { id: 'fullhouse', icon: '👨‍👩‍👦', label: 'جلسة حضرتها الشلة كاملة', xp: 20 },
   { id: 'gift', icon: '🎁', label: 'هدية من واحد من الشلة', xp: 50 },
   { id: 'lucky', icon: '🍀', label: 'فوز انحط عليه «بالحظ»: ينقص نص XP القيم', xp: 0 },
-  { id: 'daily', icon: '🎯', label: 'تحدي اليوم', xp: 15 },
   { id: 'luckbox', icon: '🎁', label: 'صندوق الحظ (ليفل 4)', xp: 0 },
   { id: 'risk', icon: '⚡', label: 'Double or Nothing: +300 لو فزت، -50 لو خسرت (ليفل 11)', xp: 0 },
   { id: 'godfather', icon: '🤝', label: 'العرّاب وتلميذه (ليفل 16)', xp: 0 },
@@ -133,7 +132,6 @@ export function computeLevels(idx) {
     for (const p of (idx.posts || []).filter(p => p.player_id === pl.id)) { const d = p.created_at.slice(0, 10); postsByDay.set(d, (postsByDay.get(d) || 0) + 1) }
     const posts = [...postsByDay.values()].reduce((s, n) => s + Math.min(n, 3), 0)
     const others = idx.players.filter(o => o.id !== pl.id).length
-    const dailyDays = dailyDone(idx, pl.id)
 
     const s = {
       plays: mine.length, wins, games: seen.size, sessions: myDays.size, cats: cats.size, winCats: winCats.size,
@@ -144,9 +142,8 @@ export function computeLevels(idx) {
       comment: comments * XP.comment, win: wins * XP.win, picks: pickWeeks * XP.picks, post: posts * XP.post, streak: streaks * XP.streak, setup: setups * XP.setup, cleanup: cleanups * XP.cleanup,
       thanks: ax.get(pl.id)?.thanks || 0, thankGive: ax.get(pl.id)?.thankGive || 0, predict: ax.get(pl.id)?.predict || 0,
       gift: ax.get(pl.id)?.gift || 0, lucky: ax.get(pl.id)?.lucky || 0, luckbox: ax.get(pl.id)?.luckbox || 0, risk: ax.get(pl.id)?.risk || 0,
-      godfather: ax.get(pl.id)?.godfather || 0, box: ax.get(pl.id)?.box || 0, guarantee: ax.get(pl.id)?.guarantee || 0, daily: dailyDays.length * XP.daily, fullhouse: fullDays.filter(d => myDays.has(d)).length * XP.fullhouse,
+      godfather: ax.get(pl.id)?.godfather || 0, box: ax.get(pl.id)?.box || 0, guarantee: ax.get(pl.id)?.guarantee || 0, fullhouse: fullDays.filter(d => myDays.has(d)).length * XP.fullhouse,
     }
-    s.dailyDays = dailyDays
     pre.push({ pl, s, parts, base: Math.max(0, Object.values(parts).reduce((a, b) => a + b, 0)) })
   }
   // الإنجازات (تحتاج ليفلات الكل بدون الإنجازات عشان «العرّاب الناجح»)
@@ -227,5 +224,3 @@ export function xpLog(idx, pid) {
   return ev.filter(e => e.at).map(e => ({ ...e, icon: icon[e.type] })).sort((a, b) => b.at.localeCompare(a.at))
 }
 
-export { MISSION_START, MISSIONS, missionOf, todayKey, dailyDone } from './missions'
-import { dailyDone } from './missions'

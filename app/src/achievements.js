@@ -86,7 +86,6 @@ function defs(ctx) {
     tiered('setup', '🧱', 'المجهّز', n => `جهّز ${cnt(n, 'لعبة ثقيلة', 'ألعاب ثقيلة')}`, [5, 15, 40], s => s.setups),
     tiered('oracle', '🔮', 'المحنك', n => `توقّع الفايز صح ${cnt(n, 'مرة', 'مرات')}`, [5, 15, 30], s => s.predOk),
     tiered('duelist', '⚔️', 'المتحدي', n => `فز في ${cnt(n, 'تحدي رسمي', 'تحديات رسمية')}`, [3, 10, 25], s => s.chalWon),
-    tiered('daily', '🎯', 'المواظب', n => `خلّص تحدي اليوم ${cnt(n, 'يوم', 'أيام')} متتابعة`, [7, 30, 100], s => s.dailyStreak),
 
     once('comeback', '🔄', 'الرجعة', 'فز بعد ما تجي الأخير في 3 أقيام متتابعة', 150, 'hard', s => s.comeback),
     once('kingslayer', '🗡️', 'قاتل الملك', 'اغلب ملك اللعبة في لعبته 3 مرات', 200, 'hard', s => s.kingslay >= 3, s => [s.kingslay, 3]),
@@ -175,14 +174,6 @@ export function achStats(idx, pl, ctx, base) {
   const tasteHits = new Set(picks.filter(pk => idx.plays.some(p => p.game_id === pk.game_id && pk.created_at && tsOf(p) > pk.created_at && new Date(tsOf(p)) - new Date(pk.created_at) < 10 * 864e5)).map(pk => pk.game_id)).size
   const lastBy = new Map(), sameBy = new Map()
   for (const p of mine) { sameBy.set(p.game_id, (sameBy.get(p.game_id) || 0) + 1); if (isLast(p, id)) lastBy.set(p.game_id, (lastBy.get(p.game_id) || 0) + 1) }
-  // تحدي اليوم ورا بعض
-  let dRun = 0, dBest = 0
-  if (base.dailyDays?.length) {
-    const set = new Set(base.dailyDays)
-    for (let t = new Date(base.dailyDays[0] + 'T00:00:00Z'); t <= new Date(); t = new Date(t.getTime() + 864e5)) {
-      const d = t.toISOString().slice(0, 10); if (set.has(d)) { dRun++; dBest = Math.max(dBest, dRun) } else if (d !== new Date().toISOString().slice(0, 10)) dRun = 0
-    }
-  }
   // شهور حضر فيها كل الجلسات
   const months = new Map(); for (const d of ctx.days) { const m = monthOf(d); if (!months.has(m)) months.set(m, []); months.get(m).push(d) }
   const myDays = new Set(mine.map(p => p.played_on))
@@ -191,7 +182,6 @@ export function achStats(idx, pl, ctx, base) {
     ...base,
     predOk: rx.predictions.filter(a => a.player_id === id && a.ok).length,
     chalWon: chal.filter(c => c.winner === id).length, chalLost: chal.filter(c => c.winner && c.winner !== id).length,
-    dailyStreak: dBest,
     comeback, kingslay, firstWins, hurricane, marathon, maxDayPlays, heavyWins, bestNotLast, kingOf: kingOfN,
     leadDays: ctx.leaderDays.get(id) || 0, sniper: others.length > 0 && others.every(o => beatenIn.has(o.id)), chalBeaten: beatenIn.size, others: others.length,
     goat, perfect: best12 >= 10, best12, scorings, longWin, monthGames,

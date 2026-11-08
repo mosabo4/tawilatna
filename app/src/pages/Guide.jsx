@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore, go } from '../store'
 import { Avatar } from '../ui'
 import { Character } from '../characters'
-import { XP_RULES, REWARDS, xpFor, missionOf, todayKey } from '../levels'
+import { XP_RULES, REWARDS, xpFor } from '../levels'
 import { useLevels } from './Levels'
 import { TIER, SECRET_BADGES } from '../achievements'
 import { RARITY, TITLE_DEFS } from '../titles'
@@ -18,7 +18,6 @@ export default function Guide() {
   const crew = useMemo(() => [...levels.values()].sort((a, b) => b.xp - a.xp), [levels])
   const someone = crew[0]?.player
   const victim = crew.at(-1)?.player
-  const mission = missionOf(todayKey())
   const rules = XP_RULES.filter(r => r.xp > 0 && !['thankGive'].includes(r.id))
   const pick = ids => ids.map(id => REWARDS.find(r => r.id === id)).filter(Boolean)
   const titleEx = ['sultan', 'wolf', 'teacher', 's67', 'runnerup', 'runaway'].map(id => TITLE_DEFS.find(t => t.id === id)).filter(Boolean)
@@ -124,13 +123,6 @@ export default function Guide() {
       <div className="gd-rar">{Object.values(RARITY).reverse().map(r => <span key={r.name}><i style={{ background: r.dot }} />{r.name}</span>)}</div>
       <div className="gd-grid">{titleEx.map(t => <Card key={t.id} icon={t.icon} title={`${t.name} · ${RARITY[t.rarity].name}`}>{t.desc}</Card>)}</div>
       <p className="gd-note">{TITLE_DEFS.length} لقب، تلبس واحد منها جنب اسمك من ليفل 3</p>
-    </div>,
-
-    <div key="daily" className="rc-cover end">
-      <h2>🎯 تحدي اليوم</h2>
-      <div className="gd-big">{mission.icon} {mission.text}</div>
-      <p>كل يوم مهمة صغيرة جديدة لكل الشلة · +15 XP</p>
-      <p className="gd-note">وإذا سويتها أيام متتابعة، يتطور إنجاز «المواظب»</p>
     </div>,
 
     <div key="session">
