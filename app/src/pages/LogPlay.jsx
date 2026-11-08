@@ -1,5 +1,5 @@
 /* eslint-disable react/prop-types */
-import { useMemo, useState } from 'react'
+import { Fragment, useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { api } from '../api'
 import { Avatar, TopBar, Cover, Confirm, today, Field, Empty, playersText } from '../ui'
@@ -28,6 +28,34 @@ const MODE_TIPS = {
   elim: 'اضغط على اللي يطلعون بالترتيب، وآخر واحد يبقى هو الفايز',
   teams: 'وزّع اللاعبين على الفرق، ثم اضغط «فاز» على الفريق الفايز',
   coop: 'كلكم تفوزون أو كلكم تخسرون',
+}
+
+function Podium({ st, pl, name }) {
+  const g = n => st.filter(c => c.position === n)
+  const rest = st.filter(c => c.position > 3)
+  const col = (n, h) => g(n).length > 0 && (
+    <div key={n} className={`lg-pcol p${n}`} style={{ '--h': h + 'px' }}>
+      <div className="lg-pav">{n === 1 && <em className="lg-crown">👑</em>}{g(n).map(c => <figure key={c.player_id}><Avatar player={pl(c.player_id)} size={n === 1 ? 52 : 42} /><figcaption>{name(c.player_id)}{c.score != null ? ` · ${c.score}` : ''}</figcaption></figure>)}</div>
+      <div className="lg-block"><span>{posLabel(n)}</span></div>
+    </div>
+  )
+  return (
+    <div className="lg-podium">
+      <small>كذا بتنسجل 🎬</small>
+      <div className="lg-pstage">{col(2, 64)}{col(1, 92)}{col(3, 44)}</div>
+      {rest.length > 0 && <div className="lg-rest">{rest.map(c => <span key={c.player_id}><Avatar player={pl(c.player_id)} size={22} />{name(c.player_id)} <i>#{c.position}</i></span>)}</div>}
+    </div>
+  )
+}
+
+function Party({ party }) {
+  const bits = useMemo(() => Array.from({ length: 42 }, (_, i) => ({ l: Math.random() * 100, d: Math.random() * .5, t: 1.4 + Math.random() * 1.2, e: ['🎉', '✨', '🎊', '⭐', '🪙', '🎲'][i % 6], r: Math.round(Math.random() * 360) })), [])
+  return (
+    <div className="lg-party">
+      {bits.map((b, i) => <span key={i} style={{ left: b.l + '%', animationDelay: b.d + 's', animationDuration: b.t + 's', '--r': b.r + 'deg' }}>{b.e}</span>)}
+      <div className="lg-party-card"><div className="lg-party-av">{party.players.map(p => <Avatar key={p.id} player={p} size={72} />)}</div><h2>{party.title}</h2><p>{party.sub}</p></div>
+    </div>
+  )
 }
 
 export default function LogPlay({ id, presetGame, live }) {
@@ -79,6 +107,7 @@ export default function LogPlay({ id, presetGame, live }) {
   const [q, setQ] = useState('')
   const [cat, setCat] = useState('all')
   const [busy, setBusy] = useState(false)
+  const [party, setParty] = useState(null)
   const [confirmDel, setConfirmDel] = useState(false)
 
   const game = idx.gamesById.get(gameId)
@@ -170,6 +199,14 @@ export default function LogPlay({ id, presetGame, live }) {
       const chosen = exps.filter(x => avail.has(x))
       if (chosen.length || existing?.expansions?.length) {
         try { await act((p, pin) => api.setPlayExpansions(p, pin, res.id, chosen)) } catch { /* toast */ }
+      }
+      const w = computed.filter(c => c.position === 1).map(c => pl(c.player_id))
+      const tw = mode === 'teams' ? teamSet[winTeam] : null
+      if (!existing) {
+        setParty(mode === 'coop' && !coopWin
+          ? { players: [], title: '😵 خسرتوا هالمرة', sub: 'الجولة الجاية انتقام!' }
+          : { players: w, title: tw ? `${tw.i} فاز ${tw.n}!` : w.length > 1 ? '🎉 مبروك للفايزين!' : `🎉 مبروك ${w[0]?.name}!`, sub: game.name })
+        await new Promise(r => setTimeout(r, 2300))
       }
       go(live ? '/live' : `/play/${res.id}`)
     } catch { /* toast shown */ } finally { setBusy(false) }
@@ -280,7 +317,7 @@ export default function LogPlay({ id, presetGame, live }) {
                 {(computed ? standings.map(c => rows.find(r => r.player_id === c.player_id)) : rows).map(r => {
                   const c = computed?.find(x => x.player_id === r.player_id)
                   return (
-                    <li key={r.player_id} className={c ? `p${Math.min(c.position, 4)}` : ''}>
+                    <li key={r.player_id} className={c ? `p${Math.min(c.position, 4)}` : ''} style={{ '--w': Math.min(100, Math.abs(Number(r.score) || 0) / (Math.max(...rows.map(x => Math.abs(Number(x.score) || 0)), 1)) * 100) + '%' }}>
                       <span className="lg-medal">{c ? posLabel(c.position) : '–'}</span>
                       <Avatar player={pl(r.player_id)} size={38} /><b>{name(r.player_id)}</b>
                       <div className="lg-step-in">
@@ -301,7 +338,7 @@ export default function LogPlay({ id, presetGame, live }) {
             {mode === 'elim' && (
               <div className="lg-tiles">{rows.map(r => {
                 const i = elim.indexOf(r.player_id); const last = computed?.find(c => c.player_id === r.player_id)?.position === 1
-                return <Tile key={r.player_id} pid={r.player_id} on={i >= 0 || last} tone={i >= 0 ? 'out' : last ? 'win' : ''} tag={i >= 0 ? `💀 ${i + 1}` : last ? '👑' : null} onClick={() => setElim(x => (i >= 0 ? x.filter(y => y !== r.player_id) : [...x, r.player_id]))} />
+                return <Tile key={r.player_id} pid={r.player_id} on={i >= 0 || last} tone={i >= 0 ? 'out shake' : last ? 'win' : ''} tag={i >= 0 ? `💀 ${i + 1}` : last ? '👑' : null} onClick={() => setElim(x => (i >= 0 ? x.filter(y => y !== r.player_id) : [...x, r.player_id]))} />
               })}</div>
             )}
 
@@ -323,25 +360,21 @@ export default function LogPlay({ id, presetGame, live }) {
                     <div>{teamSet.map((t, ti) => <button key={ti} type="button" style={{ '--tc': t.c }} className={teamOf[r.player_id] === ti ? 'on' : ''} aria-label={t.n} onClick={() => setTeamOf(m => ({ ...m, [r.player_id]: ti }))}>{t.i}</button>)}</div>
                   </li>
                 ))}</ul>
-                <div className="lg-teams" style={{ '--n': teamSet.length }}>{teamSet.map((t, ti) => {
+                <div className={`lg-teams n${teamSet.length}`} style={{ '--n': teamSet.length }}>{teamSet.map((t, ti) => {
                   const m = ids.filter(i => teamOf[i] === ti)
                   return (
-                    <div key={ti} className={`lg-team ${winTeam === ti ? 'won' : ''}`} style={{ '--tc': t.c }}>
+                    <Fragment key={ti}>{ti === 1 && teamSet.length === 2 && <div className="lg-vs">VS</div>}
+                    <div className={`lg-team ${winTeam === ti ? 'won' : ''} ${winTeam != null && winTeam !== ti ? 'lost' : ''}`} style={{ '--tc': t.c }}>
                       <header><span>{t.i}</span><b>{t.n}</b></header>
-                      <div className="lg-team-ppl">{m.length ? m.map(i => <Avatar key={i} player={pl(i)} size={40} />) : <small>فاضي</small>}</div>
+                      <div className="lg-team-ppl">{m.length ? m.map(i => <span key={i} className="lg-ring"><Avatar player={pl(i)} size={44} /></span>) : <small>انتظار لاعبين…</small>}</div>
                       <button type="button" disabled={!m.length} onClick={() => setWinTeam(ti)}>{winTeam === ti ? '🏆 فاز' : 'فاز؟'}</button>
-                    </div>
+                    </div></Fragment>
                   )
                 })}</div>
               </>
             )}
 
-            {standings && mode !== 'coop' && mode !== 'teams' && (
-              <div className="lg-podium">
-                <small>كذا بتنسجل</small>
-                <ol>{standings.map(c => <li key={c.player_id} className={`p${Math.min(c.position, 4)}`}><span>{posLabel(c.position)}</span><Avatar player={pl(c.player_id)} size={28} /><b>{name(c.player_id)}</b>{c.score != null && <em>{c.score}</em>}</li>)}</ol>
-              </div>
-            )}
+            {standings && mode !== 'coop' && mode !== 'teams' && <Podium st={standings} pl={pl} name={name} />}
           </>
         ))}
 
@@ -375,6 +408,7 @@ export default function LogPlay({ id, presetGame, live }) {
           {busy ? 'لحظة...' : !game ? 'اختر اللعبة' : !rows.length ? 'اختر اللاعبين' : !computed ? ({ points: 'اكتب نقاط الكل', low: 'اكتب نقاط الكل', winner: 'اختر الفايز', teams: 'وزّع الفرق واختر الفايز', elim: 'اضغط على اللي طلعوا', coop: 'فزتوا ولا خسرتوا؟', rank: 'رتّب الكل' }[mode] || 'كمّل النتيجة') : existing ? 'احفظ التعديل' : `سجّل القيم${count ? ` · ${count} لاعبين` : ''}`}
         </button>
       </div>
+      {party && <Party party={party} />}
       {confirmDel && <Confirm danger text="متأكد تبي تحذف هذا القيم؟ بتنحذف نتائجه من الإحصائيات." confirmText="احذف" onConfirm={del} onCancel={() => setConfirmDel(false)} />}
     </div>
   )
