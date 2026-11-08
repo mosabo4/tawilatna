@@ -18,6 +18,11 @@ const TEAM_PRESETS = {
   'Scotland Yard': [{ n: 'المحققون', i: '🕵️', c: '#3E7BFA' }, { n: 'السيد X', i: '🎩', c: '#E5484D' }],
 }
 const MARK = '⚔️ '
+const VIBES = ['😂 ضحك', '🔥 حماس', '😤 توتر', '🤯 قلبة', '😴 ملل', '🤝 تعاون', '🎭 خداع', '🍿 سوالف']
+const MARK2 = '🎭 '
+const DURS = [20, 30, 45, 60, 90, 120, 180]
+const ymd = off => { const d = new Date(); d.setDate(d.getDate() - off); return d.toLocaleDateString('en-CA') }
+const dateText = d => new Date(`${d}T12:00:00`).toLocaleDateString('ar-SA-u-ca-gregory', { weekday: 'long', day: 'numeric', month: 'long' })
 const MEDAL = ['🥇', '🥈', '🥉']
 const posLabel = n => MEDAL[n - 1] || n
 const MODE_TIPS = {
@@ -30,7 +35,7 @@ const MODE_TIPS = {
   coop: 'كلكم تفوزون أو كلكم تخسرون',
 }
 
-function Podium({ st, pl, name }) {
+function Podium({ st, pl, name, story }) {
   const g = n => st.filter(c => c.position === n)
   const rest = st.filter(c => c.position > 3)
   const col = (n, h) => g(n).length > 0 && (
@@ -42,6 +47,7 @@ function Podium({ st, pl, name }) {
   return (
     <div className="lg-podium">
       <small>كذا بتنسجل 🎬</small>
+      {story && <p className="lg-story">{story}</p>}
       <div className="lg-pstage">{col(2, 64)}{col(1, 92)}{col(3, 44)}</div>
       {rest.length > 0 && <div className="lg-rest">{rest.map(c => <span key={c.player_id}><Avatar player={pl(c.player_id)} size={22} />{name(c.player_id)} <i>#{c.position}</i></span>)}</div>}
     </div>
@@ -70,9 +76,12 @@ export default function LogPlay({ id, presetGame, live }) {
   const parsed = useMemo(() => {
     const lines = (existing?.notes || '').split('\n')
     const t = lines.find(l => l.startsWith(MARK))
-    return { team: t ? t.slice(MARK.length) : '', note: lines.filter(l => !l.startsWith(MARK)).join('\n') }
+    const v = lines.find(l => l.startsWith(MARK2))
+    return { team: t ? t.slice(MARK.length) : '', vibes: v ? v.slice(MARK2.length).split('، ').filter(x => VIBES.includes(x)) : [], note: lines.filter(l => !l.startsWith(MARK) && !l.startsWith(MARK2)).join('\n') }
   }, [existing])
   const [notes, setNotes] = useState(parsed.note)
+  const [vibes, setVibes] = useState(parsed.vibes)
+  const [spin, setSpin] = useState(null)
   const [exps, setExps] = useState(existing?.expansions || [])
   const [winners, setWinners] = useState(() => existing ? existing.results.filter(r => r.position === 1).map(r => r.player_id) : [])
   const [order, setOrder] = useState(() => existing ? [...existing.results].sort((a, b) => a.position - b.position).map(r => r.player_id) : [])
@@ -188,7 +197,7 @@ export default function LogPlay({ id, presetGame, live }) {
     if (!game || !rows.length || !computed || busy) return
     setBusy(true)
     try {
-      const body = [mode === 'teams' ? teamLine() : null, notes.trim()].filter(Boolean).join('\n')
+      const body = [mode === 'teams' ? teamLine() : null, vibes.length ? MARK2 + vibes.join('، ') : null, notes.trim()].filter(Boolean).join('\n')
       const res = await act((p, pin) => api.savePlay(p, pin, {
         id: existing?.id, game_id: gameId, played_on: date, notes: body,
         results: computed,
@@ -213,6 +222,15 @@ export default function LogPlay({ id, presetGame, live }) {
   }
   const del = async () => {
     try { await act((p, pin) => api.deletePlay(p, pin, existing.id), 'انحذف القيم'); go('/history') } catch { /* toast */ }
+  }
+  const pickStarter = () => {
+    let n = 0
+    const t = setInterval(() => { n++; setSpin({ pid: ids[Math.floor(Math.random() * ids.length)], done: n > 14 }); if (n > 14) clearInterval(t) }, 90)
+  }
+  const setDur = m => {
+    const e = endT || (date === ymd(0) ? nowT() : '22:00')
+    const [h, mi] = e.split(':').map(Number); const tot = ((h * 60 + mi - m) % 1440 + 1440) % 1440
+    setEndT(e); setStartT(`${String(Math.floor(tot / 60)).padStart(2, '0')}:${String(tot % 60).padStart(2, '0')}`)
   }
   const shuffleTeams = () => {
     const a = [...ids].sort(() => Math.random() - 0.5); const m = {}
@@ -274,17 +292,18 @@ export default function LogPlay({ id, presetGame, live }) {
             })}</div>
           </div>
         )}
-        <label className="lg-date"><span>📅 التاريخ</span><input type="date" className="input" value={date} max={today()} onChange={e => setDate(e.target.value)} /></label>
         </section>}
 
         {step(2, 'مين لعب؟', rows.length > 0, <span className="lg-count">{rows.length ? `${rows.length} لاعبين` : ''}</span>, (
           <>
-            <div className="lg-tiles">{idx.players.map(p => <Tile key={p.id} pid={p.id} on={ids.includes(p.id)} onClick={() => toggle(p.id)} />)}</div>
+            <div className="lg-tiles">{idx.players.map(p => <Tile key={p.id} pid={p.id} on={ids.includes(p.id)} tone={spin?.pid === p.id ? 'spin' : ''} onClick={() => toggle(p.id)} />)}</div>
             <div className="lg-quick">
               <button className="chip" onClick={() => setPlayers(idx.players.map(p => p.id))}>👥 الكل</button>
               {lastPlayers.length > 0 && <button className="chip" onClick={() => setPlayers(lastPlayers)}>↩︎ نفس آخر قيم</button>}
+              {rows.length > 1 && <button className="chip" onClick={pickStarter}>🎯 من يبدأ؟</button>}
               {rows.length > 0 && <button className="chip" onClick={() => setRows([])}>مسح</button>}
             </div>
+            {spin?.done && <p className="lg-tip">🎯 يبدأ: <b>{name(spin.pid)}</b></p>}
             {outOfRange && <p className="warn">هذي اللعبة لـ {playersText(game)}، وأنتم {rows.length}. تقدر تكمل عادي.</p>}
           </>
         ))}
@@ -374,7 +393,7 @@ export default function LogPlay({ id, presetGame, live }) {
               </>
             )}
 
-            {standings && mode !== 'coop' && mode !== 'teams' && <Podium st={standings} pl={pl} name={name} />}
+            {standings && mode !== 'coop' && mode !== 'teams' && <Podium st={standings} pl={pl} name={name} story={(() => { const w = standings.filter(c => c.position === 1); const l = standings.length - w.length; if (!l) return null; const sc = standings.find(c => c.position > 1 && c.score != null); const gap = w[0].score != null && sc ? Math.abs(w[0].score - sc.score) : null; return `🏆 ${w.map(c => name(c.player_id)).join(' و')} ${w.length > 1 ? 'فازوا' : 'فاز'} على ${l} ${l > 2 ? 'لاعبين' : l === 2 ? 'لاعبين' : 'لاعب'}${gap != null ? ` بفارق ${gap} نقطة${gap <= 3 ? ' فقط، فوز بالعافية! 😅' : gap >= 20 ? ' — سحق! 💥' : ''}` : ''}` })()} />}
           </>
         ))}
 
@@ -385,14 +404,32 @@ export default function LogPlay({ id, presetGame, live }) {
             <div className="chips-wrap">{rows.map(r => { const on = setupBy.includes(r.player_id); return <button key={r.player_id} className={`chip ${on ? 'on' : ''}`} onClick={() => setSetupBy(x => (on ? x.filter(y => y !== r.player_id) : [...x, r.player_id]))}>{name(r.player_id)}</button> })}</div>
             <span className="sub-label">مين ساعد في الترتيب بعدها؟ (+15 XP)</span>
             <div className="chips-wrap">{rows.map(r => { const on = cleanupBy.includes(r.player_id); return <button key={r.player_id} className={`chip ${on ? 'on' : ''}`} onClick={() => setCleanupBy(x => (on ? x.filter(y => y !== r.player_id) : [...x, r.player_id]))}>{name(r.player_id)}</button> })}</div>
-            <span className="sub-label">وقت القيم</span>
+          </>
+        ))}
+
+        {rows.length > 0 && game && step(heavy ? 5 : 4, 'متى ولكم طولتوا؟ ⏱️', !!(startT && endT), null, (
+          <>
+            <div className="lg-days">
+              {[[0, 'اليوم'], [1, 'أمس'], [2, 'قبل يومين']].map(([o, l]) => <button key={o} className={`chip ${date === ymd(o) ? 'on' : ''}`} onClick={() => setDate(ymd(o))}>{l}</button>)}
+              <label className={`chip lg-pickd ${![0, 1, 2].some(o => date === ymd(o)) ? 'on' : ''}`}>📆 يوم ثاني<input type="date" value={date} max={today()} onChange={e => e.target.value && setDate(e.target.value)} /></label>
+            </div>
+            <p className="lg-datebig">📅 {dateText(date)}</p>
+            <span className="sub-label">كم طولت الجلسة؟</span>
+            <div className="lg-days">{DURS.map(m => <button key={m} className={`chip ${dur === m ? 'on' : ''}`} onClick={() => setDur(m)}>{m >= 60 ? `${m / 60 === Math.floor(m / 60) ? m / 60 : (m / 60).toFixed(1)} س` : `${m} د`}</button>)}</div>
             <div className="time-row">
-              <label><small>بدأ</small><input type="time" className="input" value={startT} onChange={e => setStartT(e.target.value)} /><button type="button" className="link-btn" onClick={() => setStartT(nowT())}>الحين</button></label>
-              <label><small>خلص</small><input type="time" className="input" value={endT} onChange={e => setEndT(e.target.value)} /><button type="button" className="link-btn" onClick={() => setEndT(nowT())}>الحين</button></label>
+              <label><small>بدأنا</small><input type="time" className="input" value={startT} onChange={e => setStartT(e.target.value)} /><button type="button" className="link-btn" onClick={() => setStartT(nowT())}>الحين</button></label>
+              <label><small>خلصنا</small><input type="time" className="input" value={endT} onChange={e => setEndT(e.target.value)} /><button type="button" className="link-btn" onClick={() => setEndT(nowT())}>الحين</button></label>
             </div>
             {dur != null && <p className="hint">⏱️ المدة: {dur >= 60 ? `${Math.floor(dur / 60)} ساعة ${dur % 60 ? `و${dur % 60} دقيقة` : ''}` : `${dur} دقيقة`}</p>}
           </>
         ))}
+
+        {rows.length > 0 && game && (
+          <section className="lg-step">
+            <header><span className="lg-num">🎭</span><h2>كيف كانت الجلسة؟</h2></header>
+            <div className="chips-wrap">{VIBES.map(v => <button key={v} type="button" className={`chip ${vibes.includes(v) ? 'on' : ''}`} onClick={() => setVibes(x => x.includes(v) ? x.filter(y => y !== v) : [...x, v])}>{v}</button>)}</div>
+          </section>
+        )}
 
         <section className="lg-step lg-note">
           <Field label="ملاحظة (اختياري)">
