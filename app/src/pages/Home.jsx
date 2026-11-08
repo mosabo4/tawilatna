@@ -10,7 +10,7 @@ import { api } from '../api'
 import { getLive, livePlays } from '../live'
 import { usePerks } from '../perks'
 import { goldenAlert, hotSeat } from '../actions'
-import { idxBefore, levelOfReward } from '../levels'
+import { levelOfReward } from '../levels'
 
 export default function Home() {
   const { idx, me } = useStore()
@@ -89,7 +89,6 @@ export default function Home() {
         </div>
       )}
 
-      <MonthStatue />
       {legends.length > 0 && (
         <a className="glass hall" href="#/progress/crew">
           <b>🏛️ قاعة المشاهير</b>
@@ -211,22 +210,3 @@ function BoardPeek({ seen }) {
   )
 }
 
-// تمثال الشهر: صاحب أكثر XP في الشهر اللي فات
-function MonthStatue() {
-  const { idx } = useStore()
-  const top = useMemo(() => {
-    const now = new Date()
-    const start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
-    const end = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
-    const a = computeLevels(idxBefore(idx, end)), b = computeLevels(idxBefore(idx, start))
-    const gains = [...a.values()].map(l => ({ p: l.player, g: l.xp - (b.get(l.player.id)?.xp || 0) })).sort((x, y) => y.g - x.g)
-    return gains[0]?.g > 0 ? { ...gains[0], month: new Date(start).toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { month: 'long' }) } : null
-  }, [idx])
-  if (!top) return null
-  return (
-    <a className="glass statue" href={`#/player/${top.p.id}`}>
-      <span className="st-chr"><Character player={top.p} pose="crown" size={70} /></span>
-      <span><small>🗿 تمثال شهر {top.month}</small><b>{top.p.name}</b><small>جمع <bdi>{top.g} XP</bdi> في الشهر</small></span>
-    </a>
-  )
-}
