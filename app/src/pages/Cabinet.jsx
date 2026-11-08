@@ -19,12 +19,11 @@ function Box({ g, dim, onPick, picked }) {
     <a href={`#/game/${g.game.id}`} className={`box ${un ? 'unplayed' : ''} ${dim ? 'dim' : ''} ${picked ? 'picked' : ''} ${onPick ? 'editing' : ''}`} onClick={open} style={{ '--h': `${h}px` }}
       aria-label={`${g.game.name}${g.game.min_players ? `، ${g.game.min_players} إلى ${g.game.max_players} لاعبين` : ''}`}>
       <span className="box-3d">
-        <span className="box-face"><Cover game={g.game} /></span>
+        <span className="box-face"><Cover game={g.game} />{un && <i className="box-lock" aria-hidden="true">🔒</i>}</span>
         <span className="box-side" />
         <span className="box-top" />
       </span>
       <span className="box-label"><span className="box-name">{g.game.name}</span></span>
-      {un && <span className="box-new" title="ما جربتها للحين">✨</span>}
       {g.king && <span className="box-king" title={`ملك اللعبة: ${g.king}`}>👑</span>}
       {g.plays.length > 0 && <span className="box-plays" title={`${g.plays.length} قيم`}>{g.plays.length}</span>}
     </a>

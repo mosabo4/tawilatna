@@ -26,8 +26,7 @@ const write = (k, v) => { try { localStorage.setItem(k, v) } catch { /* ignore *
 function GameTile({ g }) {
   return (
     <a className={`game-tile ${g.unplayed ? 'unplayed' : ''}`} href={`#/game/${g.game.id}`}>
-      <Cover game={g.game} />
-      {g.unplayed && <span className="new-tag">✨ ما جربتها</span>}
+      <div className="gt-cover"><Cover game={g.game} />{g.unplayed && <i className="box-lock" aria-hidden="true">🔒</i>}</div>
       <div className="gt-body">
         <b className="gt-name">{g.game.name}</b>
         <div className="gt-meta">
