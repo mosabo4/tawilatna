@@ -8,22 +8,32 @@ import { IMG_CHARS, imgSrc } from '../characters'
 import { Avatar, Section, Empty, Cover, Confirm, playersText, fmtDate } from '../ui'
 
 // ---------- الجلسة الجاية ----------
-// مفتاح الجلسة: أول جمعة بعد آخر قيم مسجّل (القاعدة تبي تاريخ جمعة). ما يظهر للناس،
-// وفايدته إن الاختيارات تتصفّر لحالها أول ما تنسجل أقيام الجلسة.
+// مفتاح الجولة (تاريخ جمعة، القاعدة تبي كذا). ما يظهر للناس. الاختيارات ما تتصفّر لما تنسجل أقيام،
+// تبقى لين المسؤول يضغط «جولة جديدة» (يتخزن في lab.round). لو ما فيه جولة محفوظة نأخذ آخر جولة فيها اختيارات.
 const pad2 = n => String(n).padStart(2, '0')
-export function sessionKey(idx) {
+const fmtD = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+export function sessionKey(idx, settings) {
+  const saved = settings?.lab?.round
+  if (saved) return saved
+  const used = [...(idx.picks || []).map(p => p.week), ...(idx.actions || []).map(a => a.data?.week).filter(Boolean)].sort()
+  if (used.length) return used[used.length - 1]
   const last = idx.plays.reduce((m, p) => (p.played_on > m ? p.played_on : m), '2000-01-01')
   const d = new Date(last + 'T00:00:00')
   d.setDate(d.getDate() + ((5 - d.getDay() + 7) % 7 || 7))
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`
+  return fmtD(d)
+}
+export function nextRoundKey(idx, settings) {
+  const d = new Date(sessionKey(idx, settings) + 'T00:00:00')
+  d.setDate(d.getDate() + 7)
+  return fmtD(d)
 }
 
 export function useFriday() {
-  const { idx, me, act, notify } = useStore()
+  const { idx, me, act, notify, data } = useStore()
   const { can } = usePerks()
   const limit = 1 + (can('slot2') ? 1 : 0) + (can('slot3') ? 1 : 0)
   const total = 1 + (can('votes2') ? 1 : 0) + (can('votes3') ? 1 : 0) + (can('votes4') ? 1 : 0)
-  const week = sessionKey(idx)
+  const week = sessionKey(idx, data?.settings)
   const picks = useMemo(() => (idx.picks || []).filter(p => p.week === week).map(p => ({ ...p, votes: Math.max(1, p.votes || 1) })), [idx, week])
   const byGame = useMemo(() => {
     const m = new Map()
@@ -81,7 +91,9 @@ export function FridayButton({ gameId, big }) {
 }
 
 export function Friday() {
-  const { idx, me } = useStore()
+  const { idx, me, act, data } = useStore()
+  const [sure, setSure] = useState(false)
+  const newRound = async () => { try { await act((p, pin) => api.setLab(p, pin, { ...(data?.settings?.lab || {}), round: nextRoundKey(idx, data?.settings) }), 'بدأت جولة جديدة: انصفّرت الاختيارات') } catch { /* toast */ } setSure(false) }
   const { picks, byGame, tally, mine, toggle, bump, busy, week, limit, full, nextLv, total: vTotal, used, left, nextVoteLv, played } = useFriday()
   const { can, doAction, undoAction } = usePerks()
   const acts = (idx.actions || []).filter(a => a.data?.week === week)
@@ -149,6 +161,14 @@ export function Friday() {
   return (
     <div className="page vt">
       <div className="stack">
+        {me?.is_admin && (
+          <div className="vt-admin">
+            <span>🛠️ للمسؤول: الاختيارات تبقى لين تصفّرها بنفسك</span>
+            {sure
+              ? <><button className="btn small danger-link" onClick={newRound}>أكيد، صفّر الكل</button><button className="btn small ghost" onClick={() => setSure(false)}>لا</button></>
+              : <button className="btn small ghost" onClick={() => setSure(true)}>🧹 جولة جديدة (صفّر الترشيح والتصويت)</button>}
+          </div>
+        )}
         <section className="vt-parl glass">
           <div className="vt-parl-top"><b>🏛️ برلمان العيال</b><small>{voters.size ? `${voters.size} من ${total} صوّتوا` : 'الكراسي فاضية، ابدأ التصويت'}</small></div>
           <div className="vt-hemi">

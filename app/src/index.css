@@ -2178,3 +2178,4 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .lab-aw{display:flex;gap:10px;align-items:center;padding:12px;border-radius:14px;background:linear-gradient(135deg,#F2B33D22,transparent);border:1px solid #F2B33D55}
 .lab-aw>span{font-size:1.6rem}.lab-aw div{flex:1;display:grid}.lab-aw small{opacity:.75}
 .lab-row.wrap{flex-wrap:wrap}
+.vt-admin{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:14px;border:1px dashed var(--line);font-size:.8rem}
