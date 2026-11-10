@@ -192,16 +192,38 @@ function League() {
   const pl = id => idx.playersById.get(id)
   const gm = id => idx.gamesById.get(id)
   const usedIds = new Set((L?.stages || []).flatMap(s => s.picked || []))
-  const mkStage = (n, used = usedIds) => {
+  const mkStage = (n, used = usedIds, poolIds = L?.pool) => {
     const k = n >= 5 ? 2 : 1
-    let pool = idx.games.filter(g => !used.has(g.id) && fits(g, n) && (k < 2 || fits(g, n - 1) || fits(g, n)))
-    const duel = pool.filter(g => g.category === 'duel')
-    if (n === 2) pool = duel.length ? duel : pool; else pool = pool.filter(g => g.category !== 'duel')
+    const isD = g => g.category === 'duel'
+    const ok = g => !used.has(g.id) && fits(g, n) && (k < 2 || fits(g, n - 1) || fits(g, n))
+    const prefer = list => { const d = list.filter(isD); return n === 2 ? (d.length ? d : list) : list.filter(g => !isD(g)) }
+    const inPool = poolIds ? idx.games.filter(g => poolIds.includes(g.id)) : idx.games
+    let cands = shuffle(prefer(inPool.filter(ok))).slice(0, 3)
+    if (cands.length < 3) cands = [...cands, ...shuffle(prefer(idx.games.filter(g => ok(g) && !cands.includes(g)))).slice(0, 3 - cands.length)]
     const twist = n === 2 ? { id: 'final', icon: '🏆', name: 'النهائي', desc: 'لعبة وحدة، فايز وحد، وبطل الدوري' } : TWISTS[Math.floor(Math.random() * TWISTS.length)]
-    return { n, k, cands: shuffle(pool).slice(0, 3).map(g => g.id), votes: {}, preds: {}, picked: null, plays: [], order: [], twist }
+    return { n, k, cands: cands.map(g => g.id), votes: {}, preds: {}, picked: null, plays: [], order: [], twist }
   }
   const strip = x => Object.fromEntries(Object.entries(x).filter(([k]) => k !== 'prev'))
-  const create = () => save({ league: { name: f.name, start: f.start, end: f.end, status: 'active', players: f.ids, initial: f.ids.length, stages: [mkStage(f.ids.length, new Set())], out: [], pts: {}, shields: {}, jury: {} } }, 'انبدا الدوري')
+  const create = () => save({ league: { name: f.name, start: f.start, end: f.end, status: 'draft', players: f.ids, initial: f.ids.length, stages: [], out: [], pts: {}, shields: {}, jury: {}, draft: { votes: {} }, pool: null } }, 'انفتح تصويت ألعاب الدوري')
+  const inDraft = L?.status === 'draft'
+  const [q, setQ] = useState('')
+  const PER = 6
+  const dvotes = L?.draft?.votes || {}
+  const dTally = new Map(); Object.values(dvotes).flat().forEach(id => dTally.set(id, (dTally.get(id) || 0) + 1))
+  const needGames = L ? planOf(L.initial).reduce((t, x) => t + x.k, 0) : 0
+  const poolSize = needGames + 2
+  const toggleDraft = gid => {
+    const cur = dvotes[as || L.players[0]] || []
+    const nx = cur.includes(gid) ? cur.filter(x => x !== gid) : cur.length < PER ? [...cur, gid] : [...cur.slice(1), gid]
+    save({ league: { ...L, draft: { votes: { ...dvotes, [as || L.players[0]]: nx } } } }, 'تم')
+  }
+  const lockDraft = () => {
+    const ranked = shuffle(idx.games).sort((a, b) => (dTally.get(b.id) || 0) - (dTally.get(a.id) || 0))
+    const pool = ranked.slice(0, poolSize)
+    if (!pool.some(g => g.category === 'duel')) { const d = ranked.find(g => g.category === 'duel'); if (d) pool[pool.length - 1] = d }
+    const ids = pool.map(g => g.id)
+    save({ league: { ...L, status: 'active', pool: ids, stages: [mkStage(L.initial, new Set(), ids)] } }, 'انحسمت ألعاب الدوري')
+  }
   const alive = L ? L.players.filter(id => !L.out.some(o => o.id === id)) : []
   const stage = L?.stages?.[L.stages.length - 1]
   const asId = as || L?.players?.[0]
@@ -261,7 +283,22 @@ function League() {
   const aliveBoard = board.filter(id => alive.includes(id))
   const danger = aliveBoard.length > 2 ? aliveBoard[aliveBoard.length - 1] : null
   const progress = L ? ((L.initial - alive.length) / Math.max(1, L.initial - 1)) * 100 : 0
-  const old = L && L.stages?.length && !stage?.votes
+  const old = L && L.status !== 'draft' && L.stages?.length && !stage?.votes
+  const DRAFT = inDraft && (
+    <div className="lab-draft">
+      <div className="lab-twist"><span>🗳️</span><div><b>تصويت ألعاب الدوري</b><small>كل واحد يختار لين {PER} ألعاب من كل الدولاب. أعلى {poolSize} لعبة تدخل الدوري، ومن بينها تنسحب خيارات كل مرحلة.</small></div></div>
+      <Who value={as || L.players[0]} onChange={setAs} list={L.players.map(pl)} />
+      <input className="input" placeholder="ابحث عن لعبة…" value={q} onChange={e => setQ(e.target.value)} />
+      <p className="hint">اختيارات {pl(as || L.players[0])?.name}: {(dvotes[as || L.players[0]] || []).length} من {PER}</p>
+      <div className="lab-grid">
+        {[...idx.games].filter(g => !q.trim() || g.name.toLowerCase().includes(q.trim().toLowerCase())).sort((a, b) => (dTally.get(b.id) || 0) - (dTally.get(a.id) || 0) || a.name.localeCompare(b.name)).slice(0, 40).map(g => (
+          <GameChip key={g.id} g={g} on={(dvotes[as || L.players[0]] || []).includes(g.id)} disabled={busy} onClick={() => toggleDraft(g.id)}><em>{dTally.get(g.id) || 0} صوت{g.category === 'duel' ? ' · 1v1' : ''}</em></GameChip>
+        ))}
+      </div>
+      <p className="hint">يظهر أول 40 نتيجة، استخدم البحث للباقي. الدوري لازم فيه لعبة 1v1 للنهائي، تنضاف تلقائياً لو ما اختاروها.</p>
+      <button className="btn gold" disabled={busy || !Object.keys(dvotes).length} onClick={lockDraft}>🔒 أقفل التصويت وابدأ الدوري ({Object.keys(dvotes).length}/{L.players.length} صوّتوا)</button>
+    </div>
+  )
   const before = L && lastPlay ? (() => { const m = { ...L.pts }; Object.entries(lastPlay.gain || {}).forEach(([id, g]) => { m[id] = (m[id] || 0) - g }); return rankOf(m, L.players) })() : null
   const nowRank = L ? rankOf(L.pts, L.players) : null
   const stat = id => ({
@@ -324,9 +361,11 @@ function League() {
               </div>
             )}
 
-            <div className="lab-tabs in">{[['arena', '⚔️ الساحة'], ['table', '📊 الترتيب'], ['plan', '🗓️ الجدول'], ['awards', '🏅 الأوسمة']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
+            {!inDraft && <div className="lab-tabs in">{[['arena', '⚔️ الساحة'], ['path', '🗺️ المسار'], ['table', '📊 الترتيب'], ['awards', '🏅 الأوسمة']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>}
 
-            {tab === 'arena' && (
+            {inDraft && DRAFT}
+
+            {!inDraft && tab === 'arena' && (
               <>
                 <div className="lab-arena">
                   {board.map((id, i) => {
@@ -391,7 +430,7 @@ function League() {
               </>
             )}
 
-            {tab === 'table' && (
+            {!inDraft && tab === 'table' && (
               <div className="lab-table">
                 <div className="lab-tr head"><span>#</span><span>اللاعب</span><span>نقاط</span><span>فوز</span><span>🔮</span></div>
                 {board.map((id, i) => {
@@ -420,23 +459,48 @@ function League() {
               </div>
             )}
 
-            {tab === 'plan' && (
-              <ol className="lab-plan">
-                {plan.map((x, i) => {
-                  const st = L.stages[i]
-                  const state = st ? (i < L.stages.length - 1 || L.status === 'done' ? 'done' : 'now') : 'fut'
-                  return (
-                    <li key={i} className={state}>
-                      <span className="lab-pn">{x.n === 2 ? '🏆' : i + 1}</span>
-                      <div><b>{x.n === 2 ? 'النهائي' : `المرحلة ${i + 1}`} · {x.n} لاعبين</b><small>{x.k === 2 ? 'لعبتين' : 'لعبة'}{planDates[i] ? ` · ${planDates[i]}` : ''}</small>{st?.picked && <small>🎲 {st.picked.map(id => gm(id)?.name).join(' + ')}</small>}</div>
-                    </li>
-                  )
-                })}
+            {!inDraft && tab === 'path' && (
+              <div className="lab-pathwrap">
+                <div className="lab-path">
+                  {plan.map((x, i) => {
+                    const st = L.stages[i]
+                    const stNo = i + 1
+                    const startAlive = L.players.filter(id => !L.out.some(o => o.st < stNo && o.id === id))
+                    const outHere = L.out.filter(o => o.st === stNo)
+                    const isNow = L.status === 'active' && i === L.stages.length - 1
+                    const state = st ? (isNow ? 'now' : 'done') : 'fut'
+                    return (
+                      <div key={i} className="lab-pstep">
+                        <div className={`lab-pcol ${state}`}>
+                          <div className="lab-ph"><b>{x.n === 2 ? '🏆 النهائي' : `المرحلة ${stNo}`}</b><small>{x.n} لاعبين{planDates[i] ? ` · ${planDates[i]}` : ''}</small></div>
+                          <div className="lab-pg">
+                            {st?.picked
+                              ? st.picked.map((id, gi) => <span key={id} className={gi < st.plays.length ? 'done' : isNow && gi === st.plays.length ? 'now' : ''}><Cover game={gm(id)} className="xs" />{gm(id)?.name}</span>)
+                              : st?.cands?.length ? <><small>🗳️ مرشّحة:</small>{st.cands.map(id => <span key={id}><Cover game={gm(id)} className="xs" />{gm(id)?.name}</span>)}</>
+                                : <span className="q">🎲 {x.k === 2 ? 'لعبتين' : 'لعبة'} تنحدد بالتصويت</span>}
+                          </div>
+                          <div className="lab-pp">
+                            {(st ? startAlive : []).map(id => { const o = outHere.find(z => z.id === id); return <span key={id} className={o ? 'out' : ''}><Avatar player={pl(id)} size={26} /><em>{pl(id)?.name}</em>{o && <small>🪦 على {gm(o.game)?.name}{o.saved ? '' : ''}</small>}</span> })}
+                            {!st && <small className="q">{x.n} لاعبين باقين</small>}
+                          </div>
+                        </div>
+                        {i < plan.length - 1 && <span className="lab-arrow" aria-hidden="true">‹</span>}
+                      </div>
+                    )
+                  })}
+                  <div className="lab-pstep"><div className={`lab-pcol ${L.status === 'done' ? 'done' : 'fut'}`}><div className="lab-ph"><b>👑 البطل</b></div><div className="lab-pp">{L.status === 'done' ? <span><Avatar player={pl(L.champion)} size={40} /><em>{pl(L.champion)?.name}</em></span> : <small className="q">؟</small>}</div></div></div>
+                </div>
+                {L.pool && (
+                  <>
+                    <h4>🎒 ألعاب الدوري الباقية</h4>
+                    <div className="lab-chips">{L.pool.filter(id => !usedIds.has(id)).map(id => gm(id) && <span key={id}><Cover game={gm(id)} className="xs" />{gm(id).name}</span>)}</div>
+                  </>
+                )}
                 {!L.end && <p className="hint">حدد تاريخ نهاية عشان تتوزع المراحل على جمعات.</p>}
-              </ol>
+              </div>
             )}
 
-            {tab === 'awards' && (
+            {!inDraft && tab === 'awards' && (
               <div className="lab-awards">
                 {awards.length ? awards.map(([ic, t, w, u]) => <div key={t} className="lab-aw"><span>{ic}</span><div><b>{t}</b><small>{pl(w[0])?.name} · {w[1]} {u}</small></div><Avatar player={pl(w[0])} size={36} /></div>) : <p className="hint">الأوسمة تطلع بعد أول لعبة.</p>}
               </div>
