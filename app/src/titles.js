@@ -170,12 +170,12 @@ export function unlockEvents(idx, days = 14) {
       const pv = prev.get(pid) || { level: 1, ach: new Set(), titles: new Set() }
       const who = idx.playersById.get(pid)
       if (!who) continue
-      if (c.level > pv.level) out.push({ id: `lv${pid}${c.level}`, at: iso, who, by: pid, icon: '⬆️', text: `${who.name} وصل مستوى ${c.level}`, sub: c.lv.title, href: `#/player/${pid}` })
+      if (c.level > pv.level) out.push({ id: `lv${pid}${c.level}`, at: iso, who, by: pid, icon: '⬆️', text: `${who.name} وصل مستوى ${c.level}`, sub: c.lv.title, un: { k: 'lv', name: `مستوى ${c.level}`, day: d }, href: `#/player/${pid}` })
       for (const a of c.lv.achievements) for (const k of a.keys || []) if (!pv.ach.has(k)) {
         const t = a.group === 'tier' ? ` ${['🥉', '🥈', '🥇', '💎'][+k.split(':')[1]] || ''}` : ''
-        out.push({ id: `ac${pid}${k}`, at: iso, who, by: pid, icon: a.icon, text: `${who.name} فتح إنجاز «${a.name}»${t}`, href: `#/player/${pid}` })
+        out.push({ id: `ac${pid}${k}`, at: iso, who, by: pid, icon: a.icon, text: `${who.name} فتح إنجاز «${a.name}»${t}`, un: { k: 'ach', name: `«${a.name}»${t}`, day: d }, href: `#/player/${pid}` })
       }
-      for (const t of c.ts) if (c.titles.has(t.id) && !pv.titles.has(t.id) && t.id !== 'visitor') out.push({ id: `ti${pid}${t.id}`, at: iso, who, by: pid, icon: t.icon, text: `${who.name} فتح لقب «${t.name}»`, sub: t.desc, href: `#/player/${pid}` })
+      for (const t of c.ts) if (c.titles.has(t.id) && !pv.titles.has(t.id) && t.id !== 'visitor') out.push({ id: `ti${pid}${t.id}`, at: iso, who, by: pid, icon: t.icon, text: `${who.name} فتح لقب «${t.name}»`, sub: t.desc, un: { k: 'title', name: `«${t.name}»`, day: d }, href: `#/player/${pid}` })
     }
     prev = cur
   }

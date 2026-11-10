@@ -10,7 +10,7 @@ export const isNew = (e, me, seen = getSeen(), rs = readSet()) => e.at > seen &&
 export const readIds = readSet
 
 export const CATS = [
-  ['all', 'الكل'], ['me', '🎯 يخصني'], ['plays', '🎲 أقيام'], ['session', '🗳️ الجلسة'], ['social', '💬 تفاعل'], ['progress', '🏅 إنجازات'],
+  ['all', 'الكل'], ['me', '🎯 يخصني'], ['plays', '🎲 أقيام وجلسة'], ['social', '💬 تفاعل'], ['progress', '🏅 إنجازات'],
 ]
 
 const cache = new WeakMap()
@@ -81,33 +81,35 @@ function build(idx) {
     const who = P.get(x.player_id); if (!who) continue
     ev.push({ id: 'b' + x.id, at: x.created_at, who, by: x.player_id, cat: 'social', icon: '💬', text: `${who.name} كتب في اللوحة: «${x.body.length > 50 ? x.body.slice(0, 50) + '…' : x.body}»`, sub: x.body.slice(0, 60), href: '#/board', post: true })
   }
+  const cmts = []
   for (const c of (idx.comments || [])) {
     const who = P.get(c.player_id); const g = G.get(c.game_id); if (!who || !g) continue
-    ev.push({ id: 'c' + c.game_id + c.player_id, at: c.updated_at, who, by: c.player_id, cat: 'social', icon: '🗨️', text: `${who.name} علّق على ${g.name}`, sub: c.body.slice(0, 60), href: `#/game/${g.id}`, gk: 'c' + g.id + day(c.updated_at), game: g })
+    cmts.push({ id: 'c' + c.game_id + c.player_id, at: c.updated_at, who, by: c.player_id, cat: 'social', icon: '🗨️', text: `${who.name} علّق على ${g.name}`, sub: c.body.slice(0, 60), href: `#/game/${g.id}`, gk: 'c' + day(c.updated_at), game: g })
   }
+  ev.push(...group(cmts, e => e.gk, g => ({ id: 'cg' + g[0].gk, at: g[0].at, who: g[0].who, by: g[0].by, cat: 'social', icon: '🗨️', text: `${g.length} تعليقات جديدة على الألعاب`, sub: `${names([...new Set(g.map(x => x.who.name))])} · ${[...new Set(g.map(x => x.game.name))].slice(0, 2).join('، ')}`, href: g[0].href })))
   // تقييمات: تتجمّع لكل لعبة باليوم
   const rate = []
   for (const r of idx.ratings || []) {
     const who = P.get(r.player_id), g = G.get(r.game_id); if (!who || !g || !r.updated_at) continue
-    rate.push({ id: 'r' + r.game_id + r.player_id, at: r.updated_at, who, by: r.player_id, cat: 'social', icon: '⭐', text: `${who.name} قيّم ${g.name} بـ ${Number(r.score)}`, href: `#/game/${g.id}`, gk: 'r' + g.id + day(r.updated_at), game: g, score: Number(r.score) })
+    rate.push({ id: 'r' + r.game_id + r.player_id, at: r.updated_at, who, by: r.player_id, cat: 'social', icon: '⭐', text: `${who.name} قيّم ${g.name} بـ ${Number(r.score)}`, href: `#/game/${g.id}`, gk: 'r' + day(r.updated_at), game: g, score: Number(r.score) })
   }
-  ev.push(...group(rate, e => e.gk, g => ({ id: 'rg' + g[0].gk, at: g[0].at, who: g[0].who, by: g[0].by, cat: 'social', icon: '⭐', text: `${g.length} قيّموا ${g[0].game.name}`, sub: `${names(g.map(x => x.who.name))} · المتوسط ${(g.reduce((t, x) => t + x.score, 0) / g.length).toFixed(1)}`, href: g[0].href, members: g.map(x => x.by) })))
+  ev.push(...group(rate, e => e.gk, g => ({ id: 'rg' + g[0].gk, at: g[0].at, who: g[0].who, by: g[0].by, cat: 'social', icon: '⭐', text: `${g.length === 1 ? 'تقييم جديد' : g.length === 2 ? 'تقييمين جدد' : g.length + ' تقييمات جديدة'} (${(n => (n === 1 ? 'لعبة' : n === 2 ? 'لعبتين' : n <= 10 ? `${n} ألعاب` : `${n} لعبة`))(new Set(g.map(x => x.game.id)).size)})`, sub: `${names([...new Set(g.map(x => x.who.name))])} · ${[...new Set(g.map(x => x.game.name))].slice(0, 2).join('، ')}${new Set(g.map(x => x.game.id)).size > 2 ? '…' : ''}`, href: g[0].href, members: g.map(x => x.by) })))
   // ترشيحات الجلسة الجاية: تتجمّع لكل لعبة
   const picks = []
   const wk = (idx.picks || []).reduce((m, p) => (p.week > m ? p.week : m), '')
   for (const k of idx.picks || []) {
     if (k.week !== wk || !k.created_at) continue
     const who = P.get(k.player_id), g = G.get(k.game_id); if (!who || !g) continue
-    picks.push({ id: 'k' + k.game_id + k.player_id + k.week, at: k.created_at, who, by: k.player_id, cat: 'session', icon: '🗳️', text: `${who.name} صوّت للجلسة الجاية على ${g.name}${(k.votes || 1) > 1 ? ` (×${k.votes})` : ''}`, href: '#/friday', gk: g.id, game: g })
+    picks.push({ id: 'k' + k.game_id + k.player_id + k.week, at: k.created_at, who, by: k.player_id, cat: 'plays', icon: '🗳️', text: `${who.name} صوّت للجلسة الجاية على ${g.name}${(k.votes || 1) > 1 ? ` (×${k.votes})` : ''}`, href: '#/friday', gk: day(k.created_at), game: g })
   }
-  ev.push(...group(picks, e => e.gk, g => ({ id: 'kg' + g[0].gk + g[0].at, at: g[0].at, who: g[0].who, by: g[0].by, cat: 'session', icon: '🗳️', text: `${g.length} صوّتوا على ${g[0].game.name} للجلسة الجاية`, sub: names(g.map(x => x.who.name)), href: '#/friday' })))
+  ev.push(...group(picks, e => e.gk, g => ({ id: 'kg' + g[0].gk + g[0].at, at: g[0].at, who: g[0].who, by: g[0].by, cat: 'plays', icon: '🗳️', text: `${g.length} أصوات للجلسة الجاية`, sub: `${names([...new Set(g.map(x => x.who.name))])} · ${[...new Set(g.map(x => x.game.name))].slice(0, 2).join('، ')}${new Set(g.map(x => x.game.id)).size > 2 ? '…' : ''}`, href: '#/friday' })))
   // حركات العيال (شكر، هدايا، فيتو، افتتاح...)
   for (const a of idx.actions || []) {
     const who = P.get(a.player_id); if (!who || !a.created_at) continue
     const t = a.target && P.get(a.target)
     const g = a.game_id && G.get(a.game_id)
-    if (a.kind === 'veto' && g) { ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, cat: 'session', icon: '🚫', text: `${who.name} استخدم الفيتو على ${g.name}`, href: '#/friday' }); continue }
-    if (a.kind === 'opener' && g) { ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, cat: 'session', icon: '🎬', text: `${who.name} اختار ${g.name} لعبة الافتتاح`, href: '#/friday' }); continue }
+    if (a.kind === 'veto' && g) { ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, cat: 'plays', icon: '🚫', text: `${who.name} استخدم الفيتو على ${g.name}`, href: '#/friday' }); continue }
+    if (a.kind === 'opener' && g) { ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, cat: 'plays', icon: '🎬', text: `${who.name} اختار ${g.name} لعبة الافتتاح`, href: '#/friday' }); continue }
     const f = ACT[a.kind]; if (!f) continue
     const d = f(a)
     if (['thanks', 'gift', 'tease', 'baby', 'retitle', 'caption', 'challenge', 'rematch', 'hotseat', 'godfather'].includes(a.kind) && !t) continue
@@ -123,16 +125,33 @@ function build(idx) {
     ev.push({ id: 'g' + g.id, at: g.created_at, who, by: g.added_by, cat: 'plays', icon: '📦', text: `انضافت لعبة جديدة: ${g.name}`, href: `#/game/${g.id}` })
   }
   try { ev.push(...crownEvents(idx)) } catch { /* لا نكسر الصفحة */ }
-  try { ev.push(...unlockEvents(idx).map(e => ({ ...e, cat: 'progress' }))) } catch { /* لا نكسر الصفحة */ }
+  try {
+    const un = unlockEvents(idx).map(e => ({ ...e, cat: 'progress' }))
+    // نفس الشخص فتح 3 أشياء أو أكثر بنفس اليوم = إشعار واحد
+    const cnt = new Map(); un.filter(e => e.un.k !== 'lv').forEach(e => { const k = `${e.by}|${e.un.day}`; cnt.set(k, (cnt.get(k) || 0) + 1) })
+    const bulk = new Map(), rest = []
+    for (const e of un) {
+      const k = `${e.by}|${e.un.day}`
+      if (e.un.k !== 'lv' && cnt.get(k) >= 3) { if (!bulk.has(k)) bulk.set(k, []); bulk.get(k).push(e) } else rest.push(e)
+    }
+    for (const [k, g] of bulk) ev.push({ ...g[0], id: 'ub' + k, icon: '🎉', text: `${g[0].who.name} فتح ${g.length} إنجازات وألقاب جديدة`, sub: g.map(x => x.un.name).slice(0, 3).join('، ') + (g.length > 3 ? '…' : ''), un: { k: 'bulk', name: k, day: g[0].un.day } })
+    // نفس الإنجاز/اللقب/المستوى لأكثر من واحد بنفس اليوم = إشعار واحد
+    const whatN = { lv: 'وصلوا', ach: 'فتحوا إنجاز', title: 'فتحوا لقب' }
+    ev.push(...group(rest, e => `${e.un.k}|${e.un.name}|${e.un.day}`, g => ({ ...g[0], id: 'ug' + g[0].id, text: `${names(g.map(x => x.who.name))} ${whatN[g[0].un.k]} ${g[0].un.name}`, sub: undefined, to: g.map(x => x.by) })))
+  } catch { /* لا نكسر الصفحة */ }
   return ev.filter(e => e.at).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 200)
 }
 
 // هل الحدث يخصني؟ (أنا الهدف، أو لعبت القيم، أو الحدث على شخصي)
 export const isMine = (e, me) => !!me && (e.to || []).includes(me.id)
 
+export const DAY_MS = 864e5
+// الإشعارات تطلع آخر 24 ساعة، وسجل الإشعارات آخر أسبوع
+export const within = (list, ms) => list.filter(e => Date.now() - new Date(String(e.at).length <= 10 ? e.at + 'T12:00:00' : e.at).getTime() <= ms)
+
 export function unread(idx, me) {
   const seen = getSeen(), rs = readSet()
-  return buildEvents(idx).filter(e => e.at > seen && e.by !== me?.id && !rs.has(e.id))
+  return within(buildEvents(idx), DAY_MS).filter(e => e.at > seen && e.by !== me?.id && !rs.has(e.id))
 }
 
 export function timeAgo(iso) {

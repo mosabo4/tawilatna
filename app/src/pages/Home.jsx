@@ -5,7 +5,7 @@ import { Avatar, Section, Empty, Cover } from '../ui'
 import { useFriday } from './Social'
 import { computeLevels } from '../levels'
 import { Stage, Character } from '../characters'
-import { buildEvents, getSeen, isNew, timeAgo } from '../events'
+import { buildEvents, getSeen, isNew, within, DAY_MS, timeAgo } from '../events'
 import { api } from '../api'
 import { getLive, livePlays } from '../live'
 import { usePerks } from '../perks'
@@ -18,7 +18,7 @@ export default function Home() {
   const top3 = board.filter(b => b.plays > 0).slice(0, 3)
   const { tally, mine, picks } = useFriday()
   const live = getLive()
-  const events = useMemo(() => buildEvents(idx).filter(e => !e.post), [idx])
+  const events = useMemo(() => within(buildEvents(idx).filter(e => !e.post), DAY_MS), [idx])
   const seen = getSeen()
 
   const unrated = useMemo(() => {

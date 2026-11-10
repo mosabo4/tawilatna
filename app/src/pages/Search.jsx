@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store'
-import { buildEvents, getSeen, markSeen, markRead, readIds, isNew, isMine, dayLabel, CATS, timeAgo } from '../events'
+import { buildEvents, getSeen, markSeen, markRead, readIds, isNew, isMine, within, DAY_MS, dayLabel, CATS, timeAgo } from '../events'
 import { Avatar, Cover, TopBar, ScoreBadge } from '../ui'
 import { gameStats } from '../stats'
 
@@ -35,7 +35,8 @@ export function Alerts() {
   const [rs, setRs] = useState(() => readIds())
   const [cat, setCat] = useState('all')
   const [onlyNew, setOnlyNew] = useState(false)
-  const all = useMemo(() => buildEvents(idx).filter(e => !e.post), [idx])
+  const [hist, setHist] = useState(false)
+  const all = useMemo(() => within(buildEvents(idx).filter(e => !e.post), hist ? 7 * DAY_MS : DAY_MS), [idx, hist])
   const fresh = e => isNew(e, me, seen, rs)
   const inCat = (e, c) => c === 'all' || (c === 'me' ? isMine(e, me) : e.cat === c)
   const ev = all.filter(e => inCat(e, cat) && (!onlyNew || fresh(e)))
@@ -54,7 +55,7 @@ export function Alerts() {
           <label className="al-only"><input type="checkbox" checked={onlyNew} onChange={e => setOnlyNew(e.target.checked)} /> الجديد بس</label>
           <button type="button" className="link-btn" disabled={!n('all')} onClick={markAll}>✓ علّم الكل مقروء</button>
         </div>
-        {ev.length === 0 && <p className="muted pad">{onlyNew ? 'ما عندك شي جديد 🎉' : 'ما فيه أحداث هنا بعد.'}</p>}
+        {ev.length === 0 && <p className="muted pad">{onlyNew ? 'ما عندك شي جديد 🎉' : hist ? 'ما فيه أحداث هالأسبوع.' : 'هادي آخر 24 ساعة 🌙'}</p>}
         <ul className="feed glass">
           {ev.map(e => {
             const dl = dayLabel(e.at); const head = dl !== last ? dl : null; last = dl
@@ -70,6 +71,7 @@ export function Alerts() {
             )
           })}
         </ul>
+        <button type="button" className="btn ghost al-hist" onClick={() => setHist(!hist)}>{hist ? '↩️ رجوع لآخر 24 ساعة' : '📜 سجل الإشعارات (آخر أسبوع)'}</button>
       </div>
     </div>
   )
