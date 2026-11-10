@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store'
-import { buildEvents, getSeen, markSeen, markRead, readIds, isNew, isMine, within, DAY_MS, dayLabel, CATS, timeAgo } from '../events'
+import { buildEvents, getSeen, markSeen, markRead, readIds, isNew, isMine, within, TYPES, DAY_MS, dayLabel, CATS, timeAgo } from '../events'
 import { Avatar, Cover, TopBar, ScoreBadge } from '../ui'
 import { gameStats } from '../stats'
 
@@ -36,7 +36,7 @@ export function Alerts() {
   const [cat, setCat] = useState('all')
   const [onlyNew, setOnlyNew] = useState(false)
   const [hist, setHist] = useState(false)
-  const all = useMemo(() => within(buildEvents(idx).filter(e => !e.post), hist ? 7 * DAY_MS : DAY_MS), [idx, hist])
+  const all = useMemo(() => within(buildEvents(idx, me).filter(e => !e.post), hist ? 7 * DAY_MS : DAY_MS), [idx, me, hist])
   const fresh = e => isNew(e, me, seen, rs)
   const inCat = (e, c) => c === 'all' || (c === 'me' ? isMine(e, me) : e.cat === c)
   const ev = all.filter(e => inCat(e, cat) && (!onlyNew || fresh(e)))
@@ -60,11 +60,11 @@ export function Alerts() {
           {ev.map(e => {
             const dl = dayLabel(e.at); const head = dl !== last ? dl : null; last = dl
             return (
-              <li key={e.id} className={fresh(e) ? 'new' : ''}>
+              <li key={e.id} className={`al-t ${fresh(e) ? 'new' : ''}`} style={{ '--c': TYPES[e.t]?.[1] || '#8A94A8' }}>
                 {head && <p className="al-day">{head}</p>}
                 <a href={e.href} onClick={() => read(e)}>
                   {e.who ? <Avatar player={e.who} size={36} /> : <span className="f-ic">{e.icon}</span>}
-                  <span className="f-txt"><b>{e.icon} {e.text}</b>{e.sub && <small className="f-sub">{e.sub}</small>}<small>{timeAgo(String(e.at))}</small></span>
+                  <span className="f-txt"><b>{e.icon} {e.text}</b>{e.sub && <small className="f-sub">{e.sub}</small>}<small><em className="al-chip">{TYPES[e.t]?.[0] || 'تفاعل'}</em> {timeAgo(String(e.at))}</small></span>
                   {fresh(e) && <i className="al-dot" aria-label="جديد" />}
                 </a>
               </li>

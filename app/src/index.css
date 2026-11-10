@@ -2190,3 +2190,7 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .al-day{margin:10px 8px 2px;font-size:.72rem;opacity:.6;font-weight:700}
 .al-dot{width:9px;height:9px;border-radius:50%;background:#5B7CFF;flex:0 0 auto;margin-top:6px}
 .al-hist{width:100%;margin-top:6px}
+.feed li.al-t a{border-inline-start:3px solid var(--c);border-radius:0 10px 10px 0;background:color-mix(in srgb,var(--c) 7%,transparent);margin-bottom:4px;padding-inline-start:9px}
+.feed li.al-t + li a{border-top:0}
+.feed li.al-t.new a{background:color-mix(in srgb,var(--c) 16%,transparent)}
+.al-chip{font-style:normal;font-size:.62rem;font-weight:800;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c);margin-inline-end:4px}

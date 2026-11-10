@@ -5,7 +5,7 @@ import { Avatar, Section, Empty, Cover } from '../ui'
 import { useFriday } from './Social'
 import { computeLevels } from '../levels'
 import { Stage, Character } from '../characters'
-import { buildEvents, getSeen, isNew, within, DAY_MS, timeAgo } from '../events'
+import { buildEvents, getSeen, isNew, within, DAY_MS, TYPES, timeAgo } from '../events'
 import { api } from '../api'
 import { getLive, livePlays } from '../live'
 import { usePerks } from '../perks'
@@ -18,7 +18,7 @@ export default function Home() {
   const top3 = board.filter(b => b.plays > 0).slice(0, 3)
   const { tally, mine, picks } = useFriday()
   const live = getLive()
-  const events = useMemo(() => within(buildEvents(idx).filter(e => !e.post), DAY_MS), [idx])
+  const events = useMemo(() => within(buildEvents(idx, me).filter(e => !e.post), DAY_MS), [idx, me])
   const seen = getSeen()
 
   const unrated = useMemo(() => {
@@ -132,7 +132,7 @@ export default function Home() {
         <Section title="آخر الأحداث" action={<a className="more" href="#/alerts">الكل</a>}>
           <ul className="feed">
             {events.slice(0, 5).map(e => (
-              <li key={e.id} className={isNew(e, me, seen) ? 'new' : ''}>
+              <li key={e.id} className={`al-t ${isNew(e, me, seen) ? 'new' : ''}`} style={{ '--c': TYPES[e.t]?.[1] || '#8A94A8' }}>
                 <a href={e.href}>
                   {e.who ? <Avatar player={e.who} size={34} /> : <span className="f-ic">{e.icon}</span>}
                   <span className="f-txt"><b>{e.icon} {e.text}</b><small>{timeAgo(String(e.at))}</small></span>
