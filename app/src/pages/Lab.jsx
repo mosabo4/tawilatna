@@ -560,7 +560,7 @@ function Systems() {
     <Section title="📐 أنظمة المستوى والتقييم">
       <div className="pad lab-box">
         <p className="hint">جرّب أنظمة ترتيب مختلفة وشوف كل واحد وين مركزه في كل نظام. هذا للتجربة بس، الموقع الحقيقي باقي على الحساب الحالي.</p>
-        <div className="sy-chips">{SYSTEMS.map(x => <button key={x.id} type="button" className={sys === x.id ? 'on' : ''} onClick={() => setSys(x.id)}><span>{x.icon}</span>{x.name}</button>)}</div>
+        <div className="sy-chips">{SYSTEMS.filter(x => !x.hidden).map(x => <button key={x.id} type="button" className={sys === x.id ? 'on' : ''} onClick={() => setSys(x.id)}><span>{x.icon}</span>{x.name}</button>)}</div>
         <div className="lab-twist"><span>{cur.icon}</span><div><b>{cur.name}</b><small>{cur.desc}</small></div></div>
         {cur.params && cur.params.map(k => (
           <label key={k} className="sy-par"><span>{PARAM[k][0]}: <b>{opt[k]}</b></span><input type="range" min={PARAM[k][1]} max={PARAM[k][2]} step={PARAM[k][3]} value={opt[k]} onChange={e => setOpt({ ...opt, [k]: +e.target.value })} /></label>

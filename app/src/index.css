@@ -2202,7 +2202,7 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .sy-par input{width:100%}
 .lab-tr.sy{grid-template-columns:42px 1fr 60px 40px 40px}
 .sy-mx{display:grid;gap:3px;overflow-x:auto}
-.sy-row{display:grid;grid-template-columns:minmax(90px,1.4fr) repeat(7,1fr);gap:4px;align-items:center;text-align:center;padding:5px 6px;border-radius:8px;background:var(--line);font-size:.82rem}
+.sy-row{display:grid;grid-template-columns:minmax(90px,1.4fr) repeat(4,1fr);gap:4px;align-items:center;text-align:center;padding:5px 6px;border-radius:8px;background:var(--line);font-size:.82rem}
 .sy-row .lab-wh{justify-content:flex-start;display:flex;gap:6px;align-items:center;text-align:start}
 .sy-row.head{background:none;font-size:1rem}
 .sy-row .cur{font-weight:800;color:#F2B33D}
