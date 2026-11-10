@@ -10,7 +10,7 @@ export const isNew = (e, me, seen = getSeen(), rs = readSet()) => e.at > seen &&
 export const readIds = readSet
 
 export const CATS = [
-  ['all', 'الكل'], ['me', '🎯 يخصني'], ['plays', '🗳️ الجلسة'], ['social', '💬 تفاعل'], ['progress', '🏅 إنجازات'],
+  ['all', 'الكل'], ['me', '🎯 يخصني'], ['social', '💬 تفاعل'], ['progress', '🏅 إنجازات'],
 ]
 
 const cache = new WeakMap()
@@ -74,7 +74,7 @@ const ACT = {
   immune: () => ({ icon: '🛡️', text: w => `${w} فعّل الحصانة`, cat: 'social' }),
   alert: () => ({ icon: '🚨', text: w => `${w} أطلق تنبيه ذهبي`, cat: 'social' }),
   godfather: () => ({ icon: '🤝', text: (w, t) => `${w} صار عرّاب ${t}`, cat: 'social' }),
-  predict: () => ({ icon: '🔮', text: w => `${w} توقّع الفايز`, cat: 'plays' }),
+  predict: () => ({ icon: '🔮', text: w => `${w} توقّع الفايز`, cat: 'social' }),
 }
 
 function build(idx, me) {
@@ -103,16 +103,16 @@ function build(idx, me) {
   for (const k of idx.picks || []) {
     if (k.week !== wk || !k.created_at) continue
     const who = P.get(k.player_id), g = G.get(k.game_id); if (!who || !g) continue
-    picks.push({ id: 'k' + k.game_id + k.player_id + k.week, at: k.created_at, who, by: k.player_id, t: 'vote', cat: 'plays', icon: '🗳️', text: `${who.name} صوّت للجلسة الجاية على ${g.name}${(k.votes || 1) > 1 ? ` (×${k.votes})` : ''}`, href: '#/friday', gk: day(k.created_at), game: g })
+    picks.push({ id: 'k' + k.game_id + k.player_id + k.week, at: k.created_at, who, by: k.player_id, t: 'vote', cat: 'social', icon: '🗳️', text: `${who.name} صوّت للجلسة الجاية على ${g.name}${(k.votes || 1) > 1 ? ` (×${k.votes})` : ''}`, href: '#/friday', gk: day(k.created_at), game: g })
   }
-  ev.push(...group(picks, e => e.gk, g => ({ id: 'kg' + g[0].gk + g[0].at, at: g[0].at, who: g[0].who, by: g[0].by, t: 'vote', cat: 'plays', icon: '🗳️', text: `${g.length} أصوات للجلسة الجاية`, sub: `${[...new Set(g.map(x => x.game.name))].slice(0, 2).join('، ')}${new Set(g.map(x => x.game.id)).size > 2 ? '…' : ''}`, href: '#/friday', whos: [...new Map(g.map(x => [x.by, x.who])).values()] })))
+  ev.push(...group(picks, e => e.gk, g => ({ id: 'kg' + g[0].gk + g[0].at, at: g[0].at, who: g[0].who, by: g[0].by, t: 'vote', cat: 'social', icon: '🗳️', text: `${g.length} أصوات للجلسة الجاية`, sub: `${[...new Set(g.map(x => x.game.name))].slice(0, 2).join('، ')}${new Set(g.map(x => x.game.id)).size > 2 ? '…' : ''}`, href: '#/friday', whos: [...new Map(g.map(x => [x.by, x.who])).values()] })))
   // حركات العيال (شكر، هدايا، فيتو، افتتاح...)
   for (const a of idx.actions || []) {
     const who = P.get(a.player_id); if (!who || !a.created_at) continue
     const t = a.target && P.get(a.target)
     const g = a.game_id && G.get(a.game_id)
-    if (a.kind === 'veto' && g) { ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, t: 'vote', cat: 'plays', icon: '🚫', text: `${who.name} استخدم الفيتو على ${g.name}`, href: '#/friday' }); continue }
-    if (a.kind === 'opener' && g) { ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, t: 'vote', cat: 'plays', icon: '🎬', text: `${who.name} اختار ${g.name} لعبة الافتتاح`, href: '#/friday' }); continue }
+    if (a.kind === 'veto' && g) { ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, t: 'vote', cat: 'social', icon: '🚫', text: `${who.name} استخدم الفيتو على ${g.name}`, href: '#/friday' }); continue }
+    if (a.kind === 'opener' && g) { ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, t: 'vote', cat: 'social', icon: '🎬', text: `${who.name} اختار ${g.name} لعبة الافتتاح`, href: '#/friday' }); continue }
     const f = ACT[a.kind]; if (!f) continue
     const d = f(a)
     if (['thanks', 'gift', 'tease', 'baby', 'retitle', 'caption', 'challenge', 'rematch', 'hotseat', 'godfather'].includes(a.kind) && !t) continue
@@ -125,7 +125,7 @@ function build(idx, me) {
   for (const g of allG) {
     if (g.created_at < cutoff) continue
     const who = P.get(g.added_by)
-    ev.push({ id: 'g' + g.id, at: g.created_at, who, by: g.added_by, t: 'game', cat: 'plays', icon: '📦', text: `انضافت لعبة جديدة: ${g.name}`, href: `#/game/${g.id}` })
+    ev.push({ id: 'g' + g.id, at: g.created_at, who, by: g.added_by, t: 'game', cat: 'social', icon: '📦', text: `انضافت لعبة جديدة: ${g.name}`, href: `#/game/${g.id}` })
   }
   try { ev.push(...crownEvents(idx)) } catch { /* لا نكسر الصفحة */ }
   try {
