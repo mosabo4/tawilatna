@@ -3,7 +3,7 @@ import { useStore, go } from '../store'
 import { api } from '../api'
 import { usePerks } from '../perks'
 import { cooldownLeft } from '../actions'
-import { levelOfReward } from '../levels'
+import { levelOfReward, computeLevels } from '../levels'
 import { IMG_CHARS, imgSrc } from '../characters'
 import { Avatar, Section, Empty, Cover, Confirm, playersText, fmtDate } from '../ui'
 
@@ -126,22 +126,29 @@ export function Friday() {
     : lead > silent.length * 4 ? { i: '✅', t: <>انحسمت: <bdi>{leader.game.name}</bdi></>, d: 'حتى لو الباقين صوّتوا لغيرها تبقى الأولى' }
     : majority ? { i: '👑', t: <>أغلبية لـ<bdi>{leader.game.name}</bdi></>, d: silent.length ? `بس لسا ${silent.length} ما صوّتوا` : 'الكل صوّت' }
     : { i: '🏁', t: 'السباق مفتوح', d: <><bdi>{leader.game.name}</bdi> تتقدم بـ{lead} {lead === 1 ? 'صوت' : 'أصوات'}{silent.length ? `، و${silent.length} لسا ما صوّتوا` : ''}</> }
-  const seats = (() => {
+  // برلمان المقاعد: كل لاعب شريحة، وكل شريحة 4 مقاعد مربعة (أقصى رصيد أصوات)
+  const lvMap = useMemo(() => computeLevels(idx), [idx])
+  const SEAT_ROWS = 4
+  const capOf = pid => { const lv = lvMap.get(pid)?.level || 1; return 1 + (lv >= levelOfReward('votes2') ? 1 : 0) + (lv >= levelOfReward('votes3') ? 1 : 0) + (lv >= levelOfReward('votes4') ? 1 : 0) }
+  const wedges = (() => {
     const rank = new Map(ranked.map((r, k) => [r.game.id, k]))
     const key = pid => { const ks = picks.filter(x => x.player_id === pid).map(x => rank.get(x.game_id)).filter(v => v != null); return ks.length ? Math.min(...ks) : 99 }
     const plist = [...idx.players].sort((a, b) => key(a.id) - key(b.id))
     const n = plist.length
-    const rows = n > 8 ? [Math.ceil(n * 0.58), n - Math.ceil(n * 0.58)] : [n]
-    const out = []; let k = 0
-    rows.forEach((cnt, r) => {
-      const rad = rows.length === 1 ? 40 : r === 0 ? 43 : 28
-      for (let m = 0; m < cnt; m++) {
-        const th = Math.PI * (1 - (cnt === 1 ? 0.5 : m / (cnt - 1)))
-        out.push({ p: plist[k++], x: 50 + rad * Math.cos(th) * 1.0, y: 78 - (rows.length === 1 ? 62 : r === 0 ? 62 : 40) * Math.sin(th) })
-      }
+    const sq = n > 8 ? 13 : n > 6 ? 16 : 18
+    return plist.map((p, m) => {
+      const th = Math.PI * (1 - (n === 1 ? 0.5 : (m + 0.5) / n))
+      const cap = Math.min(SEAT_ROWS, capOf(p.id))
+      const cast = picks.filter(x => x.player_id === p.id).sort((a, b) => (rank.get(a.game_id) ?? 99) - (rank.get(b.game_id) ?? 99))
+      const cols = cast.flatMap(x => Array.from({ length: x.votes }, () => ({ c: colorOf.get(x.game_id), g: idx.gamesById.get(x.game_id)?.name }))).slice(0, cap)
+      const cells = Array.from({ length: SEAT_ROWS }, (_, r) => {
+        const rad = 24 + r * 5.5
+        return { x: 50 + rad * Math.cos(th), y: 84 - rad * 1.45 * Math.sin(th), th, st: r < cols.length ? 'sq-on' : r < cap ? 'sq-open' : 'sq-lock', c: cols[r]?.c, tip: r < cols.length ? `${p.name} → ${cols[r].g}` : r < cap ? `${p.name}: صوت لسا ما انصرف` : `${p.name}: مقعد مقفل (يفتح بالمستوى)` }
+      })
+      return { p, sq, cells, ax: 50 + 46.5 * Math.cos(th), ay: 84 - 46.5 * 1.45 * Math.sin(th), cap, used: cols.length }
     })
-    return out
   })()
+  const seatSum = wedges.reduce((t, w) => ({ on: t.on + w.used, open: t.open + w.cap - w.used, lock: t.lock + SEAT_ROWS - w.cap }), { on: 0, open: 0, lock: 0 })
 
   const topLeaders = leader ? live.filter(r => r.votes === leader.votes) : []
   const duel = tie ? topLeaders.slice(0, 4) : live.slice(0, 2)
@@ -171,16 +178,14 @@ export function Friday() {
         )}
         <section className="vt-parl glass">
           <div className="vt-parl-top"><b>🏛️ برلمان العيال</b><small>{voters.size ? `${voters.size} من ${total} صوّتوا` : 'الكراسي فاضية، ابدأ التصويت'}</small></div>
+          <p className="vt-seatkey"><span><u className="k-on" />ملوّن = صوت انصرف ({seatSum.on})</span><span><u className="k-open" />فاضي = صوت لسا ({seatSum.open})</span><span><u className="k-lock" />رمادي = مقفل ({seatSum.lock})</span></p>
           <div className="vt-hemi">
-            {seats.map(({ p, x, y }) => {
-              const cols = picks.filter(k => k.player_id === p.id).map(k => colorOf.get(k.game_id)).filter(Boolean)
-              const bg = !cols.length ? 'var(--line)' : cols.length === 1 ? cols[0] : `conic-gradient(${cols.map((c, k) => `${c} ${(k / cols.length) * 100}% ${((k + 1) / cols.length) * 100}%`).join(',')})`
-              return (
-                <span key={p.id} className={`vt-seat ${cols.length ? '' : 'absent'}`} style={{ left: `${x}%`, top: `${y}%`, '--sc': bg }}>
-                  <i><Avatar player={p} size={42} /></i><em>{p.name}</em>
-                </span>
-              )
-            })}
+            {wedges.map(({ p, sq, cells, ax, ay }) => (
+              <span key={p.id}>
+                {cells.map((c, r) => <i key={r} className={`vt-sq ${c.st}`} title={c.tip} style={{ left: `${c.x}%`, top: `${c.y}%`, width: sq, height: sq, '--c': c.c, transform: `translate(-50%,-50%) rotate(${Math.PI / 2 - c.th}rad)` }}>{c.st === 'sq-lock' ? '🔒' : ''}</i>)}
+                <span className="vt-who" style={{ left: `${ax}%`, top: `${ay}%` }}><Avatar player={p} size={32} /><em>{p.name}</em></span>
+              </span>
+            ))}
             <div className="vt-podium">
               {leader ? <><Cover game={leader.game} className="xs" /><b>{tie ? `${topLeaders.length} ألعاب متعادلة` : leader.game.name}</b><small>{tie ? '🤝' : majority ? '👑 أغلبية' : '🏆 المتصدرة'} · {leader.votes}</small></> : <small>ما فيه أصوات</small>}
             </div>
