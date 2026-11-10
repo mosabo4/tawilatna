@@ -5,6 +5,7 @@ import { useStore, go } from '../store'
 import { Avatar, Empty, Cover, fmtDate, fmtMonth, TopBar } from '../ui'
 import { usePerks } from '../perks'
 import { cooldownLeft } from '../actions'
+import { sessionsOf } from '../live'
 
 export const luckyOf = (idx, playId) => (idx.actions || []).find(a => a.kind === 'lucky' && a.play_id === playId) || null
 export function PlayCard({ play, showGame = true, focus, hideDate }) {
@@ -40,7 +41,8 @@ export function PlayCard({ play, showGame = true, focus, hideDate }) {
   )
 }
 
-const byDay = plays => { const m = new Map(); for (const p of plays) { if (!m.has(p.played_on)) m.set(p.played_on, []); m.get(p.played_on).push(p) } return [...m.entries()] }
+const bySession = (plays, sess) => { const m = new Map(); for (const p of plays) { const k = sess.get(p.id)?.key || p.played_on; if (!m.has(k)) m.set(k, []); m.get(k).push(p) } return [...m.entries()] }
+const hm = ms => new Date(ms).toLocaleTimeString('ar-SA', { hour: 'numeric', minute: '2-digit' })
 
 export default function History() {
   const { idx } = useStore()
@@ -48,6 +50,7 @@ export default function History() {
   const [game, setGame] = useState('')
   const list = useMemo(() => idx.plays.filter(p =>
     (!player || p.results.some(r => r.player_id === player)) && (!game || p.game_id === game)), [idx, player, game])
+  const sess = useMemo(() => sessionsOf(idx.plays), [idx])
   const groups = useMemo(() => {
     const m = new Map()
     for (const p of list) {
@@ -76,11 +79,12 @@ export default function History() {
         <section key={k} className="glass section">
           <div className="section-head"><h2>{fmtMonth(k + '-01')}</h2><span className="muted small">{plays.length} قيم</span></div>
           <div className="hs-days">
-            {byDay(plays).map(([d, ps]) => {
+            {bySession(plays, sess).map(([d, ps]) => {
+              const si = sess.get(ps[0].id)
               const who = [...new Set(ps.flatMap(p => p.results.map(r => r.player_id)))].map(id => idx.playersById.get(id)).filter(Boolean)
               return (
                 <div key={d} className="hs-day">
-                  <div className="hs-dh"><b>📅 جلسة {fmtDate(d)}</b><span>{ps.length} {ps.length >= 3 && ps.length <= 10 ? 'أقيام' : 'قيم'}</span><div className="hs-who">{who.map(p => <Avatar key={p.id} player={p} size={20} />)}</div></div>
+                  <div className="hs-dh"><b>📅 جلسة {fmtDate(ps[0].played_on)}{si?.of > 1 ? ` · ${si.n} من ${si.of}` : ''}</b>{si?.timed && <span>⏰ {hm(si.start)}</span>}<span>{ps.length} {ps.length >= 3 && ps.length <= 10 ? 'أقيام' : 'قيم'}</span><div className="hs-who">{who.map(p => <Avatar key={p.id} player={p} size={20} />)}</div></div>
                   <div className="play-list">{ps.map(p => <PlayCard key={p.id} play={p} hideDate focus={player ? [player] : undefined} />)}</div>
                 </div>
               )
