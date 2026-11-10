@@ -142,12 +142,14 @@ export function unlockHistory(idx, pid) {
 // أحداث الفتح لكل العيال في آخر أيام (إنجازات، ألقاب، مستويات) للأحداث الأخيرة
 export function unlockEvents(idx, days = 14) {
   const since = new Date(Date.now() - days * 864e5).toISOString().slice(0, 10)
-  const set = new Set()
-  for (const p of idx.plays) set.add((p.created_at || p.played_on).slice(0, 10))
-  for (const r of idx.ratings) if (r.updated_at) set.add(r.updated_at.slice(0, 10))
-  for (const c of idx.comments || []) if (c.updated_at) set.add(c.updated_at.slice(0, 10))
-  for (const p of idx.posts || []) set.add(p.created_at.slice(0, 10))
-  const all = [...set].sort()
+  // آخر وقت فيه نشاط بكل يوم: هو وقت فتح الإنجاز تقريباً (بدل نهاية اليوم)
+  const last = new Map()
+  const stamp = t => { if (!t) return; const d = t.slice(0, 10); if (!last.has(d) || t > last.get(d)) last.set(d, t) }
+  for (const p of idx.plays) stamp(p.created_at || p.played_on + 'T12:00:00Z')
+  for (const r of idx.ratings) stamp(r.updated_at)
+  for (const c of idx.comments || []) stamp(c.updated_at)
+  for (const p of idx.posts || []) stamp(p.created_at)
+  const all = [...last.keys()].sort()
   const recent = all.filter(d => d >= since).slice(-10)
   if (!recent.length) return []
   const base = all.filter(d => d < recent[0]).at(-1)
@@ -164,7 +166,7 @@ export function unlockEvents(idx, days = 14) {
   for (const d of recent) {
     if (!base && d === recent[0]) continue
     const cur = state(d)
-    const at = Math.min(new Date(`${d}T23:59:59Z`).getTime(), now)
+    const at = Math.min(new Date(last.get(d) || `${d}T23:59:59Z`).getTime(), now)
     const iso = new Date(at).toISOString()
     for (const [pid, c] of cur) {
       const pv = prev.get(pid) || { level: 1, ach: new Set(), titles: new Set() }
