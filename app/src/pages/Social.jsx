@@ -148,7 +148,7 @@ export function Friday() {
     idx.players.forEach(p => { for (let i = used.get(p.id) || 0; i < Math.min(SEAT_ROWS, capOf(p.id)); i++) seatsList.push({ st: 'sq-open', p, tip: `${p.name}: صوت لسا ما انصرف` }) })
     const open = seatsList.length - on
     idx.players.forEach(p => { for (let i = Math.min(SEAT_ROWS, capOf(p.id)); i < SEAT_ROWS; i++) seatsList.push({ st: 'sq-lock', p, tip: `${p.name}: مقعد مقفل (يفتح بالمستوى)` }) })
-    const radii = T > 30 ? [20, 29, 38, 47] : [25, 35, 45]
+    const radii = T > 30 ? [24, 31, 38, 45] : [26, 35, 45]
     const sum = radii.reduce((a, b) => a + b, 0)
     const counts = radii.map(r => Math.round((T * r) / sum)); counts[counts.length - 1] += T - counts.reduce((a, b) => a + b, 0)
     const pos = []
@@ -156,7 +156,7 @@ export function Friday() {
     pos.sort((a, b) => a.th - b.th || a.r - b.r)
     const sq = T > 30 ? 24 : 28
     const segs = ranked.map(r => ({ g: r.game, n: seatsList.filter(s => s.g === r.game.id).length })).filter(s => s.n > 0)
-    return { segs, T, sq, on, open, lock: T - on - open, cells: seatsList.map((s, i) => ({ ...s, x: 50 + pos[i].r * Math.cos(pos[i].th), y: 88 - pos[i].r * 1.6 * Math.sin(pos[i].th) })) }
+    return { segs, T, sq, on, open, lock: T - on - open, cells: seatsList.map((s, i) => ({ ...s, x: 50 + pos[i].r * Math.cos(pos[i].th), y: 100 - pos[i].r * 2 * Math.sin(pos[i].th) })) }
   })()
   const seatSum = chart
 
