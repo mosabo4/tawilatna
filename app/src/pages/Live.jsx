@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { standings } from '../stats'
 import { xpSince } from '../levels'
-import { getLive, setLive, livePlays, todayStr } from '../live'
+import { getLive, setLive, livePlays, todayStr, getLast, setLast, dayStartIso } from '../live'
 import { TopBar, Section, Cover } from '../ui'
 import { StandingRows } from './Ranking'
 import { Character } from '../characters'
@@ -14,7 +14,8 @@ const dur = ms => { const m = Math.max(0, Math.floor(ms / 60000)); return m < 60
 export default function Live() {
   const { idx, me } = useStore()
   const [live, setL] = useState(getLive)
-  const [pick, setPick] = useState(() => (me ? [me.id] : []))
+  const last = useMemo(getLast, [])
+  const [pick, setPick] = useState(() => (last?.players?.length ? last.players : me ? [me.id] : []))
   const [now, setNow] = useState(Date.now())
   const [done, setDone] = useState(null)
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(t) }, [])
@@ -76,8 +77,9 @@ export default function Live() {
               ))}
             </div>
           </Section>
+          {last && <p className="hint pad-x">🔁 فيه جلسة انتهت اليوم. إذا بدأت جلسة جديدة تنضم لها وتصير جلسة اليوم كلها وحدة (نفس الأقيام والـXP).</p>}
           <p className="hint pad-x">الحضور يتعبّى لحاله في كل قيم تسجّله الليلة، وتقدر تعدّله قبل الحفظ.</p>
-          <button className="btn primary wide" disabled={pick.length < 2} onClick={() => save({ start: new Date().toISOString(), date: todayStr(), players: pick })}>▶ ابدأ ({pick.length} حاضرين)</button>
+          <button className="btn primary wide" disabled={pick.length < 2} onClick={() => save({ start: last?.start || new Date().toISOString(), date: todayStr(), players: pick })}>▶ ابدأ ({pick.length} حاضرين)</button>
         </div>
       </div>
     )
@@ -120,7 +122,7 @@ export default function Live() {
 
         {plays.length > 0 && <Section title="ترتيب الليلة"><StandingRows rows={table} me={me} /></Section>}
 
-        <button className="btn ghost wide" onClick={() => { setDone({ ...live, plays, table, end: Date.now(), xp: xpSince(idx, live.start) }); save(null) }}>🏁 خلّص الجلسة وشوف الملخص</button>
+        <button className="btn ghost wide" onClick={() => { setDone({ ...live, plays, table, end: Date.now(), xp: xpSince(idx, dayStartIso(live.date)) }); setLast({ date: live.date, start: live.start, players: live.players }); save(null) }}>🏁 خلّص الجلسة وشوف الملخص</button>
       </div>
       <div className="action-bar"><button className="btn primary wide" onClick={() => go('/log?live=1')}>+ سجّل قيم بالحضور</button></div>
     </div>
