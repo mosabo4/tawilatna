@@ -1,3 +1,4 @@
+import { fairScores } from './fairRank'
 import { scoringOf } from './scoring'
 // كل الحسابات تتم على الجهاز من البيانات الكاملة (العدد صغير)
 
@@ -63,7 +64,7 @@ export function buildIndex(data) {
 export const levelOf = (beat, faced) => (faced ? Math.round((beat / faced) * 100) : null)
 export const counts = (play, game) => play.results.length > 1 && game?.category !== 'coop' && game?.scoring !== 'coop'
 
-export function standings(idx, filter = () => true) {
+export function standings(idx, filter = () => true, opts = {}) {
   const m = new Map(idx.players.map(p => [p.id, { player: p, plays: 0, wins: 0, beat: 0, faced: 0 }]))
   for (const p of idx.plays) {
     const g = idx.gamesById.get(p.game_id)
@@ -74,12 +75,16 @@ export function standings(idx, filter = () => true) {
       for (const o of p.results) if (o !== r) { s.faced++; s.beat += o.position > r.position ? 1 : o.position === r.position ? 0.5 : 0 }
     }
   }
+  const fair = opts.fair ? fairScores(idx.plays.filter(p => counts(p, idx.gamesById.get(p.game_id)) && filter(p, idx.gamesById.get(p.game_id))), opts.fair === true ? {} : opts.fair) : null
   return [...m.values()]
-    .map(s => ({ ...s, points: levelOf(s.beat, s.faced), raw: s.faced ? s.beat / s.faced : null }))
+    .map(s => ({ ...s, points: fair ? (fair.get(s.player.id)?.points ?? null) : levelOf(s.beat, s.faced), provisional: fair ? !!fair.get(s.player.id)?.provisional : false, raw: s.faced ? s.beat / s.faced : null }))
     .sort((a, b) => (b.plays > 0) - (a.plays > 0) || (b.points ?? 0) - (a.points ?? 0) || b.wins - a.wins || b.plays - a.plays)
 }
 
 const winnersOf = play => play.results.filter(r => r.position === 1).map(r => r.player_id)
+
+const fairCache = new WeakMap()
+const fairFor = idx => { if (!fairCache.has(idx)) fairCache.set(idx, fairScores(idx.plays.filter(p => counts(p, idx.gamesById.get(p.game_id))))); return fairCache.get(idx) }
 
 export function playerStats(idx, playerId) {
   const mine = idx.plays.filter(p => p.results.some(r => r.player_id === playerId))
@@ -117,7 +122,7 @@ export function playerStats(idx, playerId) {
     plays: mine.length, wins, podiums,
     winRate: mine.length ? wins / mine.length : 0,
     avgFinish: mine.length ? rel / mine.length : 0,
-    points: levelOf(beat, faced), beat, faced,
+    points: fairFor(idx).get(playerId)?.points ?? null, provisional: !!fairFor(idx).get(playerId)?.provisional, beat, faced,
     currentStreak: current, bestStreak: best,
     games, mostPlayed, bestGame, favorite, ratedCount: myRatings.length,
     lastPlayed: mine[0]?.played_on || null,
@@ -125,7 +130,7 @@ export function playerStats(idx, playerId) {
   }
 }
 
-export const leaderboard = idx => standings(idx)
+export const leaderboard = idx => standings(idx, undefined, { fair: true })
 
 export function gameStats(idx, gameId) {
   const plays = idx.plays.filter(p => p.game_id === gameId)

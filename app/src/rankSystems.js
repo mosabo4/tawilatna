@@ -1,11 +1,12 @@
 // أنظمة ترتيب/مستوى بديلة للتجربة في المختبر (ما تأثر على الموقع الحقيقي)
 import { counts } from './stats'
+import { fairScores, FAIR } from './fairRank'
 
-export const DEFAULTS = { half: 60, prior: 4, window: 10, k: 24 }
+export const DEFAULTS = { half: FAIR.half, prior: FAIR.prior, strength: FAIR.strength, clock: FAIR.clock, window: 10, k: 24 }
 
 export const SYSTEMS = [
   { id: 'raw', hidden: true, icon: '📏', name: 'الحالي (النسبة الخام)', desc: 'كم غلبت من كل اللي لعبت ضدهم، بدون أي تعديل. اللي لعب قليل وفاز يقدر يتصدر، واللي وقف لعب يظل مكانه.', unit: '%' },
-  { id: 'fair', icon: '⚖️', name: 'عادل (تخفيف + وزن ابتدائي)', desc: 'القيمات القديمة يخف وزنها مع الوقت، والنسبة تتسحب نحو 50% لين يتراكم لعب كافي. ما يفضّل أكثر واحد لعب ولا أقل واحد.', unit: '%', params: ['half', 'prior'] },
+  { id: 'fair', icon: '⚖️', name: 'عادل (المطوّر)', desc: 'تخفيف الزمن + سحب نحو 50% للقليل + قوة الخصم + ساعة المجموعة (الإجازة ما تنزّل أحد). هذا النظام المعتمد في الموقع.', unit: '%', params: ['half', 'prior', 'strength', 'clock'] },
   { id: 'form', icon: '🔥', name: 'آخر القيمات (الفورمة)', desc: 'نسبتك في آخر N قيم لعبتها بس. كل واحد يتحاسب على نفس العدد من القيمات، فما فيه أفضلية لأكثر واحد لعب. لكن اللي وقف لعب يظل رقمه ثابت.', unit: '%', params: ['window'] },
   { id: 'elo_idle', icon: '🕰️', name: 'إيلو + خمول', desc: 'نفس إيلو، لكن اللي يوقف لعب يرجع رقمه نحو 1000 تدريجياً (نصف الفرق كل فترة).', unit: '', params: ['k', 'half'] },
 ]
@@ -35,10 +36,11 @@ export function compute(id, idx, opt = {}) {
     }
     for (const [pid, d] of delta) acc.get(pid).elo += d
   }
+  const fair = fairScores(plays, { half: o.half, prior: o.prior, strength: o.strength, clock: !!o.clock })
   const rows = [...acc.values()].filter(s => s.plays > 0 && s.f > 0).map(s => {
     let v
     if (id === 'raw') v = (s.b / s.f) * 100
-    else if (id === 'fair') v = ((s.bW + o.prior * 0.5) / (s.fW + o.prior)) * 100
+    else if (id === 'fair') v = fair.get(s.player.id)?.points ?? 50
     else if (id === 'decay') v = (s.bW / s.fW) * 100
     else if (id === 'prior') v = ((s.b + o.prior * 0.5) / (s.f + o.prior)) * 100
     else if (id === 'form') { const last = s.perPlay.slice(-o.window); v = (last.reduce((t, x) => t + x[0], 0) / last.reduce((t, x) => t + x[1], 0)) * 100 }

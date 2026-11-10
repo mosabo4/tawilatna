@@ -608,7 +608,7 @@ function Rota() {
 }
 
 // ---------- 5) أنظمة المستوى والتقييم ----------
-const PARAM = { half: ['نص الوزن كل كم يوم', 1, 180, 1], prior: ['قوة السحب نحو الوسط', 0, 12, 1], window: ['عدد آخر القيمات', 3, 30, 1], k: ['حساسية إيلو (K)', 8, 48, 2] }
+const PARAM = { half: ['نص الوزن كل كم يوم', 1, 180, 1], prior: ['قوة السحب نحو الوسط', 0, 12, 1], window: ['عدد آخر القيمات', 3, 30, 1], k: ['حساسية إيلو (K)', 8, 48, 2], strength: ['تأثير قوة الخصم %', 0, 100, 10], clock: ['ساعة المجموعة (الإجازة ما تنزّل أحد)', 0, 1, 1] }
 
 function Systems() {
   const { idx } = useLab()
@@ -626,7 +626,9 @@ function Systems() {
         <p className="hint">جرّب أنظمة ترتيب مختلفة وشوف كل واحد وين مركزه في كل نظام. هذا للتجربة بس، الموقع الحقيقي باقي على الحساب الحالي.</p>
         <div className="sy-chips">{SYSTEMS.filter(x => !x.hidden).map(x => <button key={x.id} type="button" className={sys === x.id ? 'on' : ''} onClick={() => setSys(x.id)}><span>{x.icon}</span>{x.name}</button>)}</div>
         <div className="lab-twist"><span>{cur.icon}</span><div><b>{cur.name}</b><small>{cur.desc}</small></div></div>
-        {cur.params && cur.params.map(k => (
+        {cur.params && cur.params.map(k => k === 'clock' ? (
+          <label key={k} className="switch"><input type="checkbox" checked={!!opt.clock} onChange={e => setOpt({ ...opt, clock: e.target.checked })} /><span>{PARAM.clock[0]}</span></label>
+        ) : (
           <label key={k} className="sy-par"><span>{PARAM[k][0]}: <b>{opt[k]}</b></span><input type="range" min={PARAM[k][1]} max={PARAM[k][2]} step={PARAM[k][3]} value={opt[k]} onChange={e => setOpt({ ...opt, [k]: +e.target.value })} /></label>
         ))}
         <div className="lab-table">
