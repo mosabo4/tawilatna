@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { api } from '../api'
 import { useFriday } from './Social'
+import { SYSTEMS, DEFAULTS, compute } from '../rankSystems'
 import { Avatar, Cover, Section, Empty, playersText, today } from '../ui'
 
 const shuffle = a => { const r = [...a]; for (let i = r.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [r[i], r[j]] = [r[j], r[i]] } return r }
@@ -542,16 +543,67 @@ function Rota() {
   )
 }
 
+// ---------- 5) أنظمة المستوى والتقييم ----------
+const PARAM = { half: ['نص الوزن كل كم يوم', 15, 180, 5], prior: ['قوة السحب نحو الوسط', 0, 12, 1], window: ['عدد آخر القيمات', 3, 30, 1], k: ['حساسية إيلو (K)', 8, 48, 2] }
+
+function Systems() {
+  const { idx } = useLab()
+  const [sys, setSys] = useState('fair')
+  const [opt, setOpt] = useState({ ...DEFAULTS })
+  const cur = SYSTEMS.find(x => x.id === sys)
+  const rows = useMemo(() => compute(sys, idx, opt), [sys, idx, opt])
+  const all = useMemo(() => Object.fromEntries(SYSTEMS.map(x => [x.id, new Map(compute(x.id, idx, opt).map(r => [r.player.id, r.rank]))])), [idx, opt])
+  const base = all.raw
+  const fmt = v => (cur.unit === '%' ? `${Math.round(v)}%` : Math.round(v))
+  const idle = idx.players.filter(p => !rows.some(r => r.player.id === p.id))
+  return (
+    <Section title="📐 أنظمة المستوى والتقييم">
+      <div className="pad lab-box">
+        <p className="hint">جرّب أنظمة ترتيب مختلفة وشوف كل واحد وين مركزه في كل نظام. هذا للتجربة بس، الموقع الحقيقي باقي على الحساب الحالي.</p>
+        <div className="sy-chips">{SYSTEMS.map(x => <button key={x.id} type="button" className={sys === x.id ? 'on' : ''} onClick={() => setSys(x.id)}><span>{x.icon}</span>{x.name}</button>)}</div>
+        <div className="lab-twist"><span>{cur.icon}</span><div><b>{cur.name}</b><small>{cur.desc}</small></div></div>
+        {cur.params && cur.params.map(k => (
+          <label key={k} className="sy-par"><span>{PARAM[k][0]}: <b>{opt[k]}</b></span><input type="range" min={PARAM[k][1]} max={PARAM[k][2]} step={PARAM[k][3]} value={opt[k]} onChange={e => setOpt({ ...opt, [k]: +e.target.value })} /></label>
+        ))}
+        <div className="lab-table">
+          <div className="lab-tr sy head"><span>#</span><span>اللاعب</span><span>{cur.unit === '%' ? 'النسبة' : 'الرقم'}</span><span>قيم</span><span>خامل</span></div>
+          {rows.map(r => {
+            const mv = base.get(r.player.id) - r.rank
+            return (
+              <div key={r.player.id} className="lab-tr sy">
+                <span>{r.rank}{sys !== 'raw' && mv > 0 ? <i className="up">▲{mv}</i> : sys !== 'raw' && mv < 0 ? <i className="dn">▼{-mv}</i> : null}</span>
+                <span className="lab-wh"><Avatar player={r.player} size={26} />{r.player.name}</span>
+                <span><b>{fmt(r.value)}</b></span>
+                <span>{r.plays}</span>
+                <span>{r.days}ي</span>
+              </div>
+            )
+          })}
+        </div>
+        {idle.length > 0 && <p className="hint">ما لعبوا للحين: {idle.map(p => p.name).join('، ')}</p>}
+        {sys !== 'raw' && <p className="hint">▲▼ = الفرق عن الترتيب الحالي للموقع.</p>}
+        <h4>🔀 مركز كل واحد في كل نظام</h4>
+        <div className="sy-mx">
+          <div className="sy-row head"><span /> {SYSTEMS.map(x => <span key={x.id} title={x.name}>{x.icon}</span>)}</div>
+          {idx.players.map(p => (
+            <div key={p.id} className="sy-row"><span className="lab-wh"><Avatar player={p} size={24} />{p.name}</span>{SYSTEMS.map(x => <span key={x.id} className={x.id === sys ? 'cur' : ''}>{all[x.id].get(p.id) ?? '—'}</span>)}</div>
+          ))}
+        </div>
+      </div>
+    </Section>
+  )
+}
+
 export default function Lab() {
   const { me } = useStore()
   const [tab, setTab] = useState('election')
   if (!me?.is_admin) return <Empty title="هذي للمسؤول بس" />
-  const tabs = [['election', '🗳️ الانتخابات'], ['month', '🏆 لعبة الشهر'], ['league', '🏟️ الدوري'], ['rota', '🎭 الأدوار']]
+  const tabs = [['election', '🗳️ الانتخابات'], ['month', '🏆 لعبة الشهر'], ['league', '🏟️ الدوري'], ['rota', '🎭 الأدوار'], ['sys', '📐 المستوى والتقييم']]
   return (
     <>
       <p className="hint pad-x">🔬 تجارب خاصة فيك، ما أحد غيرك يشوفها. تقدر تتصرف باسم أي لاعب عشان تجرّب.</p>
       <div className="lab-tabs">{tabs.map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
-      {tab === 'election' ? <Election /> : tab === 'month' ? <Month /> : tab === 'rota' ? <Rota /> : <League />}
+      {tab === 'election' ? <Election /> : tab === 'month' ? <Month /> : tab === 'rota' ? <Rota /> : tab === 'sys' ? <Systems /> : <League />}
     </>
   )
 }

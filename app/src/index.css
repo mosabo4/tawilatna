@@ -2193,3 +2193,16 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .al-chip{font-style:normal;font-size:.62rem;font-weight:800;padding:1px 7px;border-radius:999px;background:color-mix(in srgb,var(--c) 22%,transparent);color:var(--c);margin-inline-end:4px}
 
 .al-stack{display:flex;flex:0 0 auto;flex-wrap:nowrap;padding-inline-end:8px}.al-stack>*{margin-inline-end:-8px;border:2px solid var(--bg,#0f1224);border-radius:50%}.al-stack em{font-style:normal;font-size:.7rem;align-self:center;margin-inline-start:12px}
+
+/* ---- rank systems lab ---- */
+.sy-chips{display:flex;flex-wrap:wrap;gap:6px}
+.sy-chips button{display:flex;gap:6px;align-items:center;padding:7px 11px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+.sy-chips button.on{background:var(--accent,#5B7CFF);color:#fff;border-color:transparent}
+.sy-par{display:grid;gap:4px;font-size:.82rem}
+.sy-par input{width:100%}
+.lab-tr.sy{grid-template-columns:42px 1fr 60px 40px 40px}
+.sy-mx{display:grid;gap:3px;overflow-x:auto}
+.sy-row{display:grid;grid-template-columns:minmax(90px,1.4fr) repeat(7,1fr);gap:4px;align-items:center;text-align:center;padding:5px 6px;border-radius:8px;background:var(--line);font-size:.82rem}
+.sy-row .lab-wh{justify-content:flex-start;display:flex;gap:6px;align-items:center;text-align:start}
+.sy-row.head{background:none;font-size:1rem}
+.sy-row .cur{font-weight:800;color:#F2B33D}
