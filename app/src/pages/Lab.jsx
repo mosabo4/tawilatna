@@ -3,6 +3,7 @@ import { useStore } from '../store'
 import { api } from '../api'
 import { useFriday } from './Social'
 import XpBalance from './XpBalance'
+import RankVote from './RankVote'
 import { SYSTEMS, DEFAULTS, compute } from '../rankSystems'
 import { Avatar, Cover, Section, Empty, playersText, today } from '../ui'
 
@@ -701,12 +702,12 @@ export default function Lab() {
   const { me } = useStore()
   const [tab, setTab] = useState('election')
   if (!me?.is_admin) return <Empty title="هذي للمسؤول بس" />
-  const tabs = [['election', '🗳️ الانتخابات'], ['month', '🏆 لعبة الشهر'], ['league', '🏟️ الدوري'], ['rota', '🎭 الأدوار'], ['sys', '📐 المستوى والتقييم'], ['xp', '⚖️ موازنة XP']]
+  const tabs = [['election', '🗳️ الانتخابات'], ['month', '🏆 لعبة الشهر'], ['league', '🏟️ الدوري'], ['rota', '🎭 الأدوار'], ['sys', '📐 المستوى والتقييم'], ['xp', '⚖️ موازنة XP'], ['rank', '🏛️ تصويت بالأولويات']]
   return (
     <>
       <p className="hint pad-x">🔬 تجارب خاصة فيك، ما أحد غيرك يشوفها. تقدر تتصرف باسم أي لاعب عشان تجرّب.</p>
       <div className="lab-tabs">{tabs.map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>
-      {tab === 'election' ? <Election /> : tab === 'month' ? <Month /> : tab === 'rota' ? <Rota /> : tab === 'sys' ? <Systems /> : tab === 'xp' ? <XpBalance /> : <League />}
+      {tab === 'election' ? <Election /> : tab === 'month' ? <Month /> : tab === 'rota' ? <Rota /> : tab === 'sys' ? <Systems /> : tab === 'xp' ? <XpBalance /> : tab === 'rank' ? <RankVote /> : <League />}
     </>
   )
 }
