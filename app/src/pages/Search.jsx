@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore } from '../store'
-import { buildEvents, getSeen, markSeen, timeAgo } from '../events'
+import { buildEvents, getSeen, markSeen, markRead, readIds, isNew, isMine, dayLabel, CATS, timeAgo } from '../events'
 import { Avatar, Cover, TopBar, ScoreBadge } from '../ui'
 import { gameStats } from '../stats'
 
@@ -32,21 +32,43 @@ export function Search() {
 export function Alerts() {
   const { idx, me } = useStore()
   const [seen] = useState(getSeen)
-  const ev = useMemo(() => buildEvents(idx).filter(e => !e.post), [idx])
-  useEffect(() => { markSeen() }, [])
+  const [rs, setRs] = useState(() => readIds())
+  const [cat, setCat] = useState('all')
+  const [onlyNew, setOnlyNew] = useState(false)
+  const all = useMemo(() => buildEvents(idx).filter(e => !e.post), [idx])
+  const fresh = e => isNew(e, me, seen, rs)
+  const inCat = (e, c) => c === 'all' || (c === 'me' ? isMine(e, me) : e.cat === c)
+  const ev = all.filter(e => inCat(e, cat) && (!onlyNew || fresh(e)))
+  const n = c => all.filter(e => inCat(e, c) && fresh(e)).length
+  const read = e => { markRead(e.id); setRs(readIds()) }
+  const markAll = () => { markSeen(); setRs(new Set()) }
+  let last = ''
   return (
     <div className="page">
       <TopBar title="التنبيهات وآخر الأحداث" backTo="/" />
       <div className="stack">
+        <div className="al-tabs" role="tablist">
+          {CATS.map(([k, l]) => <button key={k} role="tab" aria-selected={cat === k} className={cat === k ? 'on' : ''} onClick={() => setCat(k)}>{l}{n(k) > 0 && <i>{n(k)}</i>}</button>)}
+        </div>
+        <div className="al-bar">
+          <label className="al-only"><input type="checkbox" checked={onlyNew} onChange={e => setOnlyNew(e.target.checked)} /> الجديد بس</label>
+          <button type="button" className="link-btn" disabled={!n('all')} onClick={markAll}>✓ علّم الكل مقروء</button>
+        </div>
+        {ev.length === 0 && <p className="muted pad">{onlyNew ? 'ما عندك شي جديد 🎉' : 'ما فيه أحداث هنا بعد.'}</p>}
         <ul className="feed glass">
-          {ev.map(e => (
-            <li key={e.id} className={e.at > seen && e.by !== me?.id ? 'new' : ''}>
-              <a href={e.href}>
-                {e.who ? <Avatar player={e.who} size={36} /> : <span className="f-ic">{e.icon}</span>}
-                <span className="f-txt"><b>{e.icon} {e.text}</b>{e.sub && <small className="f-sub">{e.sub}</small>}<small>{timeAgo(String(e.at))}</small></span>
-              </a>
-            </li>
-          ))}
+          {ev.map(e => {
+            const dl = dayLabel(e.at); const head = dl !== last ? dl : null; last = dl
+            return (
+              <li key={e.id} className={fresh(e) ? 'new' : ''}>
+                {head && <p className="al-day">{head}</p>}
+                <a href={e.href} onClick={() => read(e)}>
+                  {e.who ? <Avatar player={e.who} size={36} /> : <span className="f-ic">{e.icon}</span>}
+                  <span className="f-txt"><b>{e.icon} {e.text}</b>{e.sub && <small className="f-sub">{e.sub}</small>}<small>{timeAgo(String(e.at))}</small></span>
+                  {fresh(e) && <i className="al-dot" aria-label="جديد" />}
+                </a>
+              </li>
+            )
+          })}
         </ul>
       </div>
     </div>

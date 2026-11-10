@@ -5,7 +5,7 @@ import { Avatar, Section, Empty, Cover } from '../ui'
 import { useFriday } from './Social'
 import { computeLevels } from '../levels'
 import { Stage, Character } from '../characters'
-import { buildEvents, getSeen, timeAgo } from '../events'
+import { buildEvents, getSeen, isNew, timeAgo } from '../events'
 import { api } from '../api'
 import { getLive, livePlays } from '../live'
 import { usePerks } from '../perks'
@@ -132,7 +132,7 @@ export default function Home() {
         <Section title="آخر الأحداث" action={<a className="more" href="#/alerts">الكل</a>}>
           <ul className="feed">
             {events.slice(0, 5).map(e => (
-              <li key={e.id} className={e.at > seen && e.by !== me?.id ? 'new' : ''}>
+              <li key={e.id} className={isNew(e, me, seen) ? 'new' : ''}>
                 <a href={e.href}>
                   {e.who ? <Avatar player={e.who} size={34} /> : <span className="f-ic">{e.icon}</span>}
                   <span className="f-txt"><b>{e.icon} {e.text}</b><small>{timeAgo(String(e.at))}</small></span>

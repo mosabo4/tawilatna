@@ -2179,3 +2179,13 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .lab-aw>span{font-size:1.6rem}.lab-aw div{flex:1;display:grid}.lab-aw small{opacity:.75}
 .lab-row.wrap{flex-wrap:wrap}
 .vt-admin{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:14px;border:1px dashed var(--line);font-size:.8rem}
+
+/* ---- alerts v2 ---- */
+.al-tabs{display:flex;gap:6px;overflow-x:auto;padding:0 2px}
+.al-tabs button{position:relative;white-space:nowrap;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:transparent;color:inherit;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
+.al-tabs button.on{background:var(--accent,#5B7CFF);color:#fff;border-color:transparent}
+.al-tabs i{font-style:normal;margin-inline-start:6px;background:#E5484D;color:#fff;border-radius:999px;font-size:.68rem;padding:1px 6px}
+.al-bar{display:flex;justify-content:space-between;align-items:center;font-size:.82rem}
+.al-only{display:flex;gap:6px;align-items:center}
+.al-day{margin:10px 8px 2px;font-size:.72rem;opacity:.6;font-weight:700}
+.al-dot{width:9px;height:9px;border-radius:50%;background:#5B7CFF;flex:0 0 auto;margin-top:6px}

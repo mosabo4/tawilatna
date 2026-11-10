@@ -1,29 +1,117 @@
 // آخر الأحداث والتنبيهات: تنبني من البيانات الموجودة
 import { unlockEvents } from './titles'
-const KEY = 'tw-seen'
+const KEY = 'tw-seen', RKEY = 'tw-read'
 export const getSeen = () => { try { return localStorage.getItem(KEY) || '1970' } catch { return '1970' } }
-export const markSeen = () => { try { localStorage.setItem(KEY, new Date().toISOString()) } catch { /* ignore */ } }
+const readSet = () => { try { return new Set(JSON.parse(localStorage.getItem(RKEY) || '[]')) } catch { return new Set() } }
+// «علّم الكل مقروء»: نحدّث وقت آخر زيارة ونفضّي قائمة المقروء الفردي
+export const markSeen = () => { try { localStorage.setItem(KEY, new Date().toISOString()); localStorage.removeItem(RKEY) } catch { /* ignore */ } }
+export const markRead = id => { try { const s = readSet(); s.add(id); localStorage.setItem(RKEY, JSON.stringify([...s].slice(-300))) } catch { /* ignore */ } }
+export const isNew = (e, me, seen = getSeen(), rs = readSet()) => e.at > seen && e.by !== me?.id && !rs.has(e.id)
+export const readIds = readSet
+
+export const CATS = [
+  ['all', 'الكل'], ['me', '🎯 يخصني'], ['plays', '🎲 أقيام'], ['session', '🗳️ الجلسة'], ['social', '💬 تفاعل'], ['progress', '🏅 إنجازات'],
+]
 
 const cache = new WeakMap()
 export function buildEvents(idx) {
   if (!cache.has(idx)) cache.set(idx, build(idx))
   return cache.get(idx)
 }
+
+const day = iso => String(iso).slice(0, 10)
+const names = list => (list.length <= 2 ? list.join(' و') : `${list[0]} و${list.length - 1} غيره`)
+
+// نجمّع الأحداث المتشابهة (نفس النوع + نفس الهدف + نفس اليوم) في حدث واحد
+function group(list, keyFn, make) {
+  const m = new Map()
+  for (const e of list) { const k = keyFn(e); if (!m.has(k)) m.set(k, []); m.get(k).push(e) }
+  return [...m.values()].map(g => (g.length === 1 ? g[0] : make(g.sort((a, b) => String(b.at).localeCompare(String(a.at))))))
+}
+
+function crownEvents(idx, days = 60) {
+  const since = new Date(Date.now() - days * 864e5).toISOString()
+  const plays = [...idx.plays].sort((a, b) => (a.played_on + (a.created_at || '')).localeCompare(b.played_on + (b.created_at || '')))
+  const wins = new Map(), holder = new Map(), out = []
+  for (const p of plays) {
+    if (p.results.length < 2) continue
+    const w = wins.get(p.game_id) || new Map()
+    for (const r of p.results) if (r.position === 1) w.set(r.player_id, (w.get(r.player_id) || 0) + 1)
+    wins.set(p.game_id, w)
+    const s = [...w.entries()].sort((a, b) => b[1] - a[1])
+    const king = s.length && s[0][1] >= 3 && !(s[1] && s[1][1] === s[0][1]) ? s[0][0] : null
+    const old = holder.get(p.game_id) || null
+    if (king && king !== old) {
+      const at = p.created_at || p.played_on
+      if (String(at) >= since) {
+        const who = idx.playersById.get(king), g = idx.gamesById.get(p.game_id), from = old && idx.playersById.get(old)
+        if (who && g) out.push({ id: `k${p.game_id}${king}${p.id}`, at, who, by: king, to: from ? [old] : [], cat: 'social', icon: from ? '🫅' : '👑', text: from ? `${who.name} خطف تاج «${g.name}» من ${from.name}` : `${who.name} صار ملك «${g.name}»`, sub: `${s[0][1]} فوز`, href: `#/game/${g.id}` })
+      }
+    }
+    holder.set(p.game_id, king)
+  }
+  return out
+}
+
+const ACT = {
+  thanks: () => ({ icon: '🙏', text: (w, t) => `${w} شكر ${t} على التجهيز`, cat: 'social' }),
+  gift: () => ({ icon: '🎁', text: (w, t) => `${w} أهدى ${t} هدية`, cat: 'social' }),
+  tease: () => ({ icon: '😜', text: (w, t) => `${w} طقّ ${t}`, cat: 'social' }),
+  baby: () => ({ icon: '🍼', text: (w, t) => `${w} حط ${t} في الرضّاعة`, cat: 'social' }),
+  retitle: () => ({ icon: '🏷️', text: (w, t) => `${w} غيّر لقب ${t}`, cat: 'social' }),
+  caption: () => ({ icon: '💭', text: (w, t) => `${w} كتب تعليق على ${t}`, cat: 'social' }),
+  challenge: () => ({ icon: '⚔️', text: (w, t) => `${w} تحدّى ${t}`, cat: 'social' }),
+  rematch: () => ({ icon: '🔁', text: (w, t) => `${w} طلب إعادة من ${t}`, cat: 'social' }),
+  hotseat: () => ({ icon: '🔥', text: (w, t) => `${w} حط ${t} على الكرسي الساخن`, cat: 'social' }),
+  immune: () => ({ icon: '🛡️', text: w => `${w} فعّل الحصانة`, cat: 'social' }),
+  alert: () => ({ icon: '🚨', text: w => `${w} أطلق تنبيه ذهبي`, cat: 'social' }),
+  godfather: () => ({ icon: '🤝', text: (w, t) => `${w} صار عرّاب ${t}`, cat: 'social' }),
+  predict: () => ({ icon: '🔮', text: w => `${w} توقّع الفايز`, cat: 'plays' }),
+}
+
 function build(idx) {
   const P = idx.playersById, G = idx.gamesById
   const ev = []
   for (const p of idx.plays.slice(0, 60)) {
     const g = G.get(p.game_id); const w = p.results.filter(r => r.position === 1).map(r => P.get(r.player_id)).filter(Boolean)
     const who = P.get(p.created_by) || w[0]
-    ev.push({ id: 'p' + p.id, at: p.created_at || p.played_on, who, by: p.created_by, icon: '🎲', text: `${who ? who.name + ' سجّل' : 'انسجل'} قيم ${g?.name || ''}`, sub: `${w.length ? '🏆 ' + w.map(x => x.name).join(' و') + ' · ' : ''}${p.results.length} لاعبين`, href: `#/play/${p.id}` })
+    ev.push({ id: 'p' + p.id, at: p.created_at || p.played_on, who, by: p.created_by, to: p.results.map(r => r.player_id), cat: 'plays', icon: '🎲', text: `${who ? who.name + ' سجّل' : 'انسجل'} قيم ${g?.name || ''}`, sub: `${w.length ? '🏆 ' + w.map(x => x.name).join(' و') + ' · ' : ''}${p.results.length} لاعبين`, href: `#/play/${p.id}` })
   }
   for (const x of (idx.posts || []).slice(0, 40)) {
     const who = P.get(x.player_id); if (!who) continue
-    ev.push({ id: 'b' + x.id, at: x.created_at, who, by: x.player_id, icon: '💬', text: `${who.name} كتب في اللوحة: «${x.body.length > 50 ? x.body.slice(0, 50) + '…' : x.body}»`, sub: x.body.slice(0, 60), href: '#/board', post: true })
+    ev.push({ id: 'b' + x.id, at: x.created_at, who, by: x.player_id, cat: 'social', icon: '💬', text: `${who.name} كتب في اللوحة: «${x.body.length > 50 ? x.body.slice(0, 50) + '…' : x.body}»`, sub: x.body.slice(0, 60), href: '#/board', post: true })
   }
   for (const c of (idx.comments || [])) {
     const who = P.get(c.player_id); const g = G.get(c.game_id); if (!who || !g) continue
-    ev.push({ id: 'c' + c.game_id + c.player_id, at: c.updated_at, who, by: c.player_id, icon: '🗨️', text: `${who.name} علّق على ${g.name}`, sub: c.body.slice(0, 60), href: `#/game/${g.id}` })
+    ev.push({ id: 'c' + c.game_id + c.player_id, at: c.updated_at, who, by: c.player_id, cat: 'social', icon: '🗨️', text: `${who.name} علّق على ${g.name}`, sub: c.body.slice(0, 60), href: `#/game/${g.id}`, gk: 'c' + g.id + day(c.updated_at), game: g })
+  }
+  // تقييمات: تتجمّع لكل لعبة باليوم
+  const rate = []
+  for (const r of idx.ratings || []) {
+    const who = P.get(r.player_id), g = G.get(r.game_id); if (!who || !g || !r.updated_at) continue
+    rate.push({ id: 'r' + r.game_id + r.player_id, at: r.updated_at, who, by: r.player_id, cat: 'social', icon: '⭐', text: `${who.name} قيّم ${g.name} بـ ${Number(r.score)}`, href: `#/game/${g.id}`, gk: 'r' + g.id + day(r.updated_at), game: g, score: Number(r.score) })
+  }
+  ev.push(...group(rate, e => e.gk, g => ({ id: 'rg' + g[0].gk, at: g[0].at, who: g[0].who, by: g[0].by, cat: 'social', icon: '⭐', text: `${g.length} قيّموا ${g[0].game.name}`, sub: `${names(g.map(x => x.who.name))} · المتوسط ${(g.reduce((t, x) => t + x.score, 0) / g.length).toFixed(1)}`, href: g[0].href, members: g.map(x => x.by) })))
+  // ترشيحات الجلسة الجاية: تتجمّع لكل لعبة
+  const picks = []
+  const wk = (idx.picks || []).reduce((m, p) => (p.week > m ? p.week : m), '')
+  for (const k of idx.picks || []) {
+    if (k.week !== wk || !k.created_at) continue
+    const who = P.get(k.player_id), g = G.get(k.game_id); if (!who || !g) continue
+    picks.push({ id: 'k' + k.game_id + k.player_id + k.week, at: k.created_at, who, by: k.player_id, cat: 'session', icon: '🗳️', text: `${who.name} صوّت للجلسة الجاية على ${g.name}${(k.votes || 1) > 1 ? ` (×${k.votes})` : ''}`, href: '#/friday', gk: g.id, game: g })
+  }
+  ev.push(...group(picks, e => e.gk, g => ({ id: 'kg' + g[0].gk + g[0].at, at: g[0].at, who: g[0].who, by: g[0].by, cat: 'session', icon: '🗳️', text: `${g.length} صوّتوا على ${g[0].game.name} للجلسة الجاية`, sub: names(g.map(x => x.who.name)), href: '#/friday' })))
+  // حركات العيال (شكر، هدايا، فيتو، افتتاح...)
+  for (const a of idx.actions || []) {
+    const who = P.get(a.player_id); if (!who || !a.created_at) continue
+    const t = a.target && P.get(a.target)
+    const g = a.game_id && G.get(a.game_id)
+    if (a.kind === 'veto' && g) { ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, cat: 'session', icon: '🚫', text: `${who.name} استخدم الفيتو على ${g.name}`, href: '#/friday' }); continue }
+    if (a.kind === 'opener' && g) { ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, cat: 'session', icon: '🎬', text: `${who.name} اختار ${g.name} لعبة الافتتاح`, href: '#/friday' }); continue }
+    const f = ACT[a.kind]; if (!f) continue
+    const d = f(a)
+    if (['thanks', 'gift', 'tease', 'baby', 'retitle', 'caption', 'challenge', 'rematch', 'hotseat', 'godfather'].includes(a.kind) && !t) continue
+    ev.push({ id: 'a' + a.id, at: a.created_at, who, by: a.player_id, to: t ? [t.id] : [], cat: d.cat, icon: d.icon, text: d.text(who.name, t?.name), href: t ? `#/player/${t.id}` : '#/' })
   }
   // الألعاب اللي انضافت أول مرة مع بعض ما نعتبرها أحداث
   const allG = (idx.allGames || idx.games).filter(g => g.created_at)
@@ -32,15 +120,19 @@ function build(idx) {
   for (const g of allG) {
     if (g.created_at < cutoff) continue
     const who = P.get(g.added_by)
-    ev.push({ id: 'g' + g.id, at: g.created_at, who, by: g.added_by, icon: '📦', text: `انضافت لعبة جديدة: ${g.name}`, href: `#/game/${g.id}` })
+    ev.push({ id: 'g' + g.id, at: g.created_at, who, by: g.added_by, cat: 'plays', icon: '📦', text: `انضافت لعبة جديدة: ${g.name}`, href: `#/game/${g.id}` })
   }
-  try { ev.push(...unlockEvents(idx)) } catch { /* لا نكسر الصفحة */ }
-  return ev.filter(e => e.at).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 80)
+  try { ev.push(...crownEvents(idx)) } catch { /* لا نكسر الصفحة */ }
+  try { ev.push(...unlockEvents(idx).map(e => ({ ...e, cat: 'progress' }))) } catch { /* لا نكسر الصفحة */ }
+  return ev.filter(e => e.at).sort((a, b) => String(b.at).localeCompare(String(a.at))).slice(0, 200)
 }
 
+// هل الحدث يخصني؟ (أنا الهدف، أو لعبت القيم، أو الحدث على شخصي)
+export const isMine = (e, me) => !!me && (e.to || []).includes(me.id)
+
 export function unread(idx, me) {
-  const seen = getSeen()
-  return buildEvents(idx).filter(e => e.at > seen && e.by !== me?.id)
+  const seen = getSeen(), rs = readSet()
+  return buildEvents(idx).filter(e => e.at > seen && e.by !== me?.id && !rs.has(e.id))
 }
 
 export function timeAgo(iso) {
@@ -50,4 +142,10 @@ export function timeAgo(iso) {
   if (m < 1440) return `قبل ${Math.round(m / 60)} ساعة`
   const days = Math.round(m / 1440)
   return days === 1 ? 'أمس' : days < 30 ? `قبل ${days} يوم` : d.toLocaleDateString('ar-SA-u-ca-gregory-nu-latn', { day: 'numeric', month: 'long' })
+}
+
+export function dayLabel(iso) {
+  const d = new Date(String(iso).length <= 10 ? iso + 'T12:00:00' : iso); const t = new Date(); t.setHours(0, 0, 0, 0)
+  const diff = Math.floor((t - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5)
+  return diff <= 0 ? 'اليوم' : diff === 1 ? 'أمس' : diff < 7 ? 'هذا الأسبوع' : 'أقدم'
 }
