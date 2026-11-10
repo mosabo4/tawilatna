@@ -39,13 +39,13 @@ export default function Ranking() {
 
   // ملك كل تصنيف = أكثر واحد فاز فيه
   const kings = useMemo(() => CATEGORIES.filter(c => c.id !== 'coop').map(c => {
-    const rows = standings(idx, (p, g) => g?.category === c.id).filter(r => r.plays > 0)
+    const rows = standings(idx, (p, g) => g?.category === c.id, { fair: true }).filter(r => r.plays > 0)
     const plays = idx.plays.filter(p => { const g = idx.gamesById.get(p.game_id); return g?.category === c.id && counts(p, g) }).length
     const top = Math.max(0, ...rows.map(r => r.wins))
     return { ...c, plays, top, leaders: top ? rows.filter(r => r.wins === top) : [] }
   }), [idx])
   const total = useMemo(() => idx.plays.filter(p => counts(p, idx.gamesById.get(p.game_id))).length, [idx])
-  const rows = useMemo(() => standings(idx, cat === 'all' ? undefined : (p, g) => g?.category === cat), [idx, cat])
+  const rows = useMemo(() => standings(idx, cat === 'all' ? undefined : (p, g) => g?.category === cat, { fair: true }), [idx, cat])
   const current = CATEGORIES.find(c => c.id === cat)
 
   const [a, setA] = useState(me?.id || idx.players[0]?.id || '')
@@ -65,6 +65,7 @@ export default function Ranking() {
           <details className="how-mini">
             <summary>وش يعني الرقم؟</summary>
             <p>الرقم = <b>كم شخص غلبت من كل اللي لعبت ضدهم</b>. في قيم من 5، الأول غلب 4 والثاني غلب 3 وهكذا. لو غلبت 30 من 40، رقمك 75%.</p>
+            <p>⚖️ الترتيب عادل: ما يفضّل اللي لعب كثير ولا اللي لعب قليل. القيمات القديمة يخف وزنها مع الوقت (النص كل شهرين)، واللي ما لعب إلا قيمات قليلة يتسحب رقمه نحو 50% لين يلعب أكثر. فلو وقفت لعب، رقمك يرجع لوسط الترتيب تدريجياً.</p>
             <p>🏆 = كم قيم جيت فيه الأول. الألعاب التعاونية ما تدخل.</p>
           </details>
         </Section>

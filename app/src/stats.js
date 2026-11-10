@@ -61,21 +61,29 @@ export function buildIndex(data) {
 // كل قيم: نقطة عن كل لاعب خلّصت قدّامه، ونص نقطة لو تعادلتوا.
 // المستوى = نقاطك ÷ كل اللي لعبت ضدهم (نسبة مئوية). الألعاب التعاونية ما تدخل.
 export const levelOf = (beat, faced) => (faced ? Math.round((beat / faced) * 100) : null)
+// ترتيب عادل ما يفضّل اللي لعب كثير ولا اللي لعب قليل:
+// 1) القيمات القديمة يخف وزنها تدريجياً (نصف الوزن كل 60 يوم) فاللي وقف لعب ما يظل متصدر للأبد.
+// 2) «وزن ابتدائي» يسحب النسبة نحو 50% لين يتراكم لعب كافي، فاللي لعب قيمين وفاز فيهم ما يطلع الأول.
+export const HALF_LIFE_DAYS = 60
+export const PRIOR = 4
+const ageW = playedOn => Math.pow(0.5, Math.max(0, (Date.now() - new Date(playedOn + 'T12:00:00').getTime()) / 864e5) / HALF_LIFE_DAYS)
+export const fairPoints = (b, f) => Math.round(((b + PRIOR * 0.5) / (f + PRIOR)) * 100)
 export const counts = (play, game) => play.results.length > 1 && game?.category !== 'coop' && game?.scoring !== 'coop'
 
-export function standings(idx, filter = () => true) {
-  const m = new Map(idx.players.map(p => [p.id, { player: p, plays: 0, wins: 0, beat: 0, faced: 0 }]))
+export function standings(idx, filter = () => true, opts = {}) {
+  const m = new Map(idx.players.map(p => [p.id, { player: p, plays: 0, wins: 0, beat: 0, faced: 0, bW: 0, fW: 0 }]))
   for (const p of idx.plays) {
     const g = idx.gamesById.get(p.game_id)
     if (!counts(p, g) || !filter(p, g)) continue
+    const w = ageW(p.played_on)
     for (const r of p.results) {
       const s = m.get(r.player_id); if (!s) continue
       s.plays++; if (r.position === 1) s.wins++
-      for (const o of p.results) if (o !== r) { s.faced++; s.beat += o.position > r.position ? 1 : o.position === r.position ? 0.5 : 0 }
+      for (const o of p.results) if (o !== r) { const b = o.position > r.position ? 1 : o.position === r.position ? 0.5 : 0; s.faced++; s.beat += b; s.fW += w; s.bW += b * w }
     }
   }
   return [...m.values()]
-    .map(s => ({ ...s, points: levelOf(s.beat, s.faced), raw: s.faced ? s.beat / s.faced : null }))
+    .map(s => ({ ...s, points: opts.fair ? (s.faced ? fairPoints(s.bW, s.fW) : null) : levelOf(s.beat, s.faced), raw: s.faced ? s.beat / s.faced : null }))
     .sort((a, b) => (b.plays > 0) - (a.plays > 0) || (b.points ?? 0) - (a.points ?? 0) || b.wins - a.wins || b.plays - a.plays)
 }
 
@@ -83,7 +91,7 @@ const winnersOf = play => play.results.filter(r => r.position === 1).map(r => r.
 
 export function playerStats(idx, playerId) {
   const mine = idx.plays.filter(p => p.results.some(r => r.player_id === playerId))
-  let wins = 0, podiums = 0, rel = 0, beat = 0, faced = 0
+  let wins = 0, podiums = 0, rel = 0, beat = 0, faced = 0, bW = 0, fW = 0
   const perGame = new Map()
   for (const p of mine) {
     const r = p.results.find(x => x.player_id === playerId)
@@ -95,7 +103,7 @@ export function playerStats(idx, playerId) {
       let b = 0
       for (const o of p.results) if (o !== r) b += o.position > r.position ? 1 : o.position === r.position ? 0.5 : 0
       rel += b / (n - 1)
-      if (counts(p, idx.gamesById.get(p.game_id))) { beat += b; faced += n - 1 }
+      if (counts(p, idx.gamesById.get(p.game_id))) { const w = ageW(p.played_on); beat += b; faced += n - 1; bW += b * w; fW += (n - 1) * w }
     } else rel += 0.5
     const g = perGame.get(p.game_id) || { plays: 0, wins: 0 }
     g.plays++; if (won) g.wins++
@@ -117,7 +125,7 @@ export function playerStats(idx, playerId) {
     plays: mine.length, wins, podiums,
     winRate: mine.length ? wins / mine.length : 0,
     avgFinish: mine.length ? rel / mine.length : 0,
-    points: levelOf(beat, faced), beat, faced,
+    points: faced ? fairPoints(bW, fW) : null, beat, faced,
     currentStreak: current, bestStreak: best,
     games, mostPlayed, bestGame, favorite, ratedCount: myRatings.length,
     lastPlayed: mine[0]?.played_on || null,
@@ -125,7 +133,7 @@ export function playerStats(idx, playerId) {
   }
 }
 
-export const leaderboard = idx => standings(idx)
+export const leaderboard = idx => standings(idx, undefined, { fair: true })
 
 export function gameStats(idx, gameId) {
   const plays = idx.plays.filter(p => p.game_id === gameId)
