@@ -7,7 +7,7 @@ import { usePerks } from '../perks'
 import { cooldownLeft } from '../actions'
 
 export const luckyOf = (idx, playId) => (idx.actions || []).find(a => a.kind === 'lucky' && a.play_id === playId) || null
-export function PlayCard({ play, showGame = true, focus }) {
+export function PlayCard({ play, showGame = true, focus, hideDate }) {
   const { idx } = useStore()
   const lucky = luckyOf(idx, play.id)
   const game = idx.gamesById.get(play.game_id)
@@ -19,7 +19,7 @@ export function PlayCard({ play, showGame = true, focus }) {
         <div className="pc-head">
           <b className="pc-game">{showGame ? game?.name : fmtDate(play.played_on)}</b>
           <ExpTags play={play} />
-          {showGame && <span className="pc-date">{fmtDate(play.played_on)}</span>}
+          {showGame && !hideDate && <span className="pc-date">{fmtDate(play.played_on)}</span>}
         </div>
         <ol className="pc-results">
           {play.results.map(r => {
@@ -39,6 +39,8 @@ export function PlayCard({ play, showGame = true, focus }) {
     </a>
   )
 }
+
+const byDay = plays => { const m = new Map(); for (const p of plays) { if (!m.has(p.played_on)) m.set(p.played_on, []); m.get(p.played_on).push(p) } return [...m.entries()] }
 
 export default function History() {
   const { idx } = useStore()
@@ -73,7 +75,17 @@ export default function History() {
       {groups.map(([k, plays]) => (
         <section key={k} className="glass section">
           <div className="section-head"><h2>{fmtMonth(k + '-01')}</h2><span className="muted small">{plays.length} قيم</span></div>
-          <div className="play-list">{plays.map(p => <PlayCard key={p.id} play={p} focus={player ? [player] : undefined} />)}</div>
+          <div className="hs-days">
+            {byDay(plays).map(([d, ps]) => {
+              const who = [...new Set(ps.flatMap(p => p.results.map(r => r.player_id)))].map(id => idx.playersById.get(id)).filter(Boolean)
+              return (
+                <div key={d} className="hs-day">
+                  <div className="hs-dh"><b>📅 جلسة {fmtDate(d)}</b><span>{ps.length} {ps.length >= 3 && ps.length <= 10 ? 'أقيام' : 'قيم'}</span><div className="hs-who">{who.map(p => <Avatar key={p.id} player={p} size={20} />)}</div></div>
+                  <div className="play-list">{ps.map(p => <PlayCard key={p.id} play={p} hideDate focus={player ? [player] : undefined} />)}</div>
+                </div>
+              )
+            })}
+          </div>
         </section>
       ))}
     </div>

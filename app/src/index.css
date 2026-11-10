@@ -2252,3 +2252,9 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .xb-tiers b{color:#F2B33D}
 .xb-pl{display:grid;gap:4px}.xb-pr{display:grid;grid-template-columns:1.2fr 1.4fr .8fr;gap:6px;align-items:center;font-size:12px;padding:6px 8px;border-radius:10px;background:var(--line)}
 .xb-pr.head{background:none;opacity:.6;font-size:11px}.xb-pn{display:flex;align-items:center;gap:6px}.xb-pr b.up{color:#2FB36B}.xb-pr b.dn{color:#E5484D}
+
+.hs-days{display:grid;gap:14px}
+.hs-day{border:1.5px solid #F2B33D66;border-radius:18px;padding:8px 8px 4px;background:linear-gradient(180deg,#F2B33D12,transparent 60%)}
+.hs-dh{display:flex;align-items:center;gap:8px;padding:4px 6px 8px;font-size:13px;flex-wrap:wrap}
+.hs-dh span{font-size:11px;opacity:.7;background:var(--line);padding:2px 8px;border-radius:99px}
+.hs-who{display:flex;margin-inline-start:auto}.hs-who>*{margin-inline-start:-6px;border:2px solid var(--bg,#0d1020);border-radius:50%}
