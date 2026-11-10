@@ -10,7 +10,7 @@ export const TIER = [
 const TIER_XP = [20, 60, 150, 400]
 // جائزة كل إنجاز سري: شارة تحطها على صورتك وجنب اسمك
 export const SECRET_BADGES = {
-  zero: { icon: '💀', name: 'الجمجمة' }, owl: { icon: '🦉', name: 'البومة' }, tie: { icon: '👯', name: 'التوأم' }, unlucky: { icon: '🫠', name: 'الذايب' },
+  zero: { icon: '💀', name: 'الجمجمة' }, owl: { icon: '🦉', name: 'البومة' }, tie: { icon: '🪞', name: 'التوأم' }, unlucky: { icon: '🫠', name: 'الذايب' },
   addict: { icon: '♾️', name: 'اللانهاية' }, revenge: { icon: '🗡️', name: 'الخنجر' }, ebaby: { icon: '🍼', name: 'الرضّاعة' }, grave: { icon: '🪦', name: 'شاهد القبر' },
 }
 export const GROUPS = [
