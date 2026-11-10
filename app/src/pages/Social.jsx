@@ -141,7 +141,7 @@ export function Friday() {
       for (let i = 0; i < x.votes; i++) {
         if ((used.get(x.player_id) || 0) >= cap) break
         used.set(x.player_id, (used.get(x.player_id) || 0) + 1)
-        seatsList.push({ st: 'sq-on', c: colorOf.get(x.game_id), p: idx.playersById.get(x.player_id), tip: `${idx.playersById.get(x.player_id)?.name} → ${idx.gamesById.get(x.game_id)?.name}` })
+        seatsList.push({ st: 'sq-on', g: x.game_id, c: colorOf.get(x.game_id), p: idx.playersById.get(x.player_id), tip: `${idx.playersById.get(x.player_id)?.name} → ${idx.gamesById.get(x.game_id)?.name}` })
       }
     })
     const on = seatsList.length
@@ -155,7 +155,8 @@ export function Friday() {
     radii.forEach((r, k) => { for (let i = 0; i < counts[k]; i++) pos.push({ th: Math.PI * (counts[k] === 1 ? 0.5 : i / (counts[k] - 1)), r }) })
     pos.sort((a, b) => a.th - b.th || a.r - b.r)
     const sq = T > 30 ? 24 : 28
-    return { sq, on, open, lock: T - on - open, cells: seatsList.map((s, i) => ({ ...s, x: 50 + pos[i].r * Math.cos(pos[i].th), y: 88 - pos[i].r * 1.6 * Math.sin(pos[i].th) })) }
+    const segs = ranked.map(r => ({ g: r.game, n: seatsList.filter(s => s.g === r.game.id).length })).filter(s => s.n > 0)
+    return { segs, T, sq, on, open, lock: T - on - open, cells: seatsList.map((s, i) => ({ ...s, x: 50 + pos[i].r * Math.cos(pos[i].th), y: 88 - pos[i].r * 1.6 * Math.sin(pos[i].th) })) }
   })()
   const seatSum = chart
 
@@ -194,6 +195,15 @@ export function Friday() {
               {leader ? <><Cover game={leader.game} className="xs" /><b>{tie ? `${topLeaders.length} ألعاب متعادلة` : leader.game.name}</b><small>{tie ? '🤝' : majority ? '👑 أغلبية' : '🏆 المتصدرة'} · {leader.votes}</small></> : <small>ما فيه أصوات</small>}
             </div>
           </div>
+          {chart.on > 0 && (
+            <div className="vt-maj">
+              <div className="vt-majbar">
+                {chart.segs.map(s => <i key={s.g.id} style={{ width: `${(s.n / chart.T) * 100}%`, background: colorOf.get(s.g.id) }} title={s.g.name}>{s.n}</i>)}
+                <u style={{ insetInlineStart: `${((Math.floor(chart.on / 2) + 1) / chart.T) * 100}%` }} />
+              </div>
+              <small>الأغلبية = {Math.floor(chart.on / 2) + 1} من {chart.on} صوت انصرف{leader && !majority ? ` · ${leader.game.name} ناقصها ${Math.max(0, Math.floor(chart.on / 2) + 1 - leader.votes)}` : ''}</small>
+            </div>
+          )}
           {status && <div className={`vt-status ${status.i === '✅' ? 'done' : ''}`}><span>{status.i}</span><div><b>{status.t}</b><small>{status.d}</small></div></div>}
           {ranked.length > 0 && <div className="vt-legend">{live.slice(0, 6).map(r => <span key={r.game.id}><i style={{ background: colorOf.get(r.game.id) }} /><bdi>{r.game.name}</bdi><b>{r.votes}</b></span>)}{live.length > 6 && <span>+{live.length - 6}</span>}</div>}
           {silent.length > 0 && voters.size > 0 && <div className="vt-silent"><small>لسا ما صوّتوا:</small>{silent.map(p => <Avatar key={p.id} player={p} size={26} />)}</div>}
