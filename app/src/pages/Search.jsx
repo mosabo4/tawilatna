@@ -60,11 +60,11 @@ export function Alerts() {
           {ev.map(e => {
             const dl = dayLabel(e.at); const head = dl !== last ? dl : null; last = dl
             return (
-              <li key={e.id} className={`al-t ${fresh(e) ? 'new' : ''}`} style={{ '--c': TYPES[e.t]?.[1] || '#8A94A8' }}>
+              <li key={e.id} className={fresh(e) ? 'new' : ''}>
                 {head && <p className="al-day">{head}</p>}
                 <a href={e.href} onClick={() => read(e)}>
-                  {e.who ? <Avatar player={e.who} size={36} /> : <span className="f-ic">{e.icon}</span>}
-                  <span className="f-txt"><b>{e.icon} {e.text}</b>{e.sub && <small className="f-sub">{e.sub}</small>}<small><em className="al-chip">{TYPES[e.t]?.[0] || 'تفاعل'}</em> {timeAgo(String(e.at))}</small></span>
+                  {e.whos?.length > 1 ? <span className="al-stack">{e.whos.slice(0, 5).map(w => <Avatar key={w.id} player={w} size={26} />)}{e.whos.length > 5 && <em>+{e.whos.length - 5}</em>}</span> : e.who ? <Avatar player={e.who} size={36} /> : <span className="f-ic">{e.icon}</span>}
+                  <span className="f-txt"><b>{e.icon} {e.text}</b>{e.sub && <small className="f-sub">{e.sub}</small>}<small><em className="al-chip" style={{ '--c': TYPES[e.t]?.[1] || '#8A94A8' }}>{TYPES[e.t]?.[0] || 'تفاعل'}</em> {timeAgo(String(e.at))}</small></span>
                   {fresh(e) && <i className="al-dot" aria-label="جديد" />}
                 </a>
               </li>

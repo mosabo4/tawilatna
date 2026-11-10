@@ -132,10 +132,10 @@ export default function Home() {
         <Section title="آخر الأحداث" action={<a className="more" href="#/alerts">الكل</a>}>
           <ul className="feed">
             {events.slice(0, 5).map(e => (
-              <li key={e.id} className={`al-t ${isNew(e, me, seen) ? 'new' : ''}`} style={{ '--c': TYPES[e.t]?.[1] || '#8A94A8' }}>
+              <li key={e.id} className={isNew(e, me, seen) ? 'new' : ''}>
                 <a href={e.href}>
-                  {e.who ? <Avatar player={e.who} size={34} /> : <span className="f-ic">{e.icon}</span>}
-                  <span className="f-txt"><b>{e.icon} {e.text}</b><small>{timeAgo(String(e.at))}</small></span>
+                  {e.whos?.length > 1 ? <span className="al-stack">{e.whos.slice(0, 5).map(w => <Avatar key={w.id} player={w} size={26} />)}</span> : e.who ? <Avatar player={e.who} size={34} /> : <span className="f-ic">{e.icon}</span>}
+                  <span className="f-txt"><b>{e.icon} {e.text}</b><small><em className="al-chip" style={{ '--c': TYPES[e.t]?.[1] || '#8A94A8' }}>{TYPES[e.t]?.[0] || 'تفاعل'}</em> {timeAgo(String(e.at))}</small></span>
                 </a>
               </li>
             ))}
