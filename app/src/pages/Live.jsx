@@ -77,7 +77,7 @@ export default function Live() {
               ))}
             </div>
           </Section>
-          {last && <p className="hint pad-x">🔁 جلستكم الأخيرة انتهت قبل أقل من ساعتين، فإذا بدأت الحين تكمل عليها. (بعد ساعتين من آخر قيم تصير جلسة جديدة.)</p>}
+          {last && <p className="hint pad-x">🔁 جلستكم الأخيرة انتهت قبل أقل من 6 ساعات، فإذا بدأت الحين تكمل عليها. (6 ساعات أو أكثر بين نهاية قيم وبداية اللي بعده تصير جلسة جديدة.)</p>}
           <p className="hint pad-x">الحضور يتعبّى لحاله في كل قيم تسجّله الليلة، وتقدر تعدّله قبل الحفظ.</p>
           <button className="btn primary wide" disabled={pick.length < 2} onClick={() => save({ start: last?.start || new Date().toISOString(), date: todayStr(), players: pick })}>▶ ابدأ ({pick.length} حاضرين)</button>
         </div>
