@@ -179,8 +179,73 @@ const EPI = ['كان يعتقد إنه فاهم اللعبة 🪦', 'راح ضح
 const hash = str => [...str].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7)
 
 const planOf = n => { const out = []; while (n > 2) { const k = n >= 5 ? 2 : 1; out.push({ n, k }); n -= k } out.push({ n: 2, k: 1 }); return out }
-const toFriday = d => { const x = new Date(d + 'T00:00:00'); x.setDate(x.getDate() + ((5 - x.getDay() + 7) % 7)); return x }
-const dFmt = new Intl.DateTimeFormat('ar-SA-u-ca-gregory-nu-latn', { weekday: 'long', day: 'numeric', month: 'long' })
+const mkTwist = n => n === 2 ? { id: 'final', icon: '🏆', name: 'النهائي', desc: 'لعبة وحدة، فايز وحد، وبطل الدوري' } : TWISTS[Math.floor(Math.random() * TWISTS.length)]
+const PCOL = ['#E5484D', '#3B82F6', '#F2B33D', '#2FB36B', '#A35BFF', '#FF8A3D', '#14B8A6', '#EC4899', '#84CC16', '#94A3B8']
+const clip = (t, n = 10) => (t && t.length > n ? t.slice(0, n - 1) + '…' : t || '')
+
+// خريطة المسار (مترو): لكل لاعب خط، كل مرحلة بطاقة فيها ألعابها
+function Metro({ L, plan, pl, gm, picks, cur }) {
+  const COL = 70, NAME = 74, ROW = 42, TOP = 64
+  const W = NAME + (plan.length + 1) * COL + 6
+  const xs = i => W - NAME - COL / 2 - i * COL
+  const xT = xs(plan.length)
+  const outSt = id => L.out.find(o => o.id === id)?.st || 99
+  const order = [...L.players].sort((a, b) => (outSt(b) - outSt(a)) || ((L.pts[b] || 0) - (L.pts[a] || 0)))
+  const H = TOP + order.length * ROW + 30
+  const yOf = k => TOP + k * ROW + ROW / 2
+  const done = L.status === 'done'
+  const icons = {}
+  L.stages.forEach((st, i) => (st.plays || []).forEach(p => {
+    if (p.saved) icons[`${p.last}-${i}`] = (icons[`${p.last}-${i}`] || '') + '🛡️'
+    Object.entries(p.preds || {}).forEach(([pid, t]) => { if (t === p.loser) icons[`${pid}-${i}`] = (icons[`${pid}-${i}`] || '') + '🎯' })
+  }))
+  return (
+    <div className="lab-metro">
+      <svg direction="ltr" viewBox={`0 0 ${W} ${H}`} width="100%" style={{ minWidth: Math.min(W, 420) }} role="img" aria-label="مسار الدوري">
+        {plan.map((x, i) => {
+          const st = L.stages[i]
+          const ids = st?.picked || picks?.[i] || []
+          const isNow = L.status === 'active' && i === L.stages.length - 1
+          const isCur = cur === i
+          const nPlayed = st?.plays?.length || 0
+          return (
+            <g key={i}>
+              <rect x={xs(i) - COL / 2 + 3} y={4} width={COL - 6} height={H - 8} rx="14" fill={isNow || isCur ? '#F2B33D22' : '#ffffff0b'} stroke={isNow || isCur ? '#F2B33D' : '#ffffff22'} strokeDasharray={!st && !isCur ? '4 4' : undefined} opacity={!st && !isCur ? 0.75 : 1} />
+              {ids.length ? ids.slice(0, 2).map((id, k) => <text key={id} x={xs(i)} y={20 + k * 12} textAnchor="middle" fill="#F2B33D" fontSize="9">{(k < nPlayed ? '✔ ' : '') + clip(gm(id)?.name, k < nPlayed ? 8 : 10)}</text>) : <text x={xs(i)} y={22} textAnchor="middle" fill="#fff" fontSize="10" opacity=".5">؟</text>}
+              {st && x.n !== 2 && <text x={xs(i)} y={50} textAnchor="middle" fontSize="14">{st.twist?.icon}</text>}
+              <text x={xs(i)} y={H - 12} textAnchor="middle" fill="#fff" fontSize="9" opacity=".6">{x.n === 2 ? '🏆 نهائي' : `مرحلة ${i + 1}`}</text>
+            </g>
+          )
+        })}
+        <rect x={xT - COL / 2 + 3} y={4} width={COL - 6} height={H - 8} rx="14" fill={done ? '#F2B33D22' : 'none'} stroke="#F2B33D55" strokeDasharray="4 4" />
+        <text x={xT} y={yOf(0) - 12} textAnchor="middle" fontSize="22">🏆</text>
+        {order.map((id, k) => {
+          const o = L.out.find(z => z.id === id)
+          const y = yOf(k), c = PCOL[L.players.indexOf(id) % PCOL.length]
+          const reach = o ? o.st - 1 : L.stages.length - 1
+          const endIdx = o ? o.st - 1 : plan.length - 1
+          const champ = done && id === L.champion
+          return (
+            <g key={id}>
+              {reach >= 0 && <line x1={xs(0) + 22} y1={y} x2={champ ? xT : xs(reach)} y2={y} stroke={c} strokeWidth="6" strokeLinecap="round" opacity={o ? 0.7 : 1} />}
+              {!o && !champ && endIdx > reach && <line x1={xs(Math.max(reach, 0))} y1={y} x2={xs(endIdx)} y2={y} stroke={c} strokeWidth="4" strokeDasharray="2 8" strokeLinecap="round" opacity=".6" />}
+              {Array.from({ length: endIdx + 1 }, (_, i) => (
+                <g key={i}>
+                  <circle cx={xs(i)} cy={y} r="9" fill={i <= reach ? '#0d1020' : '#ffffff11'} stroke={c} strokeWidth="3" strokeDasharray={i <= reach ? undefined : '3 3'} />
+                  {o && i === reach && <text x={xs(i)} y={y + 5} textAnchor="middle" fill="#E5484D" fontSize="14" fontWeight="700">✕</text>}
+                  {icons[`${id}-${i}`] && <text x={xs(i)} y={y - 13} textAnchor="middle" fontSize="12">{icons[`${id}-${i}`]}</text>}
+                </g>
+              ))}
+              {champ && <circle cx={xT} cy={y} r="9" fill="#F2B33D" stroke="#fff" strokeWidth="2" />}
+              <text x={W - 4} y={y + 4} textAnchor="end" fill="#fff" fontSize="11" opacity={o ? 0.6 : 1}>{(champ ? '👑 ' : '') + clip(pl(id)?.name, 8)}</text>
+            </g>
+          )
+        })}
+      </svg>
+      <p className="hint">🛡️ درع نجّاه · 🎯 توقّع الجمهور صح · ✕ طلع · ✔ لعبة انلعبت · الرمز فوق المرحلة = تويستها</p>
+    </div>
+  )
+}
 
 function League() {
   const { lab, save, busy, idx } = useLab()
@@ -204,25 +269,33 @@ function League() {
     return { n, k, cands: cands.map(g => g.id), votes: {}, preds: {}, picked: null, plays: [], order: [], twist }
   }
   const strip = x => Object.fromEntries(Object.entries(x).filter(([k]) => k !== 'prev'))
-  const create = () => save({ league: { name: f.name, start: f.start, end: f.end, status: 'draft', players: f.ids, initial: f.ids.length, stages: [], out: [], pts: {}, shields: {}, jury: {}, draft: { votes: {} }, pool: null } }, 'انفتح تصويت ألعاب الدوري')
-  const inDraft = L?.status === 'draft'
-  const [q, setQ] = useState('')
-  const PER = 6
-  const dvotes = L?.draft?.votes || {}
-  const dTally = new Map(); Object.values(dvotes).flat().forEach(id => dTally.set(id, (dTally.get(id) || 0) + 1))
-  const needGames = L ? planOf(L.initial).reduce((t, x) => t + x.k, 0) : 0
-  const poolSize = needGames + 2
-  const toggleDraft = gid => {
-    const cur = dvotes[as || L.players[0]] || []
-    const nx = cur.includes(gid) ? cur.filter(x => x !== gid) : cur.length < PER ? [...cur, gid] : [...cur.slice(1), gid]
-    save({ league: { ...L, draft: { votes: { ...dvotes, [as || L.players[0]]: nx } } } }, 'تم')
+  const create = () => {
+    const pln = planOf(f.ids.length), used = new Set(), cands = []
+    pln.forEach(x => { const sg = mkStage(x.n, used, null); sg.cands.forEach(id => used.add(id)); cands.push(sg.cands) })
+    save({ league: { name: f.name, start: f.start, end: f.end, status: 'draft', players: f.ids, initial: f.ids.length, stages: [], out: [], pts: {}, shields: {}, jury: {}, pre: { cands, votes: {}, picked: null } } }, 'انفتح تصويت ألعاب الدوري')
   }
-  const lockDraft = () => {
-    const ranked = shuffle(idx.games).sort((a, b) => (dTally.get(b.id) || 0) - (dTally.get(a.id) || 0))
-    const pool = ranked.slice(0, poolSize)
-    if (!pool.some(g => g.category === 'duel')) { const d = ranked.find(g => g.category === 'duel'); if (d) pool[pool.length - 1] = d }
-    const ids = pool.map(g => g.id)
-    save({ league: { ...L, status: 'active', pool: ids, stages: [mkStage(L.initial, new Set(), ids)] } }, 'انحسمت ألعاب الدوري')
+  const inDraft = L?.status === 'draft'
+  const pre = L?.pre
+  const [sel, setSel] = useState([])
+  const plan0 = L ? planOf(L.initial) : []
+  const stageFrom = (i, p) => ({ n: plan0[i].n, k: plan0[i].k, cands: p.cands[i], votes: {}, preds: {}, picked: p.picked?.[i] || null, plays: [], order: [], twist: mkTwist(plan0[i].n) })
+  const voterId = as || L?.players?.[0]
+  const myV = pre?.votes?.[voterId] || []
+  const step = myV.length
+  const needOf = i => Math.min(plan0[i]?.k || 1, pre?.cands?.[i]?.length || 1)
+  const pickSel = id => { const k = needOf(step); setSel(sel.includes(id) ? sel.filter(x => x !== id) : k === 1 ? [id] : sel.length < k ? [...sel, id] : [...sel.slice(1), id]) }
+  const setVotes = v => save({ league: { ...L, pre: { ...pre, votes: v } } }, 'تم')
+  const confirmStep = () => { setVotes({ ...pre.votes, [voterId]: [...myV, sel] }); setSel([]) }
+  const undoStep = () => { setVotes({ ...pre.votes, [voterId]: myV.slice(0, -1) }); setSel([]) }
+  const doneVoters = pre ? Object.values(pre.votes || {}).filter(v => v.length >= plan0.length).length : 0
+  const lockPre = () => {
+    const picked = pre.cands.map((c, i) => {
+      const t = new Map(c.map(id => [id, 0]))
+      Object.values(pre.votes || {}).forEach(v => (v[i] || []).forEach(id => t.set(id, (t.get(id) || 0) + 1)))
+      return shuffle(c).sort((a, b) => t.get(b) - t.get(a)).slice(0, plan0[i].k)
+    })
+    const np = { ...pre, picked }
+    save({ league: { ...L, status: 'active', pre: np, stages: [stageFrom(0, np)] } }, 'انحسمت ألعاب كل المراحل')
   }
   const alive = L ? L.players.filter(id => !L.out.some(o => o.id === id)) : []
   const stage = L?.stages?.[L.stages.length - 1]
@@ -269,7 +342,7 @@ function League() {
     if (rest.length === 1) return save({ league: { ...base, stages, status: 'done', champion: rest[0] } }, '🏆 انتهى الدوري')
     if (st.plays.length >= st.k) {
       const used = new Set(stages.flatMap(x => x.picked || []))
-      return save({ league: { ...base, stages: [...stages, mkStage(rest.length, used)] } }, `طلع ${pl(loser)?.name}`)
+      return save({ league: { ...base, stages: [...stages, L.pre?.picked ? stageFrom(stages.length, L.pre) : mkStage(rest.length, used)] } }, `طلع ${pl(loser)?.name}`)
     }
     save({ league: { ...base, stages } }, `طلع ${pl(loser)?.name}`)
   }
@@ -283,20 +356,23 @@ function League() {
   const aliveBoard = board.filter(id => alive.includes(id))
   const danger = aliveBoard.length > 2 ? aliveBoard[aliveBoard.length - 1] : null
   const progress = L ? ((L.initial - alive.length) / Math.max(1, L.initial - 1)) * 100 : 0
-  const old = L && L.status !== 'draft' && L.stages?.length && !stage?.votes
-  const DRAFT = inDraft && (
+  const old = L && ((L.status !== 'draft' && L.stages?.length && !stage?.votes) || (L.status === 'draft' && !L.pre))
+  const DRAFT = inDraft && pre && (
     <div className="lab-draft">
-      <div className="lab-twist"><span>🗳️</span><div><b>تصويت ألعاب الدوري</b><small>كل واحد يختار لين {PER} ألعاب من كل الدولاب. أعلى {poolSize} لعبة تدخل الدوري، ومن بينها تنسحب خيارات كل مرحلة.</small></div></div>
-      <Who value={as || L.players[0]} onChange={setAs} list={L.players.map(pl)} />
-      <input className="input" placeholder="ابحث عن لعبة…" value={q} onChange={e => setQ(e.target.value)} />
-      <p className="hint">اختيارات {pl(as || L.players[0])?.name}: {(dvotes[as || L.players[0]] || []).length} من {PER}</p>
-      <div className="lab-grid">
-        {[...idx.games].filter(g => !q.trim() || g.name.toLowerCase().includes(q.trim().toLowerCase())).sort((a, b) => (dTally.get(b.id) || 0) - (dTally.get(a.id) || 0) || a.name.localeCompare(b.name)).slice(0, 40).map(g => (
-          <GameChip key={g.id} g={g} on={(dvotes[as || L.players[0]] || []).includes(g.id)} disabled={busy} onClick={() => toggleDraft(g.id)}><em>{dTally.get(g.id) || 0} صوت{g.category === 'duel' ? ' · 1v1' : ''}</em></GameChip>
-        ))}
-      </div>
-      <p className="hint">يظهر أول 40 نتيجة، استخدم البحث للباقي. الدوري لازم فيه لعبة 1v1 للنهائي، تنضاف تلقائياً لو ما اختاروها.</p>
-      <button className="btn gold" disabled={busy || !Object.keys(dvotes).length} onClick={lockDraft}>🔒 أقفل التصويت وابدأ الدوري ({Object.keys(dvotes).length}/{L.players.length} صوّتوا)</button>
+      <div className="lab-twist"><span>🗳️</span><div><b>تصويت ألعاب كل المراحل</b><small>لكل مرحلة 3 ألعاب عشوائية. في المرحلة الأولى تختار لعبتين (يطلع واحد بعد كل لعبة)، وفي الباقي لعبة وحدة. أول ما تثبّت مرحلة تنحط لعبتك في الخريطة وتطلع لك اللي بعدها.</small></div></div>
+      <Who value={voterId} onChange={id => { setAs(id); setSel([]) }} list={L.players.map(pl)} />
+      <Metro L={L} plan={plan0} pl={pl} gm={gm} picks={myV} cur={step < plan0.length ? step : -1} />
+      {step < plan0.length ? (
+        <div className="lab-stage">
+          <h4>المرحلة {step + 1} · {plan0[step].n} لاعبين — اختر {needOf(step) === 2 ? 'لعبتين' : 'لعبة'} ({sel.length}/{needOf(step)})</h4>
+          <div className="lab-grid">{pre.cands[step].map((id, i) => gm(id) && <div key={id} className="lab-flip" style={{ animationDelay: `${i * 0.12}s` }}><GameChip g={gm(id)} on={sel.includes(id)} disabled={busy} onClick={() => pickSel(id)}>{gm(id).category === 'duel' && <em>1v1</em>}</GameChip></div>)}</div>
+          <div className="lab-row"><button className="btn gold" disabled={busy || sel.length !== needOf(step)} onClick={confirmStep}>✅ ثبّت المرحلة {step + 1}</button>{step > 0 && <button className="btn small ghost" disabled={busy} onClick={undoStep}>↩️ المرحلة اللي قبلها</button>}</div>
+        </div>
+      ) : (
+        <div className="lab-row wrap"><p className="hint">✔ {pl(voterId)?.name} خلّص تصويته على كل المراحل. اختر لاعب ثاني من فوق ليصوّت.</p><button className="btn small ghost" disabled={busy} onClick={undoStep}>↩️ عدّل آخر مرحلة</button></div>
+      )}
+      <p className="hint">{doneVoters} من {L.players.length} خلّصوا التصويت كامل</p>
+      <button className="btn gold" disabled={busy || !doneVoters} onClick={lockPre}>🔒 أقفل التصويت وابدأ الدوري</button>
     </div>
   )
   const before = L && lastPlay ? (() => { const m = { ...L.pts }; Object.entries(lastPlay.gain || {}).forEach(([id, g]) => { m[id] = (m[id] || 0) - g }); return rankOf(m, L.players) })() : null
@@ -307,7 +383,6 @@ function League() {
     saves: allPlays.filter(x => x.saved && x.last === id).length,
   })
   const plan = L ? planOf(L.initial) : []
-  const planDates = L && L.end && L.start ? plan.map((_, i) => { const t = new Date(L.start + 'T00:00:00').getTime() + (plan.length > 1 ? (i / (plan.length - 1)) : 0) * (new Date(L.end) - new Date(L.start)); const d = toFriday(new Date(t).toISOString().slice(0, 10)); return dFmt.format(d) }) : []
   const awards = L ? (() => {
     const top = (fn) => { const v = L.players.map(id => [id, fn(id)]).sort((a, b) => b[1] - a[1]); return v[0] && v[0][1] > 0 ? v[0] : null }
     const fin = L.status === 'done' ? [L.champion, L.out[L.out.length - 1]?.id] : []
@@ -332,7 +407,7 @@ function League() {
       <div className="pad lab-box">
         {!L && (
           <>
-            <p className="hint">كل مرحلة: 3 ألعاب عشوائية، واللاعبين (حتى اللي طلعوا: «هيئة المحلفين») يصوّتون على اللي تنلعب. من 5 لاعبين فوق تنلعب لعبتين في المرحلة ويطلع واحد بكل لعبة، وبعدها لعبة وحدة لكل مرحلة لين النهائي. فيه نقاط ودروع وتويستات وتوقعات وأوسمة.</p>
+            <p className="hint">قبل البداية كل لاعب يصوّت على ألعاب كل المراحل (3 ألعاب عشوائية لكل مرحلة)، واللاعبين (حتى اللي طلعوا: «هيئة المحلفين») يصوّتون على اللي تنلعب. من 5 لاعبين فوق تنلعب لعبتين في المرحلة ويطلع واحد بكل لعبة، وبعدها لعبة وحدة لكل مرحلة لين النهائي. فيه نقاط ودروع وتويستات وتوقعات وأوسمة.</p>
             <div className="form">
               <input className="input" value={f.name} onChange={e => setF({ ...f, name: e.target.value })} placeholder="اسم الدوري" />
               <div className="lab-row"><label className="hint">يبدأ<input className="input" type="date" value={f.start} onChange={e => setF({ ...f, start: e.target.value })} /></label><label className="hint">ينتهي<input className="input" type="date" value={f.end} onChange={e => setF({ ...f, end: e.target.value })} /></label></div>
@@ -363,7 +438,7 @@ function League() {
 
             {!inDraft && <div className="lab-tabs in">{[['arena', '⚔️ الساحة'], ['path', '🗺️ المسار'], ['table', '📊 الترتيب'], ['awards', '🏅 الأوسمة']].map(([k, l]) => <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{l}</button>)}</div>}
 
-            {inDraft && DRAFT}
+            {DRAFT}
 
             {!inDraft && tab === 'arena' && (
               <>
@@ -459,46 +534,7 @@ function League() {
               </div>
             )}
 
-            {!inDraft && tab === 'path' && (
-              <div className="lab-pathwrap">
-                <div className="lab-path">
-                  {plan.map((x, i) => {
-                    const st = L.stages[i]
-                    const stNo = i + 1
-                    const startAlive = L.players.filter(id => !L.out.some(o => o.st < stNo && o.id === id))
-                    const outHere = L.out.filter(o => o.st === stNo)
-                    const isNow = L.status === 'active' && i === L.stages.length - 1
-                    const state = st ? (isNow ? 'now' : 'done') : 'fut'
-                    return (
-                      <div key={i} className="lab-pstep">
-                        <div className={`lab-pcol ${state}`}>
-                          <div className="lab-ph"><b>{x.n === 2 ? '🏆 النهائي' : `المرحلة ${stNo}`}</b><small>{x.n} لاعبين{planDates[i] ? ` · ${planDates[i]}` : ''}</small></div>
-                          <div className="lab-pg">
-                            {st?.picked
-                              ? st.picked.map((id, gi) => <span key={id} className={gi < st.plays.length ? 'done' : isNow && gi === st.plays.length ? 'now' : ''}><Cover game={gm(id)} className="xs" />{gm(id)?.name}</span>)
-                              : st?.cands?.length ? <><small>🗳️ مرشّحة:</small>{st.cands.map(id => <span key={id}><Cover game={gm(id)} className="xs" />{gm(id)?.name}</span>)}</>
-                                : <span className="q">🎲 {x.k === 2 ? 'لعبتين' : 'لعبة'} تنحدد بالتصويت</span>}
-                          </div>
-                          <div className="lab-pp">
-                            {(st ? startAlive : []).map(id => { const o = outHere.find(z => z.id === id); return <span key={id} className={o ? 'out' : ''}><Avatar player={pl(id)} size={26} /><em>{pl(id)?.name}</em>{o && <small>🪦 على {gm(o.game)?.name}{o.saved ? '' : ''}</small>}</span> })}
-                            {!st && <small className="q">{x.n} لاعبين باقين</small>}
-                          </div>
-                        </div>
-                        {i < plan.length - 1 && <span className="lab-arrow" aria-hidden="true">‹</span>}
-                      </div>
-                    )
-                  })}
-                  <div className="lab-pstep"><div className={`lab-pcol ${L.status === 'done' ? 'done' : 'fut'}`}><div className="lab-ph"><b>👑 البطل</b></div><div className="lab-pp">{L.status === 'done' ? <span><Avatar player={pl(L.champion)} size={40} /><em>{pl(L.champion)?.name}</em></span> : <small className="q">؟</small>}</div></div></div>
-                </div>
-                {L.pool && (
-                  <>
-                    <h4>🎒 ألعاب الدوري الباقية</h4>
-                    <div className="lab-chips">{L.pool.filter(id => !usedIds.has(id)).map(id => gm(id) && <span key={id}><Cover game={gm(id)} className="xs" />{gm(id).name}</span>)}</div>
-                  </>
-                )}
-                {!L.end && <p className="hint">حدد تاريخ نهاية عشان تتوزع المراحل على جمعات.</p>}
-              </div>
-            )}
+            {!inDraft && tab === 'path' && <Metro L={L} plan={plan} pl={pl} gm={gm} />}
 
             {!inDraft && tab === 'awards' && (
               <div className="lab-awards">

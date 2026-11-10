@@ -2228,3 +2228,6 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .lab-chips{display:flex;flex-wrap:wrap;gap:6px}
 .lab-chips span{display:flex;align-items:center;gap:6px;font-size:.74rem;padding:4px 8px;border-radius:999px;background:var(--line)}
 .lab-draft{display:grid;gap:10px}
+
+.lab-metro{overflow-x:auto;padding:4px 0 6px;display:grid;gap:6px}
+.lab-metro svg{display:block;font-family:inherit}
