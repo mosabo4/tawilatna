@@ -2310,3 +2310,8 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .rv-grid button{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:6px;color:inherit;display:flex;flex-direction:column;align-items:center;gap:4px}
 .rv-grid small{font-size:10px;text-align:center;line-height:1.3}
 .rv.vt .rv-pl{margin-bottom:6px}.rv-pl button small{white-space:nowrap}
+
+.rv-ctl{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}.rv-next{opacity:.65;font-size:11px}
+.rv-more{background:none;border:0;color:#9fb2ff;font-size:12px;padding:4px 0;text-align:start}
+.rv-how{padding:8px 12px;margin-top:10px}.rv-howbtn{background:none;border:0;color:inherit;font-size:13px;width:100%;text-align:start;padding:6px 0}
+.rv-howtxt p{font-size:12px;opacity:.8;line-height:1.7;margin:6px 0}

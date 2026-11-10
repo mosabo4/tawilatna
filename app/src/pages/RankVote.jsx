@@ -43,6 +43,9 @@ export default function RankVote() {
   const [who, setWho] = useState(() => me?.id || idx.players[0]?.id)
   const [q, setQ] = useState('')
   const [pick, setPick] = useState(false)
+  const [edit, setEdit] = useState(false)
+  const [all, setAll] = useState(false)
+  const [info, setInfo] = useState(false)
   const put = b => { setB(b); save(b) }
   const lv = useMemo(() => computeLevels(idx), [idx])
   const lvOf = pid => lv.get(pid)?.level || 1
@@ -111,104 +114,84 @@ export default function RankVote() {
     })
     put(b)
   }
-  const duel = ranked.slice(0, 2), chase = ranked.slice(2, 5)
+
+  const WORD = ['لعبتك الأولى', 'الثانية', 'الثالثة']
+  const shown = all ? ranked : ranked.slice(0, 3)
 
   return (
     <div className="pad lab-box rv vt">
-      <p className="hint">⚠️ نسخة تجريبية من صفحة الجلسة الجاية بنظام الأولويات: <b>ما تغيّر تصويت الموقع</b>، وتتخزن في جهازك بس. تتصرف باسم أي لاعب وتختار له ألعاب وترتبها. كل لاعب عنده رصيد نقاط يتوزع على ألعابه بالترتيب (لعبة 100%، لعبتين 2/3 و1/3، ثلاث 1/2 و1/3 و1/6)، وعدد الخانات والرصيد حسب مستواه مثل الموقع.</p>
-
-      <div className="rv-pl">{players.map(p => <button key={p.id} type="button" className={who === p.id ? 'on' : ''} onClick={() => { setWho(p.id); setPick(false); setQ('') }}><Avatar player={p} size={34} /><small>{(ballots[p.id] || []).length ? `✓ ${p.name}` : p.name}</small></button>)}</div>
+      <p className="hint">🔬 نسخة تجريبية: ما تغيّر تصويت الموقع. اختر لاعب وصوّت باسمه.</p>
+      <div className="rv-pl">{players.map(p => <button key={p.id} type="button" className={who === p.id ? 'on' : ''} onClick={() => { setWho(p.id); setPick(false); setQ(''); setEdit(false) }}><Avatar player={p} size={34} /><small>{(ballots[p.id] || []).length ? `✓ ${p.name}` : p.name}</small></button>)}</div>
 
       <section className="rv-hemi glass">
-        <div className="rv-top"><b>🏛️ برلمان العيال</b><small>{voted.length ? `${voted.length} من ${players.length} وزّعوا نقاطهم` : 'الكراسي فاضية، ابدأ التصويت'}</small></div>
+        <div className="rv-top"><b>🏛️ برلمان العيال</b><small>{voted.length ? `${voted.length} من ${players.length} صوّتوا` : 'ما أحد صوّت للحين'}</small></div>
         <div className="rv-svgbox">
           <svg viewBox="0 0 200 106" role="img" aria-label="قوس البرلمان">
             {H.pts.map((pt, i) => cells[i]
               ? <circle key={i} cx={pt.x} cy={pt.y} r={H.dot} fill={cells[i]} />
               : <circle key={i} cx={pt.x} cy={pt.y} r={H.dot} fill="none" stroke="rgba(255,255,255,.22)" strokeWidth=".7" />)}
           </svg>
-          <div className="rv-center">{lead ? <><b>{tie ? 'تعادل' : gname(lead)}</b><small>{pts.get(lead)} / {cast}</small></> : <small>ما فيه نقاط</small>}</div>
+          <div className="rv-center">{lead ? <><b>{tie ? 'تعادل' : gname(lead)}</b><small>👑</small></> : <small>—</small>}</div>
         </div>
-        {cast > 0 && (
-          <div className="vt-maj">
-            <div className="vt-majbar">
-              {ranked.map(g => <i key={g} style={{ width: `${(pts.get(g) / totalBudget) * 100}%`, background: col.get(g) }}>{pts.get(g)}</i>)}
-              <u style={{ insetInlineStart: `${(need / totalBudget) * 100}%` }} />
-            </div>
-            <small>الأغلبية = {need} من {cast} نقطة موزّعة{lead && pts.get(lead) < need ? ` · ${gname(lead)} ناقصها ${need - pts.get(lead)}` : ''}</small>
-          </div>
-        )}
         {status && <div className={`vt-status ${status.i === '✅' ? 'done' : ''}`}><span>{status.i}</span><div><b>{status.t}</b><small>{status.d}</small></div></div>}
         <div className="rv-games">
-          {ranked.map(g => (
+          {shown.map(g => (
             <div key={g} className="rv-g">
               <i style={{ background: col.get(g) }} />
-              <b>{gname(g)}</b><em>{pts.get(g)}</em>
-              <span className="rv-who">{by.get(g).sort((a, b) => a.rank - b.rank || b.n - a.n).map(v => <span key={v.p.id} className="rv-v" title={`${v.p.name}: ${v.n}`}><Avatar player={v.p} size={22} /><sup>{MEDAL[v.rank]}</sup></span>)}</span>
+              <b>{gname(g)}</b>
+              <span className="rv-who">{by.get(g).sort((a, b) => a.rank - b.rank || b.n - a.n).map(v => <span key={v.p.id} className="rv-v" title={v.p.name}><Avatar player={v.p} size={22} />{v.rank === 0 && <sup>🥇</sup>}</span>)}</span>
             </div>
           ))}
+          {ranked.length > 3 && <button type="button" className="rv-more" onClick={() => setAll(v => !v)}>{all ? 'أقل ▲' : `شوف الكل (${ranked.length}) ▼`}</button>}
         </div>
-        {silent.length > 0 && voted.length > 0 && <div className="vt-silent"><small>لسا ما وزّعوا:</small>{silent.map(p => <Avatar key={p.id} player={p} size={26} />)}</div>}
+        {silent.length > 0 && voted.length > 0 && <div className="vt-silent"><small>لسا ما صوّتوا:</small>{silent.map(p => <Avatar key={p.id} player={p} size={26} />)}</div>}
       </section>
 
       {meP && (
         <section className="vt-bal glass">
-          <div className="vt-bal-top"><b>🗳️ ورقة {meP.name}</b><small>رتّب ألعابك من الأهم للأقل · {cap === 1 ? 'لعبة وحدة' : `لين ${cap} ألعاب`}{nextSlotLv ? ` · مستوى ${nextSlotLv} يفتح خانة` : ''}</small></div>
+          <div className="vt-bal-top"><b>🗳️ ورقة {meP.name}</b><small>اختر ألعابك بالترتيب، الأولى هي الأهم</small></div>
           <div className="vt-slotrow">
-            {Array.from({ length: 3 }, (_, k) => {
+            {Array.from({ length: cap }, (_, k) => {
               const g = idx.gamesById.get(cur[k])
               if (g) return (
                 <div key={k} className="vt-bslot filled">
-                  <Cover game={g} className="xs" /><b>{MEDAL[k]} {g.name}</b><em className="vt-bv">{sp[k]} نقطة</em>
-                  <span className="rv-mv">
+                  <Cover game={g} className="xs" /><b>{MEDAL[k]} {g.name}</b><em className="vt-bv">{WORD[k]}</em>
+                  {edit && <span className="rv-mv">
                     <button type="button" onClick={() => mv(k, -1)} disabled={k === 0} aria-label="قدّمها">▲</button>
                     <button type="button" onClick={() => mv(k, 1)} disabled={k === cur.length - 1} aria-label="أخّرها">▼</button>
                     <button type="button" onClick={() => rm(k)} aria-label={`شيل ${g.name}`}>✕</button>
-                  </span>
+                  </span>}
                 </div>
               )
-              if (k < cap) return <button key={k} type="button" className="vt-bslot free" onClick={() => setPick(true)}><span>＋</span><small>خانة فاضية<br />اضغط واختر لعبة</small></button>
-              return <div key={k} className="vt-bslot lockd"><span>🔒</span><small>مستوى {levelOfReward(k === 1 ? 'slot2' : 'slot3')}</small></div>
+              return <button key={k} type="button" className="vt-bslot free" onClick={() => setPick(true)}><span>＋</span><small>{MEDAL[k]} {WORD[k]}<br />اضغط واختر</small></button>
             })}
+          </div>
+          <div className="rv-ctl">
+            {cur.length > 1 || cur.length > 0 ? <button type="button" className="btn small ghost" onClick={() => setEdit(v => !v)}>{edit ? '✔ تم' : '✏️ عدّل الترتيب'}</button> : null}
+            {nextSlotLv && <small className="rv-next">🔒 مستوى {nextSlotLv} يفتح خانة</small>}
           </div>
           {pick && cur.length < cap && (
             <div className="rv-pick">
               <input className="rv-q" placeholder="ابحث عن لعبة ما جربتها..." value={q} onChange={e => setQ(e.target.value)} />
               <div className="rv-grid">{pool.map(g => <button key={g.id} type="button" onClick={() => add(g.id)}><Cover game={g} className="sm" /><small>{g.name}</small></button>)}</div>
-              {!pool.length && <p className="hint">ما لقيت لعبة، يمكن جربتها كلها 🙂 (التصويت بس على ألعاب ما جربتها)</p>}
+              {!pool.length && <p className="hint">ما لقيت لعبة، يمكن جربتها كلها 🙂</p>}
             </div>
           )}
         </section>
       )}
 
-      {meP && (
-        <section className="vt-pool glass">
-          <div className="vt-bal-top"><b>🪙 رصيد {meP.name}</b><small>{nextBudLv ? `مستوى ${nextBudLv} يزيد الرصيد 4` : 'وصل أقصى رصيد'}</small></div>
-          <div className="vt-stats">
-            <span><b>{budget}</b><small>رصيد النقاط</small></span>
-            <span><b>{cur.length ? budget : 0}</b><small>موزّعة</small></span>
-            <span><b>{cur.length ? 0 : budget}</b><small>ما وزّع</small></span>
+      <section className="rv-how glass">
+        <button type="button" className="rv-howbtn" onClick={() => setInfo(v => !v)}>❓ كيف تنحسب؟ {info ? '▲' : '▼'}</button>
+        {info && (
+          <div className="rv-howtxt">
+            <p>كل لاعب عنده نقاط يوزعها على ألعابه حسب ترتيبها: لعبة وحدة تاخذ كل النقاط، لعبتين تاخذ الأولى الثلثين، وثلاث ألعاب تاخذ الأولى النصف.</p>
+            <p>رصيد <b>{meP?.name}</b>: {budget} نقطة{nextBudLv ? `، ومستوى ${nextBudLv} يزيدها 4` : ''}. {cur.length ? `توزيعها الحين: ${cur.map((g, i) => `${gname(g)} ${sp[i]}`).join('، ')}.` : ''}</p>
+            {cast > 0 && <p>الأغلبية: {need} من {cast} نقطة موزّعة.{lead && pts.get(lead) < need ? ` ${gname(lead)} ناقصها ${need - pts.get(lead)}.` : ''}</p>}
+            <p>إذا تعادلت لعبتان، تفوز اللي أخذت أولوية أولى من لاعبين أكثر.</p>
+            <div className="vt-maj"><div className="vt-majbar">{ranked.map(g => <i key={g} style={{ width: `${(pts.get(g) / totalBudget) * 100}%`, background: col.get(g) }}>{pts.get(g)}</i>)}<u style={{ insetInlineStart: `${(need / totalBudget) * 100}%` }} /></div></div>
           </div>
-          <p className="hint">كل ما تحط ألعاب أكثر، الرصيد يتقسم عليها (الأولى تاخذ النصيب الأكبر). فالفرق مو بعدد الألعاب بل بترتيبها.</p>
-        </section>
-      )}
-
-      {duel.length >= 2 && (
-        <section className="vt-h2h glass">
-          <h3>⚔️ {tie ? 'تعادل على الصدارة' : 'المنافسة على الصدارة'}</h3>
-          <div className="vt-h2h-row n2">
-            {duel.map((g, k) => (
-              <div key={g} className={`vt-fighter ${k === 0 ? 'lead' : ''}`} style={{ '--bc': col.get(g) }}>
-                <Cover game={idx.gamesById.get(g)} className="sm" />
-                <b>{gname(g)}</b><strong>{pts.get(g)}</strong>
-                <small>{tie ? 'متعادلة' : k === 0 ? 'المتصدرة' : `متأخرة بـ${gap}`}</small>
-              </div>
-            ))}
-            <span className="vt-vs">VS</span>
-          </div>
-          {chase.length > 0 && <p className="vt-chase">🏃 وراهم: {chase.map((g, k) => <span key={g}>{k > 0 && '، '}<bdi>{gname(g)}</bdi> ({pts.get(g)})</span>)}</p>}
-        </section>
-      )}
+        )}
+      </section>
 
       <div className="rv-act"><button type="button" className="btn small" onClick={fill}>🎲 تعبئة تجريبية للباقي</button><button type="button" className="btn small ghost" onClick={() => { put({}); setPick(false) }}>🧹 صفّر</button></div>
     </div>
