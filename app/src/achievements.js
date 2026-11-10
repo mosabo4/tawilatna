@@ -7,7 +7,7 @@ export const TIER = [
   { id: 'g', name: 'ذهبي', icon: '🥇', color: '#FFC45C' },
   { id: 'd', name: 'ماسي', icon: '💎', color: '#7FE3FF' },
 ]
-const TIER_XP = [20, 60, 150, 400]
+export const TIER_XP = [20, 60, 150, 400]
 // جائزة كل إنجاز سري: شارة تحطها على صورتك وجنب اسمك
 export const SECRET_BADGES = {
   zero: { icon: '💀', name: 'الجمجمة' }, owl: { icon: '🦉', name: 'البومة' }, tie: { icon: '🪞', name: 'التوأم' }, unlucky: { icon: '🫠', name: 'الذايب' },
@@ -74,7 +74,7 @@ const tiered = (id, icon, name, text, steps, value) => ({ id, icon, name, group:
 const cnt = (n, one, many) => `${n} ${n >= 3 && n <= 10 ? many : one}`
 const once = (id, icon, name, desc, xp, group, test, prog) => ({ id, icon, name, desc, xp, group, test, prog })
 
-function defs(ctx) {
+export function defs(ctx) {
   const all = ctx.totalGames
   const cats = ctx.compCats.length
   return [
@@ -204,26 +204,28 @@ export function achStats(idx, pl, ctx, base) {
 }
 
 // تقييم الإنجازات للاعب
-export function evalAchievements(ctx, s) {
+export function evalAchievements(ctx, s, o = {}) {
   return defs(ctx).map(d => {
     if (d.group === 'tier') {
       const v = d.value(s)
       const tier = d.steps.filter(n => v >= n).length
-      const xp = TIER_XP.slice(0, tier).reduce((a, b) => a + b, 0)
+      const TX = o.tier?.[d.id] || TIER_XP
+      const xp = TX.slice(0, tier).reduce((a, b) => a + b, 0)
       const maxed = tier >= d.steps.length
       const target = maxed ? d.steps.at(-1) : d.steps[tier]
       const tierIdx = n => (d.steps.length === 3 ? n : n)
       return {
         ...d, desc: d.text(target, tier === d.steps.length - 1 || maxed), unit: '', tier, tiers: d.steps.length, tierInfo: tier ? TIER[tierIdx(tier - 1)] : null,
-        done: tier > 0, maxed, xp, nextXp: maxed ? 0 : TIER_XP[tier], progress: [Math.min(v, target), target], value: v,
+        done: tier > 0, maxed, xp, nextXp: maxed ? 0 : TX[tier], progress: [Math.min(v, target), target], value: v,
         keys: Array.from({ length: tier }, (_, i) => `${d.id}:${i}`),
       }
     }
     if (d.group === 'season') {
-      const n = d.times(s)
-      return { ...d, desc: d.desc + (d.extra ? d.extra(s) : ''), done: n > 0, maxed: false, xp: n * d.each, nextXp: d.each, times: n, progress: null, keys: Array.from({ length: n }, (_, i) => `${d.id}:${i}`) }
+      const n = d.times(s), each = o.season?.[d.id] ?? d.each
+      return { ...d, desc: d.desc + (d.extra ? d.extra(s) : ''), done: n > 0, maxed: false, xp: n * each, nextXp: each, times: n, progress: null, keys: Array.from({ length: n }, (_, i) => `${d.id}:${i}`) }
     }
     const done = !!d.test(s)
-    return { ...d, done, maxed: done, xp: done ? d.xp : 0, nextXp: d.xp, progress: d.prog ? d.prog(s) : null, keys: done ? [d.id] : [] }
+    const ox = o.once?.[d.id] ?? d.xp
+    return { ...d, done, maxed: done, xp: done ? ox : 0, nextXp: ox, progress: d.prog ? d.prog(s) : null, keys: done ? [d.id] : [] }
   })
 }

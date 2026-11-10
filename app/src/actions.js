@@ -21,39 +21,41 @@ const nextDay = (idx, iso, who) => {
   return days.find(d => who.every(w => idx.plays.some(p => p.played_on === d && p.results.some(r => r.player_id === w)))) || null
 }
 
-export function resolveActions(idx) {
+export function resolveActions(idx, o = {}) {
+  const A = { predict: 15, predictDouble: 30, riskOk: 300, riskFail: -50, guarantee: 20, godfather: 20, gift: 50, thanks: 20, thankGive: 10, chalWin: 0, chalPart: 0, ...o }
   const acts = idx.actions || []
   const xp = new Map() // pid -> {predict, bet, thanks}
-  const add = (pid, k, v) => { if (!xp.has(pid)) xp.set(pid, { predict: 0, thanks: 0, thankGive: 0, gift: 0, lucky: 0, luckbox: 0, risk: 0, godfather: 0, box: 0, guarantee: 0 }); xp.get(pid)[k] += v }
+  const add = (pid, k, v) => { if (!xp.has(pid)) xp.set(pid, { chal: 0, predict: 0, thanks: 0, thankGive: 0, gift: 0, lucky: 0, luckbox: 0, risk: 0, godfather: 0, box: 0, guarantee: 0 }); xp.get(pid)[k] += v }
   const predictions = [], challenges = [], rematches = [], risks = [], boxes = [], guarantees = []
   for (const a of acts) {
     if (a.kind === 'predict') {
       const p = after(idx, a.created_at, 2, x => x.game_id === a.game_id)
       const ok = p ? pos(p, a.target) === 1 : null
-      if (ok) add(a.player_id, 'predict', a.data?.double ? 30 : 15)
+      if (ok) add(a.player_id, 'predict', a.data?.double ? A.predictDouble : A.predict)
       predictions.push({ ...a, play: p, ok })
     } else if (a.kind === 'challenge') {
       const p = after(idx, a.created_at, 14, x => (!a.game_id || x.game_id === a.game_id) && x.results.some(r => r.player_id === a.player_id) && x.results.some(r => r.player_id === a.target))
       const winner = p ? (pos(p, a.player_id) < pos(p, a.target) ? a.player_id : pos(p, a.target) < pos(p, a.player_id) ? a.target : null) : undefined
+      if (p && (A.chalWin || A.chalPart)) { add(a.player_id, 'chal', A.chalPart + (winner === a.player_id ? A.chalWin : 0)); add(a.target, 'chal', A.chalPart + (winner === a.target ? A.chalWin : 0)) }
       challenges.push({ ...a, play: p, winner })
     } else if (a.kind === 'rematch') {
       const orig = idx.plays.find(x => x.id === a.play_id)
       const w = orig?.results.find(r => r.position === 1)?.player_id
       const p = orig ? after(idx, a.created_at, 30, x => x.game_id === orig.game_id && x.results.some(r => r.player_id === a.player_id) && x.results.some(r => r.player_id === w)) : null
       rematches.push({ ...a, orig, rival: w, play: p, done: !!p })
-    } else if (a.kind === 'gift' && a.target) add(a.target, 'gift', 50)
+    } else if (a.kind === 'gift' && a.target) add(a.target, 'gift', A.gift)
     else if (a.kind === 'luckbox') add(a.player_id, 'luckbox', Math.max(0, Math.min(60, Number(a.data?.xp) || 0)))
     else if (a.kind === 'risk') {
       const p = after(idx, a.created_at, 2, x => x.game_id === a.game_id && x.results.some(r => r.player_id === a.player_id))
       const ok = p ? pos(p, a.player_id) === 1 : null
-      if (p) add(a.player_id, 'risk', ok ? 300 : -50)
+      if (p) add(a.player_id, 'risk', ok ? A.riskOk : A.riskFail)
       risks.push({ ...a, play: p, ok })
     } else if (a.kind === 'godfather' && a.target) {
       const d = nextDay(idx, a.created_at, [a.player_id, a.target])
       if (d) {
         const mine = idx.plays.filter(p => p.played_on === d && p.results.some(r => r.player_id === a.player_id))
         const earned = mine.length * 10 + mine.filter(p => pos(p, a.player_id) === 1 && p.results.length > 1).length * 5
-        add(a.target, 'godfather', Math.round(earned / 2)); add(a.player_id, 'godfather', 20)
+        add(a.target, 'godfather', Math.round(earned / 2)); add(a.player_id, 'godfather', A.godfather)
       }
     } else if (a.kind === 'box') {
       const amt = Math.max(20, Math.min(100, Number(a.data?.amount) || 0))
@@ -72,7 +74,7 @@ export function resolveActions(idx) {
           st.set(r.player_id, s)
         }
         const last = [...st.entries()].sort((x, y) => x[1].b / x[1].f - y[1].b / y[1].f)[0]
-        if (last) add(last[0], 'guarantee', 20)
+        if (last) add(last[0], 'guarantee', A.guarantee)
         guarantees.push({ ...a, day: d, loser: last?.[0] || null })
       } else guarantees.push({ ...a, day: null, loser: null })
     }
@@ -80,9 +82,9 @@ export function resolveActions(idx) {
       const p = idx.plays.find(x => x.id === a.play_id)
       if (p) {
         const first = !idx.plays.some(x => x.game_id === p.game_id && x.id !== p.id && tsOf(x) < tsOf(p) && x.results.some(r => r.player_id === a.target))
-        add(a.target, 'lucky', -Math.round((10 + winXp(p, idx.gamesById.get(p.game_id)) + (first ? 40 : 0)) / 2))
+        add(a.target, 'lucky', -Math.round((10 + winXp(p, idx.gamesById.get(p.game_id), A.win) + (first ? 40 : 0)) / 2))
       }
-    } else if (a.kind === 'thanks' && a.target) { add(a.target, 'thanks', 20); add(a.player_id, 'thankGive', 10) }
+    } else if (a.kind === 'thanks' && a.target) { add(a.target, 'thanks', A.thanks); add(a.player_id, 'thankGive', A.thankGive) }
   }
   return { xp, predictions, challenges, rematches, risks, boxes, guarantees }
 }

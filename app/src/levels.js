@@ -28,7 +28,8 @@ export const XP_RULES = [
   { id: 'box', icon: '💰', label: 'صندوق العيال: تحطه أو تكسبه (مستوى 18)', xp: 0 },
   { id: 'guarantee', icon: '🛟', label: 'ضمان الخاسر: آخر واحد في الجلسة ياخذ +20', xp: 0 },
 ]
-const XP = Object.fromEntries(XP_RULES.map(r => [r.id, r.xp]))
+const XP0 = Object.fromEntries(XP_RULES.map(r => [r.id, r.xp]))
+const XP = XP0
 
 // XP المطلوب للوصول للمستوى L (تراكمي): 300، 720، 1440، 2400، 3600...
 export const xpFor = L => (L <= 1 ? 0 : L === 2 ? 300 : Math.round((150 * (L - 1) ** 2 + 150 * (L - 1)) * 0.8 / 10) * 10)
@@ -102,9 +103,10 @@ export const REWARDS = [
 export const levelOfReward = id => REWARDS.find(r => r.id === id)?.level ?? 99
 
 
-export function computeLevels(idx) {
+export function computeLevels(idx, opts) {
   const G = idx.gamesById
-  const rx = resolveActions(idx)
+  const XP = opts?.xp ? { ...XP0, ...opts.xp } : XP0
+  const rx = resolveActions(idx, opts ? { ...opts.act, ...opts.chal, win: opts.win } : undefined)
   const ax = rx.xp
   const pre = []
   const chrono = [...idx.plays].reverse()
@@ -124,7 +126,7 @@ export function computeLevels(idx) {
       if (g?.category) cats.add(g.category)
       for (const o of p.results) if (o.player_id !== pl.id) mates.add(o.player_id)
       if (counts(p, g)) {
-        if (r.position === 1) { wins++; winPts += winXp(p, g); run++; bestWinStreak = Math.max(bestWinStreak, run); if (g?.category) winCats.add(g.category); if (p.results.length >= 5) bigWin = true } else run = 0
+        if (r.position === 1) { wins++; winPts += winXp(p, g, opts?.win); run++; bestWinStreak = Math.max(bestWinStreak, run); if (g?.category) winCats.add(g.category); if (p.results.length >= 5) bigWin = true } else run = 0
       }
     }
     // جلسات ورا بعض = أيام لعب العيال المتتالية اللي حضرها
@@ -149,7 +151,7 @@ export function computeLevels(idx) {
       comment: comments * XP.comment, win: winPts, picks: pickWeeks * XP.picks, post: posts * XP.post, streak: streaks * XP.streak, setup: setups * XP.setup, cleanup: cleanups * XP.cleanup,
       thanks: ax.get(pl.id)?.thanks || 0, thankGive: ax.get(pl.id)?.thankGive || 0, predict: ax.get(pl.id)?.predict || 0,
       gift: ax.get(pl.id)?.gift || 0, lucky: ax.get(pl.id)?.lucky || 0, luckbox: ax.get(pl.id)?.luckbox || 0, risk: ax.get(pl.id)?.risk || 0,
-      godfather: ax.get(pl.id)?.godfather || 0, box: ax.get(pl.id)?.box || 0, guarantee: ax.get(pl.id)?.guarantee || 0, fullhouse: fullDays.filter(d => myDays.has(d)).length * XP.fullhouse,
+      godfather: ax.get(pl.id)?.godfather || 0, box: ax.get(pl.id)?.box || 0, guarantee: ax.get(pl.id)?.guarantee || 0, fullhouse: fullDays.filter(d => myDays.has(d)).length * XP.fullhouse, chal: ax.get(pl.id)?.chal || 0,
     }
     pre.push({ pl, s, parts, base: Math.max(0, Object.values(parts).reduce((a, b) => a + b, 0)) })
   }
@@ -157,7 +159,7 @@ export function computeLevels(idx) {
   const ctx = achContext(idx, rx)
   const baseLv = new Map(pre.map(x => [x.pl.id, levelFromXp(x.base)]))
   for (const { pl, s, parts, base } of pre) {
-    const achievements = evalAchievements(ctx, achStats(idx, pl, ctx, { ...s, levelOf: pid => baseLv.get(pid) || 1 }))
+    const achievements = evalAchievements(ctx, achStats(idx, pl, ctx, { ...s, levelOf: pid => baseLv.get(pid) || 1 }), opts)
     const achXp = achievements.reduce((t, a) => t + a.xp, 0)
     const xp = Math.max(0, base + achXp)
     const level = levelFromXp(xp)
