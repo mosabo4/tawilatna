@@ -2275,3 +2275,7 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .vt-hemi .vt-podium small{font-size:10px}
 .vt-hemi .vt-podium .cover,.vt-hemi .vt-podium img{max-height:26px;max-width:26px}
 .vt-hemi{margin-inline:22px}
+
+.vt-sq{transform:translate(-50%,-50%);line-height:0}
+.vt-sq.sq-open>*{opacity:.35;filter:grayscale(.6)}
+.vt-hemi{margin-inline:6px}
