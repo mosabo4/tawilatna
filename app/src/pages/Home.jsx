@@ -118,7 +118,7 @@ export default function Home() {
                 <span className="medal">{['🥈', '🥇', '🥉'][k]}</span>
                 <Avatar player={b.player} size={[48, 62, 44][k]} />
                 <b>{b.player.name}</b>
-                <strong>{b.points}%</strong>
+                <strong>{b.points}</strong>
                 <i className="step" />
               </div>
             ))}

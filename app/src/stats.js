@@ -1,4 +1,4 @@
-import { fairScores } from './fairRank'
+import { eloScores } from './fairRank'
 import { scoringOf } from './scoring'
 // كل الحسابات تتم على الجهاز من البيانات الكاملة (العدد صغير)
 
@@ -60,7 +60,7 @@ export function buildIndex(data) {
 
 // ---------- الترتيب ----------
 // كل قيم: نقطة عن كل لاعب خلّصت قدّامه، ونص نقطة لو تعادلتوا.
-// المستوى = نقاطك ÷ كل اللي لعبت ضدهم (نسبة مئوية). الألعاب التعاونية ما تدخل.
+// الترتيب الرسمي = إيلو + خمول (fairRank.eloScores). النسبة الخام (نقاطك ÷ اللي لعبت ضدهم) تبقى لملخص الشهر والليلة. الألعاب التعاونية ما تدخل.
 export const levelOf = (beat, faced) => (faced ? Math.round((beat / faced) * 100) : null)
 export const counts = (play, game) => play.results.length > 1 && game?.category !== 'coop' && game?.scoring !== 'coop'
 
@@ -75,7 +75,7 @@ export function standings(idx, filter = () => true, opts = {}) {
       for (const o of p.results) if (o !== r) { s.faced++; s.beat += o.position > r.position ? 1 : o.position === r.position ? 0.5 : 0 }
     }
   }
-  const fair = opts.fair ? fairScores(idx.plays.filter(p => counts(p, idx.gamesById.get(p.game_id)) && filter(p, idx.gamesById.get(p.game_id))), opts.fair === true ? {} : opts.fair) : null
+  const fair = opts.fair ? eloScores(idx.plays.filter(p => counts(p, idx.gamesById.get(p.game_id)) && filter(p, idx.gamesById.get(p.game_id))), opts.fair === true ? {} : opts.fair) : null
   return [...m.values()]
     .map(s => ({ ...s, points: fair ? (fair.get(s.player.id)?.points ?? null) : levelOf(s.beat, s.faced), provisional: fair ? !!fair.get(s.player.id)?.provisional : false, raw: s.faced ? s.beat / s.faced : null }))
     .sort((a, b) => (b.plays > 0) - (a.plays > 0) || (b.points ?? 0) - (a.points ?? 0) || b.wins - a.wins || b.plays - a.plays)
@@ -84,7 +84,7 @@ export function standings(idx, filter = () => true, opts = {}) {
 const winnersOf = play => play.results.filter(r => r.position === 1).map(r => r.player_id)
 
 const fairCache = new WeakMap()
-const fairFor = idx => { if (!fairCache.has(idx)) fairCache.set(idx, fairScores(idx.plays.filter(p => counts(p, idx.gamesById.get(p.game_id))))); return fairCache.get(idx) }
+const fairFor = idx => { if (!fairCache.has(idx)) fairCache.set(idx, eloScores(idx.plays.filter(p => counts(p, idx.gamesById.get(p.game_id))))); return fairCache.get(idx) }
 
 export function playerStats(idx, playerId) {
   const mine = idx.plays.filter(p => p.results.some(r => r.player_id === playerId))

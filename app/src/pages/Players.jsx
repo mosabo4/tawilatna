@@ -1,3 +1,4 @@
+import { eloFill } from '../fairRank'
 import { useMemo, useState } from 'react'
 import { cooldownLeft, isImmune } from '../actions'
 import { STICKERS, Sticker } from '../stickers'
@@ -31,7 +32,7 @@ export function PlayerView({ id }) {
       <TopBar title={player.name} backTo="/rank" right={me?.id === id && <button className="btn small ghost" onClick={() => go('/me')}>حسابي</button>} />
       <div className="stack">
         <div className={`glass lead ${lk.gold ? 'gold-card' : ''}`} style={lk.bg ? { background: lk.bg.css } : null}>
-          <Donut value={(st.points ?? 0) / 100}><Avatar player={player} size={56} /></Donut>
+          <Donut value={st.points == null ? 0 : eloFill(st.points)}><Avatar player={player} size={56} /></Donut>
           <div className="lead-info">
             {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <small>المستوى</small>}
             <strong className={lk.nameFx ? 'name-fx' : ''}>{player.name}{lk.badge && <i className="nm-badge">{lk.badge.icon}</i>}</strong>

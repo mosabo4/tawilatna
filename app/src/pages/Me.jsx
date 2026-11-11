@@ -217,7 +217,7 @@ export function PlayerCard({ pid, href }) {
           <span className="mc-lv"><span className="mc-lvn">{lv.level}</span>مستوى · <bdi>{lv.xp} XP</bdi></span>
         </div>
         <div className="mc-left">
-          <div className="mc-big"><bdi>{st.points ?? '—'}{st.points != null && <em>%</em>}</bdi></div>
+          <div className="mc-big"><bdi>{st.points ?? '—'}</bdi></div>
           <small className="mc-cap">المستوى</small>
           <div className="mc-chips">
             <span>🏆 <b><bdi>{st.wins}/{st.plays}</bdi></b> فوز</span>

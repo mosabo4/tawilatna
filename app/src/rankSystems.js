@@ -1,13 +1,13 @@
 // أنظمة ترتيب/مستوى بديلة للتجربة في المختبر (ما تأثر على الموقع الحقيقي)
 import { counts } from './stats'
-import { fairScores, FAIR } from './fairRank'
+import { fairScores, FAIR, ELO } from './fairRank'
 
-export const DEFAULTS = { half: FAIR.half, prior: FAIR.prior, strength: FAIR.strength, clock: FAIR.clock, window: 10, k: 24 }
+export const DEFAULTS = { half: ELO.half, prior: FAIR.prior, strength: FAIR.strength, clock: FAIR.clock, window: 10, k: 24 }
 
 export const SYSTEMS = [
   { id: 'raw', hidden: true, icon: '📏', name: 'الحالي (النسبة الخام)', desc: 'كم غلبت من كل اللي لعبت ضدهم، بدون أي تعديل. اللي لعب قليل وفاز يقدر يتصدر، واللي وقف لعب يظل مكانه.', unit: '%' },
-  { id: 'fair', icon: '⚖️', name: 'عادل (المطوّر)', desc: 'تخفيف الزمن + سحب نحو 50% للقليل + قوة الخصم + ساعة المجموعة (الإجازة ما تنزّل أحد). هذا النظام المعتمد في الموقع.', unit: '%', params: ['half', 'prior', 'strength', 'clock'] },
-  { id: 'elo_idle', icon: '🕰️', name: 'إيلو + خمول', desc: 'نفس إيلو، لكن اللي يوقف لعب يرجع رقمه نحو 1000 تدريجياً (نصف الفرق كل فترة).', unit: '', params: ['k', 'half'] },
+  { id: 'fair', icon: '⚖️', name: 'عادل (المطوّر)', desc: 'النظام القديم: تخفيف الزمن + سحب نحو 50% للقليل + قوة الخصم + ساعة المجموعة. صار بديل للمقارنة بس.', unit: '%', params: ['half', 'prior', 'strength', 'clock'] },
+  { id: 'elo_idle', icon: '🕰️', name: 'إيلو + خمول ✅ المعتمد', desc: 'هذا النظام المعتمد في الموقع (الخمول 30 يوم). نفس إيلو، لكن اللي يوقف لعب يرجع رقمه نحو 1000 تدريجياً (نصف الفرق كل فترة).', unit: '', params: ['k', 'half'] },
 ]
 
 const ageDays = d => Math.max(0, (Date.now() - new Date(d + 'T12:00:00').getTime()) / 864e5)

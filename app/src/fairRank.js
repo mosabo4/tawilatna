@@ -44,3 +44,38 @@ export function fairScores(plays, opt = {}) {
   for (const [id, v] of s) out.set(id, { points: Math.round(v * 100), eff: eff.get(id) || 0, provisional: (eff.get(id) || 0) < o.solid, plays: pc.get(id) || 0 })
   return out
 }
+
+// ---------- إيلو + خمول (النظام المعتمد) ----------
+// كل واحد يبدأ من 1000. بعد كل قيم يتحدّث رقمك مع كل خصم: تكسب أكثر لو غلبت واحد أقوى منك، وتخسر أكثر لو خسرت قدام أضعف.
+// الخمول: اللي يوقف لعب يرجع رقمه نحو 1000 (نصف الفرق كل HALF يوم). ساعة المجموعة: العمر من آخر قيم لعبناه كلنا، فالإجازة ما تنزّل أحد.
+export const ELO = { k: 24, base: 1000, half: 30, solid: 6, clock: true }
+// عشان الشريط والدائرة: من 850 إلى 1150 تقريباً
+export const eloFill = v => Math.max(0.03, Math.min(1, ((v ?? 1000) - 850) / 300))
+
+export function eloScores(plays, opt = {}) {
+  const o = { ...ELO, ...opt }
+  const sorted = [...plays].filter(p => p.results.length > 1).sort((a, b) => String(a.played_on).localeCompare(String(b.played_on)) || (a.created_at || '').localeCompare(b.created_at || ''))
+  const ref = o.clock && sorted.length ? Math.max(...sorted.map(p => toT(p.played_on))) : Date.now()
+  const st = new Map()
+  const get = id => { if (!st.has(id)) st.set(id, { elo: o.base, plays: 0, last: 0 }); return st.get(id) }
+  for (const p of sorted) {
+    const n = p.results.length, delta = new Map()
+    for (const r of p.results) {
+      const s = get(r.player_id)
+      s.plays++; s.last = Math.max(s.last, toT(p.played_on))
+      for (const x of p.results) if (x !== r) {
+        const sc = x.position > r.position ? 1 : x.position === r.position ? 0.5 : 0
+        const ex = 1 / (1 + Math.pow(10, (get(x.player_id).elo - s.elo) / 400))
+        delta.set(r.player_id, (delta.get(r.player_id) || 0) + (o.k / (n - 1)) * (sc - ex))
+      }
+    }
+    for (const [id, d] of delta) get(id).elo += d
+  }
+  const out = new Map()
+  for (const [id, s] of st) {
+    const idle = Math.max(0, (ref - s.last) / dayMs)
+    const v = o.base + (s.elo - o.base) * Math.pow(0.5, idle / o.half)
+    out.set(id, { points: Math.round(v), idle: Math.round(idle), provisional: s.plays < o.solid, plays: s.plays })
+  }
+  return out
+}
