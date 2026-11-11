@@ -32,3 +32,8 @@ const LAST = 'tw-live-last'
 // جلسة انتهت قبل أقل من 6 ساعات: لو بدأت ثانية تكمل عليها
 export const getLast = () => { try { const v = JSON.parse(localStorage.getItem(LAST)); return v && v.date === todayStr() && Date.now() - (v.end || 0) < SESSION_GAP ? v : null } catch { return null } }
 export const setLast = v => { try { localStorage.setItem(LAST, JSON.stringify({ ...v, end: Date.now() })) } catch { /* ignore */ } }
+
+// مفتاح الجلسة لكل قيم (للإنجازات والـXP): نفس تعريف الجلسة (6 ساعات بين قيم وقيم)
+const sessCache = new WeakMap()
+export const sessionMap = idx => { if (!sessCache.has(idx)) sessCache.set(idx, sessionsOf(idx.plays)); return sessCache.get(idx) }
+export const skey = (idx, p) => sessionMap(idx).get(p.id)?.key || p.played_on

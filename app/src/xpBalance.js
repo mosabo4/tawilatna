@@ -27,7 +27,7 @@ export const PROPOSED = {
 
 // القواعد المسطّحة: id، الفئة، الاسم، الوصف، السبب
 export const FLAT = [
-  { id: 'session', cat: 'play', icon: '📅', label: 'حضور جلسة', why: 'ثابت: ساعات من وقتك كل يوم لعب.', part: 'session' },
+  { id: 'session', cat: 'play', icon: '📅', label: 'حضور جلسة', why: 'ثابت: ساعات من وقتك كل جلسة.', part: 'session' },
   { id: 'play', cat: 'play', icon: '🎲', label: 'كل قيم تلعبه', why: 'ثابت: أساس كل شي، كل القيم تتقاس عليه.', part: 'play' },
   { id: 'newgame', cat: 'play', icon: '🆕', label: 'لعبة تجربها لأول مرة', why: 'ثابت: يشجّع التنويع.', part: 'newgame' },
   { id: 'streak', cat: 'play', icon: '🔥', label: 'كل 3 جلسات ورا بعض', why: 'ثابت.', part: 'streak' },

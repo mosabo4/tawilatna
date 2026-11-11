@@ -2,6 +2,7 @@
 // كل شي يتحسب من جدول actions + الأقيام المسجلة
 
 import { winXp } from './winxp'
+import { skey } from './live'
 const tsOf = p => p.created_at || `${p.played_on}T12:00:00`
 const DAY = 864e5
 export const TEASE_MS = 3 * DAY
@@ -14,11 +15,11 @@ const after = (idx, iso, maxDays, test) => {
     .sort((a, b) => tsOf(a).localeCompare(tsOf(b)))[0] || null
 }
 const pos = (p, pid) => p.results.find(r => r.player_id === pid)?.position
-// أول يوم لعب بعد وقت معيّن (ويحضره كل اللي في القائمة)
+// أول جلسة بعد وقت معيّن (ويحضره كل اللي في القائمة)
 const nextDay = (idx, iso, who) => {
   const d0 = iso.slice(0, 10)
-  const days = [...new Set(idx.plays.filter(p => tsOf(p) > iso || p.played_on > d0).map(p => p.played_on))].sort()
-  return days.find(d => who.every(w => idx.plays.some(p => p.played_on === d && p.results.some(r => r.player_id === w)))) || null
+  const days = [...new Set(idx.plays.filter(p => tsOf(p) > iso || p.played_on > d0).map(p => skey(idx, p)))].sort()
+  return days.find(d => who.every(w => idx.plays.some(p => skey(idx, p) === d && p.results.some(r => r.player_id === w)))) || null
 }
 
 export function resolveActions(idx, o = {}) {
@@ -53,7 +54,7 @@ export function resolveActions(idx, o = {}) {
     } else if (a.kind === 'godfather' && a.target) {
       const d = nextDay(idx, a.created_at, [a.player_id, a.target])
       if (d) {
-        const mine = idx.plays.filter(p => p.played_on === d && p.results.some(r => r.player_id === a.player_id))
+        const mine = idx.plays.filter(p => skey(idx, p) === d && p.results.some(r => r.player_id === a.player_id))
         const earned = mine.length * 10 + mine.filter(p => pos(p, a.player_id) === 1 && p.results.length > 1).length * 5
         add(a.target, 'godfather', Math.round(earned / 2)); add(a.player_id, 'godfather', A.godfather)
       }
@@ -68,7 +69,7 @@ export function resolveActions(idx, o = {}) {
       const d = nextDay(idx, a.created_at, [])
       if (d) {
         const st = new Map()
-        for (const p of idx.plays.filter(x => x.played_on === d && x.results.length > 1)) for (const r of p.results) {
+        for (const p of idx.plays.filter(x => skey(idx, x) === d && x.results.length > 1)) for (const r of p.results) {
           const s = st.get(r.player_id) || { b: 0, f: 0 }
           for (const o of p.results) if (o !== r) { s.f++; s.b += o.position > r.position ? 1 : o.position === r.position ? .5 : 0 }
           st.set(r.player_id, s)

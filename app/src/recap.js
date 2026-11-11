@@ -1,4 +1,5 @@
 // حسابات ملخص الشهر (للمسؤول وقت العرض). كل شي يتحسب من البيانات الموجودة.
+import { skey } from './live'
 import { standings, counts } from './stats'
 import { CATEGORIES } from './categories'
 
@@ -31,13 +32,13 @@ export function buildRecap(idx, month) {
   const prevPlays = idx.plays.filter(p => monthOf(p.played_on) === prev)
 
   // ---------- الأرقام العامة ----------
-  const days = [...new Set(plays.map(p => p.played_on))]
+  const days = [...new Set(plays.map(p => skey(idx, p)))]
   const minutes = plays.reduce((s, p) => s + (G.get(p.game_id)?.play_minutes || 0), 0)
   const gameIds = [...new Set(plays.map(p => p.game_id))]
   const firstEver = new Map()
   for (const p of [...idx.plays].reverse()) if (!firstEver.has(p.game_id)) firstEver.set(p.game_id, p.played_on)
   const newGames = gameIds.filter(id => monthOf(firstEver.get(id)) === month).map(id => G.get(id)).filter(Boolean)
-  const busiestDay = best(days.map(d => ({ d, n: plays.filter(p => p.played_on === d).length })), x => x.n, 2)
+  const busiestDay = best(days.map(d => ({ d, n: plays.filter(p => skey(idx, p) === d).length })), x => x.n, 2)
 
   // ---------- الترتيب ----------
   const table = standings(idx, inMonth).filter(r => r.plays > 0)
@@ -54,7 +55,7 @@ export function buildRecap(idx, month) {
     const lastCount = p.results.filter(r => r.position === lastPos).length
     for (const r of p.results) {
       const s = per.get(r.player_id); if (!s) continue
-      s.plays++; s.days.add(p.played_on)
+      s.plays++; s.days.add(skey(idx, p))
       s.games.set(p.game_id, (s.games.get(p.game_id) || 0) + 1)
       if (r.position === 1) { s.wins++; s.streak++; s.bestStreak = Math.max(s.bestStreak, s.streak) } else s.streak = 0
       if (r.position === 2 && n > 2) s.seconds++
@@ -71,7 +72,7 @@ export function buildRecap(idx, month) {
   add('wins', '🏆', 'ملك الفوز', 'أكثر واحد جاء الأول', best(people, s => s.wins), f => `${f.value} فوز`)
   add('streak', '🔥', 'أطول سلسلة فوز', 'أكثر فوز ورا بعض في الشهر', best(people, s => s.bestStreak, 2), f => `${f.value} فوز ورا بعض`)
   add('second', '🥈', 'ملك المركز الثاني', 'قريب دايم… بس مو الأول', best(people, s => s.seconds, 2), f => `جاء الثاني ${f.value} مرات`)
-  add('attend', '📅', 'الأكثر حضوراً', 'حضر أكثر جلسات', best(people.map(s => ({ ...s, d: s.days.size })), s => s.d, 1), f => `حضر ${f.value} من ${days.length} أيام لعب`)
+  add('attend', '📅', 'الأكثر حضوراً', 'حضر أكثر جلسات', best(people.map(s => ({ ...s, d: s.days.size })), s => s.d, 1), f => `حضر ${f.value} من ${days.length} ${days.length === 1 ? 'جلسة' : 'جلسات'}`)
   add('busy', '🎲', 'ما يشبع لعب', 'لعب أكثر عدد أقيام', best(people, s => s.plays, 1), f => `${f.value} قيم`)
   add('last', '🫠', 'صديق المركز الأخير', 'أكثر واحد جاء الأخير لحاله (قيم من 3 وفوق)', best(people, s => s.lasts, 2), f => `${f.value} مرات`)
   add('variety', '🧭', 'المغامر', 'جرّب أكثر ألعاب مختلفة', best(people.map(s => ({ ...s, g: s.games.size })), s => s.g, 2), f => `${f.value} ألعاب مختلفة`)

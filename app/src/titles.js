@@ -1,6 +1,7 @@
 // الألقاب: كل لقب له ندرة وطريقة فتح وتقدّم
 import { computeLevels, idxBefore, REWARDS } from './levels'
 import { counts } from './stats'
+import { skey } from './live'
 import { achContext } from './achievements'
 import { resolveActions } from './actions'
 
@@ -73,9 +74,9 @@ export function computeTitles(idx, levels = computeLevels(idx)) {
     for (const p of comp) { const r = rOf(p); for (const o of p.results) if (o.player_id !== id) { shared.set(o.player_id, (shared.get(o.player_id) || 0) + 1); if (r.position < o.position) ahead.set(o.player_id, (ahead.get(o.player_id) || 0) + 1); else if (r.position > o.position) behind.set(o.player_id, (behind.get(o.player_id) || 0) + 1) } }
     const others = idx.players.filter(o => o.id !== id)
     const allShared = new Map(); for (const p of mine) for (const o of p.results) if (o.player_id !== id) allShared.set(o.player_id, (allShared.get(o.player_id) || 0) + 1)
-    const byDay = new Map(); for (const p of comp) if (won(p)) { if (!byDay.has(p.played_on)) byDay.set(p.played_on, new Set()); byDay.get(p.played_on).add(p.game_id) }
-    const myDays = new Set(mine.map(p => p.played_on))
-    let run = 0, bestRun = 0; for (const d of ctx.days) { if (myDays.has(d)) { run++; bestRun = Math.max(bestRun, run) } else run = 0 }
+    const byDay = new Map(); for (const p of comp) if (won(p)) { if (!byDay.has(skey(idx, p))) byDay.set(skey(idx, p), new Set()); byDay.get(skey(idx, p)).add(p.game_id) }
+    const myDays = new Set(mine.map(p => skey(idx, p)))
+    let run = 0, bestRun = 0; for (const d of ctx.sessKeys) { if (myDays.has(d)) { run++; bestRun = Math.max(bestRun, run) } else run = 0 }
     const kingGames = [...ctx.kings.entries()].filter(([, k]) => k === id).map(([g]) => g)
     const lastPerGame = new Map(); let jinx = 0
     for (const p of comp) { const n = last(p) ? (lastPerGame.get(p.game_id) || 0) + 1 : 0; lastPerGame.set(p.game_id, n); jinx = Math.max(jinx, n) }

@@ -46,7 +46,7 @@ export default function Recap({ month }) {
     <div className="rc-cover" key="cover">
       <small>طاولتنا</small>
       <h1>ملخص<br /><span>{monthName(month)}</span></h1>
-      <p>{n.plays ? `${n.plays} قيم · ${n.days} أيام لعب · ${n.games} ألعاب` : 'ما فيه أقيام مسجلة هالشهر للحين'}</p>
+      <p>{n.plays ? `${n.plays} قيم · ${n.days} جلسات · ${n.games} ألعاب` : 'ما فيه أقيام مسجلة هالشهر للحين'}</p>
       <em>اضغط عشان نبدأ ←</em>
     </div>,
 
@@ -54,7 +54,7 @@ export default function Recap({ month }) {
       <h2>الشهر بالأرقام</h2>
       <div className="rc-nums">
         <div><b>{n.plays}</b><span>قيم</span>{r.prevPlays.length > 0 ? <i className={delta >= 0 ? 'up' : 'down'}>{delta >= 0 ? '▲' : '▼'} {Math.abs(delta)} عن الشهر اللي قبله</i> : <i>ما فيه شهر قبله للمقارنة</i>}</div>
-        <div><b>{n.days}</b><span>أيام لعب</span></div>
+        <div><b>{n.days}</b><span>جلسات</span></div>
         <div><b>{n.hours || '—'}</b><span>ساعة لعب تقريباً</span><i>حسب مدة كل لعبة في BGG</i></div>
         <div><b>{n.games}</b><span>لعبة مختلفة</span></div>
       </div>
@@ -62,7 +62,7 @@ export default function Recap({ month }) {
         <h3>🆕 ألعاب جربناها لأول مرة</h3>
         {n.newGames.length ? <div className="rc-covers">{n.newGames.slice(0, 8).map(g => <span key={g.id}><Cover game={g} className="sm" /><small>{g.name}</small></span>)}</div> : <Pending text="ما جربنا شي جديد هالشهر" />}
       </div>
-      {n.busiestDay && <p className="rc-note">📌 أطول جلسة: {fmtDate(n.busiestDay.items[0].d)} لعبنا فيها {n.busiestDay.value} أقيام</p>}
+      {n.busiestDay && <p className="rc-note">📌 أطول جلسة: {fmtDate(n.busiestDay.items[0].d.slice(0, 10))} لعبنا فيها {n.busiestDay.value} أقيام</p>}
     </div>,
 
     <div key="podium">

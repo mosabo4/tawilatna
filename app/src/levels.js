@@ -2,10 +2,11 @@
 import { counts } from './stats'
 import { resolveActions } from './actions'
 import { winXp } from './winxp'
+import { skey } from './live'
 import { achContext, achStats, evalAchievements } from './achievements'
 
 export const XP_RULES = [
-  { id: 'session', icon: '📅', label: 'حضور جلسة (كل يوم لعب)', xp: 30 },
+  { id: 'session', icon: '📅', label: 'حضور جلسة', xp: 30 },
   { id: 'play', icon: '🎲', label: 'كل قيم تلعبه', xp: 10 },
   { id: 'newgame', icon: '🆕', label: 'لعبة تجربها لأول مرة', xp: 40 },
   { id: 'rate', icon: '⭐', label: 'تقييم لعبة', xp: 10 },
@@ -110,13 +111,13 @@ export function computeLevels(idx, opts) {
   const ax = rx.xp
   const pre = []
   const chrono = [...idx.plays].reverse()
-  const sessionDays = [...new Set(chrono.map(p => p.played_on))]
+  const sessionDays = [...new Set(chrono.map(p => skey(idx, p)))].sort()
   // أيام حضرها كل العيال
-  const fullDays = sessionDays.filter(d => { const who = new Set(chrono.filter(p => p.played_on === d).flatMap(p => p.results.map(r => r.player_id))); return idx.players.length > 1 && idx.players.every(pl => who.has(pl.id)) })
+  const fullDays = sessionDays.filter(d => { const who = new Set(chrono.filter(p => skey(idx, p) === d).flatMap(p => p.results.map(r => r.player_id))); return idx.players.length > 1 && idx.players.every(pl => who.has(pl.id)) })
   const out = new Map()
   for (const pl of idx.players) {
     const mine = chrono.filter(p => p.results.some(r => r.player_id === pl.id))
-    const myDays = new Set(mine.map(p => p.played_on))
+    const myDays = new Set(mine.map(p => skey(idx, p)))
     const seen = new Set(), cats = new Set(), winCats = new Set(), mates = new Set()
     let wins = 0, winPts = 0, run = 0, bestWinStreak = 0, bigWin = false
     for (const p of mine) {
@@ -129,7 +130,7 @@ export function computeLevels(idx, opts) {
         if (r.position === 1) { wins++; winPts += winXp(p, g, opts?.win); run++; bestWinStreak = Math.max(bestWinStreak, run); if (g?.category) winCats.add(g.category); if (p.results.length >= 5) bigWin = true } else run = 0
       }
     }
-    // جلسات ورا بعض = أيام لعب العيال المتتالية اللي حضرها
+    // جلسات ورا بعض = جلسات العيال المتتالية اللي حضرها
     let srun = 0, streaks = 0
     for (const d of sessionDays) { if (myDays.has(d)) { srun++; if (srun % 3 === 0) streaks++ } else srun = 0 }
     const setups = idx.plays.filter(p => (p.setup_by || []).includes(pl.id)).length
@@ -208,7 +209,7 @@ export function xpLog(idx, pid) {
   const seenGames = new Set(), seenDays = new Set()
   for (const p of chrono) {
     const at = tsOf(p), g = G.get(p.game_id), name = g?.name || 'لعبة'
-    if (!seenDays.has(p.played_on)) { seenDays.add(p.played_on); ev.push({ at, type: 'session', xp: XP.session, text: 'حضر جلسة' }) }
+    if (!seenDays.has(skey(idx, p))) { seenDays.add(skey(idx, p)); ev.push({ at, type: 'session', xp: XP.session, text: 'حضر جلسة' }) }
     ev.push({ at, type: 'play', xp: XP.play, text: `لعب ${name}` })
     if (!seenGames.has(p.game_id)) { seenGames.add(p.game_id); ev.push({ at, type: 'newgame', xp: XP.newgame, text: `جرّب ${name} لأول مرة` }) }
     const r = p.results.find(x => x.player_id === pid)

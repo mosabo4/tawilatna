@@ -1,5 +1,6 @@
 // الإنجازات: درجات (برونزي→ماسي)، مواقف صعبة، العيال، سرية، وموسمية
 import { counts, kingOf } from './stats'
+import { skey } from './live'
 
 export const TIER = [
   { id: 'b', name: 'برونزي', icon: '🥉', color: '#CD7F32' },
@@ -27,6 +28,7 @@ export function achContext(idx, rx) {
   const G = idx.gamesById
   const kings = new Map(idx.games.map(g => [g.id, kingOf(idx, g.id)?.player?.id || null]))
   const days = [...new Set(chrono.map(p => p.played_on))]
+  const sessKeys = [...new Set(chrono.map(p => skey(idx, p)))].sort()
   // المتصدر بعد كل يوم لعب (نفس منطق الترتيب: نقطة لكل خصم تغلبه)
   const acc = new Map(), leaderDays = new Map(), leaderByDay = new Map()
   let leader = null, since = null
@@ -66,7 +68,7 @@ export function achContext(idx, rx) {
     const s = [...w.entries()].sort((a, b) => b[1] - a[1])
     if (s[0] && (!s[1] || s[1][1] < s[0][1])) monthChamps.set(s[0][0], [...(monthChamps.get(s[0][0]) || []), m])
   }
-  return { chrono, kings, days, leaderDays, leaderByDay, scoringTypes, compCats, monthChamps, rx, totalGames: idx.games.length }
+  return { chrono, kings, days, sessKeys, leaderDays, leaderByDay, scoringTypes, compCats, monthChamps, rx, totalGames: idx.games.length }
 }
 
 const tiered = (id, icon, name, text, steps, value) => ({ id, icon, name, group: 'tier', text, steps, value })
@@ -144,7 +146,7 @@ export function achStats(idx, pl, ctx, base) {
   const seen = new Set(); let firstWins = 0
   for (const p of mine) { if (!seen.has(p.game_id)) { seen.add(p.game_id); if (won(p, id) && counts(p, G.get(p.game_id))) firstWins++ } }
   const kingslay = comp.filter(p => won(p, id) && ctx.kings.get(p.game_id) && ctx.kings.get(p.game_id) !== id && p.results.some(r => r.player_id === ctx.kings.get(p.game_id))).length
-  const byDay = new Map(); for (const p of chrono) { if (!byDay.has(p.played_on)) byDay.set(p.played_on, []); byDay.get(p.played_on).push(p) }
+  const byDay = new Map(); for (const p of chrono) { const k = skey(idx, p); if (!byDay.has(k)) byDay.set(k, []); byDay.get(k).push(p) }
   let hurricane = false, marathon = false, maxDayPlays = 0
   for (const ps of byDay.values()) {
     const inAll = ps.every(p => p.results.some(r => r.player_id === id))
@@ -177,8 +179,8 @@ export function achStats(idx, pl, ctx, base) {
   const lastBy = new Map(), sameBy = new Map()
   for (const p of mine) { sameBy.set(p.game_id, (sameBy.get(p.game_id) || 0) + 1); if (isLast(p, id)) lastBy.set(p.game_id, (lastBy.get(p.game_id) || 0) + 1) }
   // شهور حضر فيها كل الجلسات
-  const months = new Map(); for (const d of ctx.days) { const m = monthOf(d); if (!months.has(m)) months.set(m, []); months.get(m).push(d) }
-  const myDays = new Set(mine.map(p => p.played_on))
+  const months = new Map(); for (const d of ctx.sessKeys) { const m = monthOf(d); if (!months.has(m)) months.set(m, []); months.get(m).push(d) }
+  const myDays = new Set(mine.map(p => skey(idx, p)))
   const fullMonths = [...months.entries()].filter(([m, ds]) => m < monthOf(new Date().toISOString()) && ds.length >= 3 && ds.every(d => myDays.has(d))).length
   return {
     ...base,
