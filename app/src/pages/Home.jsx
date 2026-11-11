@@ -8,7 +8,7 @@ import { Stage, Character } from '../characters'
 import { buildEvents, getSeen, isNew, within, DAY_MS, TYPES, timeAgo } from '../events'
 import { api } from '../api'
 import { getLive, livePlays } from '../live'
-import { usePerks } from '../perks'
+import { usePerks, NameTags } from '../perks'
 import { goldenAlert, hotSeat } from '../actions'
 import { levelOfReward } from '../levels'
 
@@ -28,7 +28,7 @@ export default function Home() {
     return [...played].filter(id => !rated.has(id)).map(id => idx.gamesById.get(id)).filter(Boolean)
   }, [idx, me])
   const newPosts = useMemo(() => buildEvents(idx).filter(e => e.post && e.at > seen && e.by !== me?.id).length, [idx, seen, me])
-  const { fx, levels } = usePerks()
+  const { fx, levels, look } = usePerks()
 
   if (!idx.games.length) {
     return (
@@ -117,7 +117,7 @@ export default function Home() {
               <div key={b.player.id} className={`pod p${[2, 1, 3][k]}`}>
                 <span className="medal">{['🥈', '🥇', '🥉'][k]}</span>
                 <Avatar player={b.player} size={[48, 62, 44][k]} />
-                <b>{b.player.name}</b>
+                <b>{b.player.name}<NameTags lk={look(b.player.id)} /></b>
                 <strong>{b.points}</strong>
                 <i className="step" />
               </div>

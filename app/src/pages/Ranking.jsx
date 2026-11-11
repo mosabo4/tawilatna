@@ -1,5 +1,5 @@
 import { eloFill } from '../fairRank'
-import { usePerks } from '../perks'
+import { usePerks, NameTags } from '../perks'
 import { useMemo, useState } from 'react'
 import { useStore, go } from '../store'
 import { standings, counts } from '../stats'
@@ -20,7 +20,7 @@ export function StandingRows({ rows, me }) {
               <span className={`st-rank r${i + 1}`}>{i + 1}</span>
               <Avatar player={r.player} size={32} />
               <span className="st-main">
-                <span className="st-top"><b className={look(r.player.id).nameFx ? 'name-fx' : ''}>{r.player.name}{look(r.player.id).badge && <i className="nm-badge">{look(r.player.id).badge.icon}</i>}</b><small>🏆 {r.wins} من {r.plays}{r.provisional ? ' · مؤقت' : ''}</small></span>
+                <span className="st-top"><b className={look(r.player.id).nameFx ? 'name-fx' : ''}>{r.player.name}<NameTags lk={look(r.player.id)} /></b><small>🏆 {r.wins} من {r.plays}{r.provisional ? ' · مؤقت' : ''}</small></span>
                 {look(r.player.id).caption && <span className="st-cap">💬 «{look(r.player.id).caption.data?.text}»</span>}
                 <span className="st-bar"><span style={{ width: `${eloFill(r.points) * 100}%`, '--c': r.player.color }} /></span>
               </span>

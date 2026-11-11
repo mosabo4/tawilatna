@@ -79,6 +79,15 @@ export function PerksProvider({ children }) {
 
   const levels = useMemo(() => (idx ? computeLevels(idx) : null), [idx])
   const titlesMap = useMemo(() => (idx && levels ? computeTitles(idx, levels) : new Map()), [idx, levels])
+  // آخر قيم انتهى ونقاطه فيه بالسالب (شعار «سالب» يوم كامل)
+  const negMap = useMemo(() => {
+    const m = new Map()
+    for (const p of idx?.plays || []) {
+      const t = new Date(p.ended_at || p.created_at || `${p.played_on}T23:59:59`).getTime()
+      for (const r of p.results) if (r.score != null && r.score < 0 && !(m.get(r.player_id) >= t)) m.set(r.player_id, t)
+    }
+    return m
+  }, [idx?.plays])
   const fx = useMemo(() => { if (!idx) return null; const r = resolveActions(idx); return { ...r, effects: activeEffects(idx), flags: flagsOn(r.challenges) } }, [idx])
   const real = (levels && me && levels.get(me.id)?.level) || 0
   const test = !!(local.test && me?.is_admin)
@@ -105,6 +114,7 @@ export function PerksProvider({ children }) {
       frame: d.frame === 'custom' && ok('frame2') && d.fc1 ? 'custom' : fr && lvOf(pid) >= fr.level ? fr.id : null,
       fc: [d.fc1, d.fc2 || d.fc1],
       badge: d.badge && SECRET_BADGES[d.badge] && (pid === me?.id && test || levels?.get(pid)?.achievements.find(a => a.id === d.badge)?.done) ? SECRET_BADGES[d.badge] : null,
+      neg: negMap.has(pid) && Date.now() - negMap.get(pid) < 864e5,
       nameFx: ok('nameFx') && !!d.nameFx, pose: ok('pose') ? d.pose || null : null,
       caption: eff.caption, immune: eff.immune, flag: flaggers.length ? flaggers : null,
       pin: ok('pin') ? d.pinned || null : null,
@@ -124,3 +134,6 @@ export function PerksProvider({ children }) {
   return <Ctx.Provider value={{ perks, set, active, level: L, realLevel: real, test, titleOk, frameOk, look, can, fx, levels, doAction, undoAction, dbReady }}>{children}</Ctx.Provider>
 }
 export const usePerks = () => useContext(Ctx)
+
+// شعارات جنب الاسم: الشعار السري + «سالب» لو آخر قيم نقاطه فيه بالسالب (يوم كامل)
+export const NameTags = ({ lk }) => <>{lk?.badge && <i className="nm-badge">{lk.badge.icon}</i>}{lk?.neg && <i className="nm-neg" title="نقاطه بالسالب">سالب</i>}</>

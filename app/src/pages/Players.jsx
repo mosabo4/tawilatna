@@ -7,7 +7,7 @@ import { playerStats, versus } from '../stats'
 import { Avatar, Donut, TopBar, Section, Empty, Cover, fmtDate, fmtScore, ScoreBadge } from '../ui'
 import { PlayCard } from './History'
 import { useLevels, LevelPill } from './Levels'
-import { usePerks, TitleBadge } from '../perks'
+import { usePerks, TitleBadge, NameTags } from '../perks'
 import { Character } from '../characters'
 import { xpLog, XP_RULES, levelOfReward } from '../levels'
 import { timeAgo } from '../events'
@@ -35,7 +35,7 @@ export function PlayerView({ id }) {
           <Donut value={st.points == null ? 0 : eloFill(st.points)}><Avatar player={player} size={56} /></Donut>
           <div className="lead-info">
             {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <small>المستوى</small>}
-            <strong className={lk.nameFx ? 'name-fx' : ''}>{player.name}{lk.badge && <i className="nm-badge">{lk.badge.icon}</i>}</strong>
+            <strong className={lk.nameFx ? 'name-fx' : ''}>{player.name}<NameTags lk={lk} /></strong>
             <p>{st.plays ? `المستوى ${st.points ?? '—'} · فاز ${st.wins} من ${st.plays} قيم` : 'ما لعب للحين'}</p>
           </div>
         </div>
@@ -172,7 +172,7 @@ export default function PlayersList() {
             return (
               <a key={p.id} className={`glass crew-card ${lk.gold ? 'gold-card' : ''} ${p.id === me?.id ? 'is-me' : ''}`} href={`#/player/${p.id}`} style={{ '--c': lk.color || p.color, ...(lk.bg ? { background: lk.bg.css } : {}) }}>
                 <span className="crew-char"><Character player={p} size={92} /></span>
-                <b className={lk.nameFx ? 'name-fx' : ''}>{p.name}{lk.badge && <i className="nm-badge">{lk.badge.icon}</i>}</b>
+                <b className={lk.nameFx ? 'name-fx' : ''}>{p.name}<NameTags lk={lk} /></b>
                 {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <small>{lv?.title}</small>}
                 {lv && <span className="crew-lv"><LevelPill level={lv.level} /> مستوى</span>}
               </a>

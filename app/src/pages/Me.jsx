@@ -7,7 +7,7 @@ import { Character } from '../characters'
 import { CharacterEditor } from './Closet'
 import Progress from './Progress'
 import { MyGames } from './Players'
-import { usePerks, TitleBadge } from '../perks'
+import { usePerks, TitleBadge, NameTags } from '../perks'
 import { unlockHistory } from '../titles'
 import { useLevels } from './Levels'
 import { LimitsList } from './Limits'
@@ -212,7 +212,7 @@ export function PlayerCard({ pid, href }) {
       <div className="mc-body">
         <span className="mc-chr"><Character player={p} size={150} /></span>
         <div className="mc-mid">
-          <b className={`mc-nm ${lk.nameFx ? 'name-fx' : ''}`}>{p.name}{lk.badge && <i className="nm-badge">{lk.badge.icon}</i>}</b>
+          <b className={`mc-nm ${lk.nameFx ? 'name-fx' : ''}`}>{p.name}<NameTags lk={lk} /></b>
           {lk.title ? <TitleBadge title={lk.title} kind={lk.titleKind} small /> : <span className="mc-tb">{lv.title}</span>}
           <span className="mc-lv"><span className="mc-lvn">{lv.level}</span>مستوى · <bdi>{lv.xp} XP</bdi></span>
         </div>
