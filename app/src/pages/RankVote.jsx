@@ -6,14 +6,14 @@ import { levelOfReward, computeLevels } from '../levels'
 // تجربة: التصويت بالأولويات. كل لاعب عنده رصيد نقاط (يكبر بالمستوى) يتوزع على ألعابه حسب ترتيبها.
 // هذي الصفحة معزولة: تخزّن في جهازك بس ولا تلمس تصويت الموقع.
 const KEY = 'tawilatna-lab-rankvote'
-const PAL = ['#5B7CFF', '#F2B33D', '#2FB36B', '#E5484D', '#A35BFF', '#2BC4D6', '#FF8A3D', '#E056A0']
+export const PAL = ['#5B7CFF', '#F2B33D', '#2FB36B', '#E5484D', '#A35BFF', '#2BC4D6', '#FF8A3D', '#E056A0']
 const SHARES = { 1: [1], 2: [2 / 3, 1 / 3], 3: [1 / 2, 1 / 3, 1 / 6] }
-const MEDAL = ['🥇', '🥈', '🥉']
+export const MEDAL = ['🥇', '🥈', '🥉']
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } }
 const save = v => { try { localStorage.setItem(KEY, JSON.stringify(v)) } catch { /* ignore */ } }
 
 // قسمة الرصيد على الأولويات بأعداد صحيحة مجموعها = الرصيد
-function split(budget, n) {
+export function split(budget, n) {
   const sh = SHARES[n] || []
   const raw = sh.map(s => s * budget), fl = raw.map(Math.floor)
   let left = budget - fl.reduce((a, b) => a + b, 0)
@@ -22,7 +22,7 @@ function split(budget, n) {
 }
 
 // مقاعد الهلال: صفوف أقواس، عدد النقاط يتناسب مع نصف القطر، مرتبة بالزاوية عشان الألوان تطلع شرائح
-function hemicycle(N) {
+export function hemicycle(N) {
   const R = N > 200 ? 8 : N > 120 ? 7 : N > 60 ? 5 : 4
   const r0 = 50, r1 = 94
   const rs = Array.from({ length: R }, (_, i) => r0 + ((r1 - r0) * i) / (R - 1))
