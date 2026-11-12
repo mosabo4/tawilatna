@@ -2336,3 +2336,6 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .rk-picks em{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rk-leg b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rk-leg em{white-space:nowrap}
+
+.rk-cands{grid-template-columns:repeat(2,1fr)}
+.rk-c.rd{border-style:dashed}.rk-rdi{font-size:34px;line-height:1;display:grid;place-items:center;height:56px}
