@@ -2324,3 +2324,15 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 .rk-c.on{border-color:var(--bc);background:rgba(255,255,255,.1)}.rk-c.off{opacity:.35}
 .rk-redo{width:100%;margin-top:10px;padding:10px;border-radius:12px;border:1px dashed rgba(255,255,255,.3);background:rgba(255,255,255,.04);color:inherit;font-size:13px}
 .rk-redo.on{background:#8892a6;border-style:solid;color:#0d1020;font-weight:800}
+
+.rk-leg{display:grid;gap:6px;margin-top:10px}.rk-leg span{display:flex;align-items:center;gap:8px;font-size:13px}
+.rk-leg i{width:12px;height:12px;border-radius:50%;flex:none}.rk-leg b{flex:1}.rk-leg em{font-style:normal;opacity:.8;font-size:12px}
+.rk-ppl{padding:10px 12px;margin-top:10px}
+.rk-p{width:100%;display:flex;align-items:center;gap:8px;padding:8px 6px;border:0;border-bottom:1px solid rgba(255,255,255,.07);background:none;color:inherit;text-align:start;border-radius:10px}
+.rk-p.sel{background:rgba(91,124,255,.16)}.rk-p b{min-width:48px;font-size:13px}
+.rk-picks{display:flex;flex-wrap:wrap;gap:4px;flex:1}.rk-picks em{font-style:normal;font-size:11px;padding:2px 8px;border-radius:99px;background:rgba(255,255,255,.07);border:1px solid var(--bc,transparent)}
+.rk-picks em.rd{border-color:#8892a6}
+.rk-picks{flex-direction:column;align-items:flex-start;gap:3px;min-width:0}
+.rk-picks em{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rk-leg b{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rk-leg em{white-space:nowrap}

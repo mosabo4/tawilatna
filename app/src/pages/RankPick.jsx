@@ -82,7 +82,6 @@ export default function RankPick() {
   return (
     <div className="pad lab-box rv vt">
       <p className="hint">🔬 تجربة: النظام يرشّح 3 ألعاب ما جرّبها أحد، والعيال يرتّبونها. ما تغيّر الموقع، وتتخزن في جهازك.</p>
-      <div className="rv-pl">{players.map(p => <button key={p.id} type="button" className={who === p.id ? 'on' : ''} onClick={() => setWho(p.id)}><Avatar player={p} size={34} /><small>{st.ballots[p.id] && (st.ballots[p.id].redo || st.ballots[p.id].order.length) ? `✓ ${p.name}` : p.name}</small></button>)}</div>
       {st.note && <div className="vt-status"><span>🔄</span><div><b>{st.note}</b></div></div>}
 
       <section className="rv-hemi glass">
@@ -95,14 +94,31 @@ export default function RankPick() {
           </svg>
           <div className="rv-center">{lead ? <><b>{tie ? 'تعادل' : gname(lead)}</b><small>👑</small></> : <small>—</small>}</div>
         </div>
-        <div className="vt-status"><span>{redoN ? '🔄' : lead ? '👑' : '🗳️'}</span><div>
-          <b>{lead ? (tie ? 'تعادل كامل' : <>المتصدرة: <bdi>{gname(lead)}</bdi></>) : 'ابدأوا التصويت'}</b>
-          <small>إعادة الترشيح: {redoN} من {redoNeed} لازم{waiting.length ? ` · لسا ما صوّت ${waiting.length}` : ''}</small>
-        </div></div>
+        <div className="rk-leg">
+          {st.cands.map(id => <span key={id}><i style={{ background: col.get(id) }} /><b>{gname(id)}</b><em>{pts.get(id) || 0} مقعد</em></span>)}
+          <span><i style={{ background: RED }} /><b>إعادة ترشيح</b><em>{redoPts} مقعد · {redoN}/{redoNeed}</em></span>
+        </div>
+      </section>
+
+      <section className="rk-ppl glass">
+        <div className="rv-top"><b>👥 تصويت العيال</b><small>{waiting.length ? `لسا ما صوّت ${waiting.length}` : 'الكل صوّت'}</small></div>
+        {players.map(pl => {
+          const b = st.ballots[pl.id], on = b && (b.redo || b.order.length), s2 = b && !b.redo ? split(BUDGET, b.order.length) : []
+          return (
+            <button key={pl.id} type="button" className={`rk-p ${who === pl.id ? 'sel' : ''}`} onClick={() => setWho(pl.id)}>
+              <Avatar player={pl} size={30} /><b>{pl.name}</b>
+              <span className="rk-picks">
+                {!on && <em>لسا ما صوّت</em>}
+                {b?.redo && <em className="rd">🔄 إعادة ترشيح · {BUDGET}</em>}
+                {b && !b.redo && b.order.map((g, i) => <em key={g} style={{ '--bc': col.get(g) }}>{MEDAL[i]} {gname(g)} · {s2[i]}</em>)}
+              </span>
+            </button>
+          )
+        })}
       </section>
 
       <section className="vt-bal glass">
-        <div className="vt-bal-top"><b>🗳️ ورقة {idx.playersById.get(who)?.name}</b><small>اضغط ألعابك بالترتيب: الأولى هي اللي تبغى تجربها أكثر</small></div>
+        <div className="vt-bal-top"><b>🗳️ ورقة {idx.playersById.get(who)?.name}</b><small>اضغط ألعابك بالترتيب، الأولى هي الأهم</small></div>
         <div className="rk-cands">
           {st.cands.map(id => {
             const g = idx.gamesById.get(id), i = myB.order.indexOf(id)
@@ -135,7 +151,6 @@ export default function RankPick() {
         <button type="button" className="btn small" onClick={() => reshuffle('🎲 المسؤول أعاد الترشيح')}>🎲 إعادة ترشيح ألعاب (المسؤول)</button>
         <button type="button" className="btn small ghost" onClick={() => put({ cands: [], seen: [], ballots: {}, round: 0, note: '' })}>🧹 من الصفر</button>
       </div>
-      {by.size > 0 && <div className="rv-games">{ranked.map(g => <div key={g} className="rv-g"><i style={{ background: col.get(g) }} /><b>{gname(g)}</b><em>{pts.get(g)}</em><span className="rv-who">{by.get(g).sort((a, b) => a.rank - b.rank).map(v => <span key={v.p.id} className="rv-v"><Avatar player={v.p} size={22} />{v.rank === 0 && <sup>🥇</sup>}</span>)}</span></div>)}</div>}
     </div>
   )
 }

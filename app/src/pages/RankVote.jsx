@@ -23,18 +23,18 @@ export function split(budget, n) {
 
 // مقاعد الهلال: صفوف أقواس، عدد النقاط يتناسب مع نصف القطر، مرتبة بالزاوية عشان الألوان تطلع شرائح
 export function hemicycle(N) {
-  const R = N > 200 ? 8 : N > 120 ? 7 : N > 60 ? 5 : 4
-  const r0 = 50, r1 = 94
-  const rs = Array.from({ length: R }, (_, i) => r0 + ((r1 - r0) * i) / (R - 1))
-  const sum = rs.reduce((a, b) => a + b, 0)
-  const cnt = rs.map(r => Math.round((N * r) / sum)); cnt[R - 1] += N - cnt.reduce((a, b) => a + b, 0)
+  // شبكة منتظمة: صفوف أقواس بنفس عدد النقاط، فكل عمود شعاع مستقيم من المركز
+  const R = N > 150 ? 8 : N > 100 ? 7 : 6
+  const C = Math.max(2, Math.ceil(N / R))
+  const r0 = 48, r1 = 94
   const gap = (r1 - r0) / (R - 1)
-  const minSp = Math.min(...rs.map((r, i) => (cnt[i] > 1 ? (Math.PI * r) / (cnt[i] - 1) : 99)))
-  const dot = Math.min(gap, minSp) * 0.42
-  const pos = []
-  rs.forEach((r, i) => { for (let k = 0; k < cnt[i]; k++) pos.push({ th: Math.PI * (cnt[i] === 1 ? 0.5 : k / (cnt[i] - 1)), r }) })
-  pos.sort((a, b) => a.th - b.th || a.r - b.r)
-  return { dot, pts: pos.map(p => ({ x: 100 + p.r * Math.cos(p.th), y: 100 - p.r * Math.sin(p.th) })) }
+  const dot = Math.min(gap, (Math.PI * r0) / (C - 1)) * 0.42
+  const pts = []
+  for (let k = 0; k < C && pts.length < N; k++) {
+    const th = (Math.PI * k) / (C - 1)
+    for (let i = 0; i < R && pts.length < N; i++) { const r = r0 + gap * i; pts.push({ x: 100 + r * Math.cos(th), y: 100 - r * Math.sin(th) }) }
+  }
+  return { dot, pts }
 }
 
 export default function RankVote() {
