@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { Avatar, Cover } from '../ui'
-import { split, hemicycle, PAL, MEDAL } from './RankVote'
+import { split, hemicycle, expand, PAL, MEDAL } from './RankVote'
 
 // تجربة: النظام يرشّح 3 ألعاب ما جرّبها أحد، والعيال يرتّبونها. تجربة معزولة في جهازك.
 const KEY = 'tawilatna-lab-rankpick'
@@ -71,6 +71,7 @@ export default function RankPick() {
   for (let i = 0; i < redoPts; i++) cells.push(RED)
   while (cells.length < total) cells.push(null)
   const H = useMemo(() => hemicycle(total || 1), [total])
+  const dots = expand(cells)
   const lead = ranked[0], second = ranked[1]
   const tie = !!second && pts.get(lead) === pts.get(second) && (firsts.get(lead) || 0) === (firsts.get(second) || 0)
   const waiting = players.filter(p => { const b = st.ballots[p.id]; return !b || (!b.redo && !b.order.length) })
@@ -88,9 +89,9 @@ export default function RankPick() {
         <div className="rv-top"><b>🎲 ترشيح الجولة {st.round}</b><small>{voted ? `${voted} من ${players.length} صوّتوا` : 'ما أحد صوّت للحين'}</small></div>
         <div className="rv-svgbox">
           <svg viewBox="0 0 200 106" role="img" aria-label="قوس البرلمان">
-            {H.pts.map((pt, i) => cells[i]
-              ? <circle key={i} cx={pt.x} cy={pt.y} r={H.dot} fill={cells[i]} />
-              : <circle key={i} cx={pt.x} cy={pt.y} r={H.dot} fill="none" stroke="rgba(255,255,255,.22)" strokeWidth=".7" />)}
+            {H.pts.map((pt, i) => dots[i]
+              ? <circle key={i} cx={pt.x} cy={pt.y} r={H.dot} fill={dots[i]} />
+              : <circle key={i} cx={pt.x} cy={pt.y} r={H.dot} fill="rgba(255,255,255,.16)" />)}
           </svg>
           <div className="rv-center">{lead ? <><b>{tie ? 'تعادل' : gname(lead)}</b><small>👑</small></> : <small>—</small>}</div>
         </div>
