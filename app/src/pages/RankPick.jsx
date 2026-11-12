@@ -22,11 +22,16 @@ export default function RankPick() {
 
   // ألعاب ما لعبها أحد للحين
   const fresh = useMemo(() => { const played = new Set(idx.plays.map(p => p.game_id)); return idx.games.filter(g => !played.has(g.id)) }, [idx])
+  // نبدأ بالألعاب اللي تكفي كل العيال (6)، ولو خلصت ننزل لـ5 وبعدها 4 وهكذا
+  const fits = (g, t) => (!g.min_players || g.min_players <= t) && (g.max_players ? g.max_players >= t : t <= 2)
+  const shuffle = arr => { const a = [...arr]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] } return a }
   const draw = (seen, ban = []) => {
-    let pool = fresh.filter(g => !seen.includes(g.id) && !ban.includes(g.id))
-    if (pool.length < 3) pool = fresh.filter(g => !ban.includes(g.id)) // خلصت الجديدة: ندور من جديد
-    const a = [...pool]; for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]] }
-    return a.slice(0, 3).map(g => g.id)
+    const out = []
+    for (let t = players.length; t >= 2 && out.length < 3; t--) {
+      const pool = fresh.filter(g => fits(g, t) && !ban.includes(g.id) && !out.includes(g.id))
+      for (const g of [...shuffle(pool.filter(x => !seen.includes(x.id))), ...shuffle(pool.filter(x => seen.includes(x.id)))]) { if (out.length < 3) out.push(g.id) }
+    }
+    return out
   }
   const reshuffle = (note = '') => { const seen = [...new Set([...st.seen, ...st.cands])]; put({ cands: draw(seen, st.cands), seen, ballots: {}, round: st.round + 1, note }) }
   useEffect(() => { if (!st.cands.length && fresh.length) { const v = { cands: draw([]), seen: [], ballots: {}, round: 1, note: '' }; setSt(v); save(v) } }, [st.cands.length, fresh.length]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -140,7 +145,7 @@ export default function RankPick() {
         <button type="button" className="rv-howbtn" onClick={() => setInfo(v => !v)}>❓ كيف تنحسب؟ {info ? '▲' : '▼'}</button>
         {info && (
           <div className="rv-howtxt">
-            <p>الألعاب المرشّحة تنختار عشوائي من الألعاب اللي ما لعبها أحد للحين.</p>
+            <p>الألعاب المرشّحة تنختار عشوائي من الألعاب اللي ما لعبها أحد للحين، وتكفي كل العيال ({players.length}). إذا خلصت هذي، تنزل لألعاب تكفي {players.length - 1} وبعدها {players.length - 2} وهكذا.</p>
             <p>كل لاعب عنده {BUDGET} نقطة بس، ثابتة للكل. ترتّب الألعاب اللي تبغاها: لو رتّبت الثلاث تاخذ الأولى 6 والثانية 4 والثالثة 2، ولو اخترت لعبتين 8 و4، ولعبة وحدة كل النقاط. وهكذا ما أحد يكسب قوة زيادة لأنه اختار أكثر.</p>
             <p>إذا تعادلت لعبتان، تفوز اللي أخذت أولوية أولى من لاعبين أكثر.</p>
             <p>إعادة الترشيح: إذا طلبها أكثر من 51% من العيال (هنا {redoNeed} من {players.length}) تتبدّل الثلاث بألعاب جديدة، وتتصفّر الأصوات.</p>
