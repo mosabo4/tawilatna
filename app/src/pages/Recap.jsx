@@ -79,14 +79,14 @@ export default function Recap({ month }) {
           ))}
         </div>
       ) : <Pending />}
-      <p className="rc-note">المستوى = كم شخص غلب من كل اللي لعب ضدهم هالشهر</p>
+      <p className="rc-note">الإيلو يعتمد على مين غلبت في كل مباراة، مو على عدد الفوزات</p>
     </div>,
 
     <div key="table">
       <h2>الترتيب الكامل</h2>
       {r.table.length ? (
         <table className="rc-table">
-          <thead><tr><th>#</th><th>اللاعب</th><th>المستوى</th><th>غلب</th><th>فاز</th><th>{r.hasPrev ? 'التغيّر' : ''}</th></tr></thead>
+          <thead><tr><th>#</th><th>اللاعب</th><th>إيلو</th><th>غلب</th><th>فاز</th><th>{r.hasPrev ? 'التغيّر' : ''}</th></tr></thead>
           <tbody>
             {r.table.map(t => (
               <tr key={t.player.id}>
