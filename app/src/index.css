@@ -2339,3 +2339,58 @@ input[type=color] { width: 54px; height: 34px; border: 0; border-radius: 10px; b
 
 .rk-cands{grid-template-columns:repeat(2,1fr)}
 .rk-c.rd{border-style:dashed}.rk-rdi{font-size:34px;line-height:1;display:grid;place-items:center;height:56px}
+
+/* ===== ترشيح الجلسة الجاية (الصفحة الأساسية) ===== */
+.pk-night ol { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.pk-night li { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: 12px; background: rgba(255,255,255,.05); }
+.pk-night li > span { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.pk-night li small { font-size: 11px; color: var(--muted); }
+.pk-tag { font-style: normal; font-size: 11px; padding: 2px 8px; border-radius: 99px; background: rgba(255,196,92,.18); border: 1px solid rgba(255,196,92,.4); white-space: nowrap; }
+.pk-pw { display: grid; gap: 8px; }
+.pk-perk { padding: 8px 10px; border-radius: 12px; background: rgba(255,255,255,.05); display: grid; gap: 6px; }
+.pk-perk.lock { opacity: .5; }
+.pk-ph { display: flex; gap: 10px; align-items: center; }
+.pk-ph > span { font-size: 20px; }
+.pk-ph div { display: flex; flex-direction: column; }
+.pk-ph small, .pk-chips small, .pk-on { font-size: 11px; color: var(--muted); }
+.pk-on { color: #2FB36B; }
+.pk-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+
+/* شاشة الشرح */
+.pi-wrap { position: fixed; inset: 0; z-index: 90; background: rgba(8,10,18,.82); backdrop-filter: blur(6px); display: grid; place-items: center; padding: 16px; }
+.pi-box { position: relative; width: min(420px, 100%); background: var(--card, #161b2b); border: 1px solid rgba(255,255,255,.12); border-radius: 22px; padding: 20px 18px 16px; text-align: center; display: grid; gap: 10px; }
+.pi-box h3 { margin: 0; font-size: 19px; }
+.pi-box p { margin: 0; font-size: 14px; line-height: 1.7; color: var(--muted); min-height: 72px; }
+.pi-skip { position: absolute; top: 10px; inset-inline-start: 12px; background: none; border: 0; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer; }
+.pi-scene { height: 150px; display: grid; place-items: center; border-radius: 16px; background: rgba(255,255,255,.04); overflow: hidden; animation: pi-in .35s ease; }
+@keyframes pi-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.pi-dots { display: flex; gap: 6px; justify-content: center; }
+.pi-dots i { width: 7px; height: 7px; border-radius: 99px; background: rgba(255,255,255,.2); transition: all .2s; }
+.pi-dots i.done { background: rgba(255,255,255,.45); } .pi-dots i.on { width: 20px; background: #F2B33D; }
+.pi-act { display: flex; gap: 8px; justify-content: center; }
+.pi-row { display: flex; gap: 12px; }
+.pi-card { width: 64px; height: 84px; border-radius: 12px; background: var(--c); display: grid; place-items: center; font-style: normal; font-size: 26px; box-shadow: 0 6px 16px rgba(0,0,0,.35); animation: pi-drop .7s cubic-bezier(.2,.9,.3,1.2) both, pi-float 2.4s ease-in-out 1s infinite; }
+.pi-card.c1 { animation-delay: .15s, 1.15s; } .pi-card.c2 { animation-delay: .3s, 1.3s; }
+@keyframes pi-drop { from { opacity: 0; transform: translateY(-60px) rotate(-8deg); } to { opacity: 1; transform: none; } }
+@keyframes pi-float { 50% { transform: translateY(-5px); } }
+.pi-pick { display: grid; place-items: center; line-height: 1; animation: pi-pop 2.7s ease-in-out infinite; animation-delay: var(--d); }
+.pi-pick small { font-size: 12px; font-weight: 800; margin-top: 4px; }
+@keyframes pi-pop { 0%, 20% { transform: scale(.4); opacity: 0; } 30%, 90% { transform: scale(1); opacity: 1; } 100% { opacity: 0; } }
+.pi-coins { position: relative; display: flex; flex-wrap: wrap; width: 150px; gap: 6px; justify-content: center; }
+.pi-coins b { width: 28px; height: 28px; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #ffe08a, #e0a21c); box-shadow: 0 2px 6px rgba(0,0,0,.4); animation: pi-coin 2.4s ease-in-out infinite; animation-delay: calc(var(--i) * .1s); }
+@keyframes pi-coin { 0% { transform: translateY(-40px) scale(.5); opacity: 0; } 25%, 80% { transform: none; opacity: 1; } 100% { opacity: 0; } }
+.pi-coins em { position: absolute; inset: 0; display: grid; place-items: center; font-style: normal; font-size: 30px; font-weight: 800; color: #3a2a00; text-shadow: 0 1px 0 rgba(255,255,255,.4); pointer-events: none; }
+.pi-redo { display: grid; gap: 10px; justify-items: center; }
+.pi-redo small { font-size: 12px; font-weight: 800; color: #8892a6; }
+.pi-bar { position: relative; width: 190px; height: 12px; border-radius: 99px; background: rgba(255,255,255,.12); overflow: hidden; }
+.pi-bar i { position: absolute; inset: 0 auto 0 0; background: #8892a6; width: 0; animation: pi-fill 3s ease-in-out infinite; }
+.pi-bar u { position: absolute; top: 0; bottom: 0; inset-inline-start: 51%; width: 2px; background: #F2B33D; }
+@keyframes pi-fill { 0% { width: 0; } 70%, 100% { width: 70%; } }
+.pi-spin { display: inline-block; animation: pi-rot 2s linear infinite; }
+@keyframes pi-rot { to { transform: rotate(360deg); } }
+.pi-hemi { width: 220px; }
+.pi-hemi circle { animation: pi-dot .5s ease both; opacity: 0; }
+@keyframes pi-dot { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: none; } }
+.pi-perks { display: grid; grid-template-columns: repeat(3, 54px); gap: 10px; font-size: 28px; }
+.pi-perks span { width: 54px; height: 54px; border-radius: 14px; background: rgba(255,255,255,.08); display: grid; place-items: center; animation: pi-drop .6s ease both; animation-delay: calc(var(--i) * .15s); }
+@media (prefers-reduced-motion: reduce) { .pi-box *, .pi-scene * { animation: none !important; opacity: 1 !important; } }

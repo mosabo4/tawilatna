@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import SEED_GAMES from './seedGames.json'
+import { roomToPicks } from './pickLogic'
 
 const URL = import.meta.env.VITE_SUPABASE_URL
 const KEY = import.meta.env.VITE_SUPABASE_KEY
@@ -21,6 +22,7 @@ export const ERRORS = {
   name_taken: 'هذا الاسم مستخدم',
   not_found: 'العنصر غير موجود، يمكن انحذف',
   dup_game: 'هذي اللعبة موجودة من قبل',
+  stale: 'تغيّرت الجولة قبل لا تصوّت، حدّثنا الصفحة',
   bad_week: 'التاريخ لازم يكون يوم جمعة',
   not_played: 'ما تقدر تقيّم لعبة قبل ما تجربها',
   already_played: 'التصويت بس على ألعاب ما جربتها',
@@ -46,14 +48,15 @@ async function sbLoad() {
   ])
   for (const r of [players, games, plays, results, ratings]) if (r.error) throw new ApiError('network')
   // الجداول الجديدة: لو التحديث ما انشغّل في القاعدة، نكمل بدونها
-  const [picks, comments, posts, settings, playExp, expRatings, charStyles, scenes, perksT, actionsT] = await Promise.all([
+  const [picks, comments, posts, settings, playExp, expRatings, charStyles, scenes, perksT, actionsT, roomT] = await Promise.all([
     q('friday_picks'), q('game_comments'), q('posts').order('created_at', { ascending: false }).limit(200), q('app_settings'),
-    q('play_expansions'), q('expansion_ratings'), q('players', 'id,char_style'), q('scenes'), q('perks'), q('actions').order('created_at', { ascending: false }).limit(1000),
+    q('play_expansions'), q('expansion_ratings'), q('players', 'id,char_style'), q('scenes'), q('perks'), q('actions').order('created_at', { ascending: false }).limit(1000), q('pick_room'),
   ])
   if (!charStyles.error) { const m = new Map(charStyles.data.map(x => [x.id, x.char_style])); for (const p of players.data) p.char_style = m.get(p.id) || null }
+  const pickRoom = (!roomT.error && roomT.data?.[0]?.data?.round) ? roomT.data[0].data : null
   return {
-    players: players.data, games: games.data, plays: plays.data, results: results.data, ratings: ratings.data,
-    picks: picks.error ? [] : picks.data, comments: comments.error ? [] : comments.data, posts: posts.error ? [] : posts.data,
+    players: players.data, games: games.data, plays: plays.data, results: results.data, ratings: ratings.data, pickRoom,
+    picks: [...(picks.error ? [] : picks.data), ...roomToPicks(pickRoom)], comments: comments.error ? [] : comments.data, posts: posts.error ? [] : posts.data,
     settings: (!settings.error && settings.data?.[0]) || {},
     playExp: playExp.error ? [] : playExp.data, expRatings: expRatings.error ? [] : expRatings.data,
     scenes: scenes.error ? null : scenes.data,
@@ -108,7 +111,7 @@ function dAuth(s, player, pin) {
   return p
 }
 const demo = {
-  load: async () => { const s = dGet(); return { picks: [], comments: [], posts: [], settings: {}, playExp: [], expRatings: [], scenes: [], perksDb: [], actions: [], ...s, players: s.players.map(({ pin: _pin, ...p }) => p) } },
+  load: async () => { const s = dGet(); return { comments: [], posts: [], settings: {}, playExp: [], expRatings: [], scenes: [], perksDb: [], actions: [], ...s, pickRoom: s.pickRoom?.round ? s.pickRoom : null, picks: [...(s.picks || []), ...roomToPicks(s.pickRoom)], players: s.players.map(({ pin: _pin, ...p }) => p) } },
   login: async (player, pin) => { dAuth(dGet(), player, pin); return { ok: true } },
   setRating: async (player, pin, game, score) => {
     const s = dGet(); dAuth(s, player, pin)
@@ -182,6 +185,18 @@ const demo = {
       if (s.plays.some(pl => pl.game_id === game && s.results.some(r => r.play_id === pl.id && r.player_id === player))) throw new ApiError('already_played')
       s.picks.push({ week, game_id: game, player_id: player, votes, created_at: new Date().toISOString() })
     }
+    dSet(s); return { ok: true }
+  },
+  setPickRoom: async (player, pin, expect, room) => {
+    const s = dGet(); dAuth(s, player, pin)
+    if ((s.pickRoom?.round || 0) !== (expect || 0)) throw new ApiError('stale')
+    s.pickRoom = room; dSet(s); return { ok: true }
+  },
+  setPickBallot: async (player, pin, round, ballot) => {
+    const s = dGet(); dAuth(s, player, pin)
+    if (!s.pickRoom || s.pickRoom.round !== round) throw new ApiError('stale')
+    s.pickRoom.ballots ||= {}
+    if (!ballot?.order?.length) delete s.pickRoom.ballots[player]; else s.pickRoom.ballots[player] = { ...ballot, at: new Date().toISOString() }
     dSet(s); return { ok: true }
   },
   setComment: async (player, pin, game, body) => {
@@ -283,6 +298,8 @@ const real = {
   deleteGame: (p, pin, id) => sbCall('delete_game', { p_player: p, p_pin: pin, p_game: id }),
   toggleFriday: (p, pin, week, g) => sbCall('toggle_friday', { p_player: p, p_pin: pin, p_week: week, p_game: g }),
   setFridayVotes: (p, pin, week, g, n) => sbCall('set_friday_votes', { p_player: p, p_pin: pin, p_week: week, p_game: g, p_votes: n }),
+  setPickRoom: (p, pin, expect, room) => sbCall('set_pick_room', { p_player: p, p_pin: pin, p_expect: expect || 0, p_data: room }),
+  setPickBallot: (p, pin, round, ballot) => sbCall('set_pick_ballot', { p_player: p, p_pin: pin, p_round: round, p_ballot: ballot }),
   setComment: (p, pin, g, body) => sbCall('set_comment', { p_player: p, p_pin: pin, p_game: g, p_body: body }),
   addPost: (p, pin, body) => sbCall('add_post', { p_player: p, p_pin: pin, p_body: body }),
   deletePost: (p, pin, id) => sbCall('delete_post', { p_player: p, p_pin: pin, p_post: id }),

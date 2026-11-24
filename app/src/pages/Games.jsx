@@ -11,7 +11,8 @@ import { Avatar, Cover, Empty, ScoreBadge, TopBar, Section, PlayerTag, RatingInp
 import { PlayCard } from './History'
 import Cabinet, { CabinetHint } from './Cabinet'
 import TableHero from './TableHero'
-import { FridayButton, GameComments } from './Social'
+import { GameComments } from './Social'
+import { FridayButton } from './Pick'
 
 const SORTS = [
   ['cat', '🗄️ ترتيب الدولاب'],

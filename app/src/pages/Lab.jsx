@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { api } from '../api'
-import { useFriday } from './Social'
+import { useFriday } from './Pick'
 import XpBalance from './XpBalance'
 import RankVote from './RankVote'
 import RankPick from './RankPick'

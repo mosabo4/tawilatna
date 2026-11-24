@@ -1,25 +1,17 @@
 import { useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { Avatar, Cover } from '../ui'
-import { levelOfReward, computeLevels } from '../levels'
+import { split } from '../pickLogic'
 
 // تجربة: التصويت بالأولويات. كل لاعب عنده رصيد نقاط (يكبر بالمستوى) يتوزع على ألعابه حسب ترتيبها.
 // هذي الصفحة معزولة: تخزّن في جهازك بس ولا تلمس تصويت الموقع.
 const KEY = 'tawilatna-lab-rankvote'
 export const PAL = ['#5B7CFF', '#F2B33D', '#2FB36B', '#E5484D', '#A35BFF', '#2BC4D6', '#FF8A3D', '#E056A0']
-const SHARES = { 1: [1], 2: [2 / 3, 1 / 3], 3: [1 / 2, 1 / 3, 1 / 6] }
 export const MEDAL = ['🥇', '🥈', '🥉']
 const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {} } catch { return {} } }
 const save = v => { try { localStorage.setItem(KEY, JSON.stringify(v)) } catch { /* ignore */ } }
 
-// قسمة الرصيد على الأولويات بأعداد صحيحة مجموعها = الرصيد
-export function split(budget, n) {
-  const sh = SHARES[n] || []
-  const raw = sh.map(s => s * budget), fl = raw.map(Math.floor)
-  let left = budget - fl.reduce((a, b) => a + b, 0)
-  raw.map((r, i) => [r - fl[i], i]).sort((a, b) => b[0] - a[0]).forEach(([, i]) => { if (left > 0) { fl[i]++; left-- } })
-  return fl
-}
+export { split }
 
 // مقاعد الهلال: صفوف أقواس، عدد النقاط يتناسب مع نصف القطر، مرتبة بالزاوية عشان الألوان تطلع شرائح
 // كل مقعد يتمثل بـ HEM_M نقاط صغيرة عشان القوس يطلع كثيف مثل برلمانات الألعاب
@@ -51,10 +43,8 @@ export default function RankVote() {
   const [all, setAll] = useState(false)
   const [info, setInfo] = useState(false)
   const put = b => { setB(b); save(b) }
-  const lv = useMemo(() => computeLevels(idx), [idx])
-  const lvOf = pid => lv.get(pid)?.level || 1
-  const budgetOf = pid => 12 + 4 * ((lvOf(pid) >= levelOfReward('votes2') ? 1 : 0) + (lvOf(pid) >= levelOfReward('votes3') ? 1 : 0) + (lvOf(pid) >= levelOfReward('votes4') ? 1 : 0))
-  const slotsOf = pid => 1 + (lvOf(pid) >= levelOfReward('slot2') ? 1 : 0) + (lvOf(pid) >= levelOfReward('slot3') ? 1 : 0)
+  const budgetOf = () => 12
+  const slotsOf = () => 3
   const gname = id => idx.gamesById.get(id)?.name || '؟'
   const players = idx.players
   const meP = idx.playersById.get(who)
@@ -105,9 +95,9 @@ export default function RankVote() {
     const list = idx.games.filter(g => !cur.includes(g.id) && !playedBy.has(g.id) && (!t || g.name.toLowerCase().includes(t)))
     return t ? list.slice(0, 12) : [...list].sort((a, b) => (b.rating_avg || 0) - (a.rating_avg || 0) || a.name.localeCompare(b.name)).slice(0, 12)
   }, [idx.games, q, cur, playedBy])
-  const nextSlotLv = cap < 2 ? levelOfReward('slot2') : cap < 3 ? levelOfReward('slot3') : null
+  const nextSlotLv = null
   const budget = budgetOf(who)
-  const nextBudLv = budget < 16 ? levelOfReward('votes2') : budget < 20 ? levelOfReward('votes3') : budget < 24 ? levelOfReward('votes4') : null
+  const nextBudLv = null
   const fill = () => {
     const b = {}
     players.forEach((p, k) => {

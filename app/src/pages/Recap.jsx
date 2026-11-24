@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useStore, go } from '../store'
 import { buildRecap, monthName, MIN_PLAYS } from '../recap'
-import { useFriday } from './Social'
+import { useFriday } from './Pick'
 import { Avatar, Cover, fmtDate, fmtScore } from '../ui'
 
 const Pending = ({ text = 'البيانات للحين ما اكتملت' }) => <div className="rc-pending"><span>⏳</span>{text}</div>
