@@ -41,8 +41,8 @@ export function buildRecap(idx, month) {
   const busiestDay = best(days.map(d => ({ d, n: plays.filter(p => skey(idx, p) === d).length })), x => x.n, 2)
 
   // ---------- الترتيب ----------
-  const table = standings(idx, inMonth).filter(r => r.plays > 0)
-  const prevTable = standings(idx, p => monthOf(p.played_on) === prev).filter(r => r.plays > 0)
+  const table = standings(idx, inMonth, { fair: true }).filter(r => r.plays > 0)
+  const prevTable = standings(idx, p => monthOf(p.played_on) === prev, { fair: true }).filter(r => r.plays > 0)
   const prevRank = new Map(prevTable.map((r, i) => [r.player.id, i + 1]))
   const tableWithMove = table.map((r, i) => ({ ...r, rank: i + 1, prev: prevRank.get(r.player.id) ?? null }))
   const eligible = tableWithMove.filter(r => r.plays >= MIN_PLAYS)
@@ -68,7 +68,7 @@ export function buildRecap(idx, month) {
   // ---------- الجوائز ----------
   const awards = []
   const add = (id, icon, title, desc, found, text) => awards.push({ id, icon, title, desc, ...(found ? { who: found.items.map(x => x.player), text: text(found) } : { empty: true }) })
-  add('mvp', '👑', 'لاعب الشهر', `أعلى مستوى (بشرط ${MIN_PLAYS} أقيام على الأقل)`, best(eligible, r => r.points, 0), f => `مستواه ${f.value}%`)
+  add('mvp', '👑', 'لاعب الشهر', `أعلى إيلو (بشرط ${MIN_PLAYS} أقيام على الأقل)`, best(eligible, r => r.points, 0), f => `إيلو ${f.value}`)
   add('wins', '🏆', 'ملك الفوز', 'أكثر واحد جاء الأول', best(people, s => s.wins), f => `${f.value} فوز`)
   add('streak', '🔥', 'أطول سلسلة فوز', 'أكثر فوز ورا بعض في الشهر', best(people, s => s.bestStreak, 2), f => `${f.value} فوز ورا بعض`)
   add('second', '🥈', 'ملك المركز الثاني', 'قريب دايم… بس مو الأول', best(people, s => s.seconds, 2), f => `جاء الثاني ${f.value} مرات`)

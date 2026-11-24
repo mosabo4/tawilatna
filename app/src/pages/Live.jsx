@@ -21,7 +21,7 @@ export default function Live() {
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30000); return () => clearInterval(t) }, [])
   const save = v => { setLive(v); setL(v) }
   const plays = useMemo(() => (live ? livePlays(idx, live) : []), [idx, live])
-  const table = useMemo(() => (live ? standings(idx, p => plays.includes(p)) : []), [idx, live, plays])
+  const table = useMemo(() => (live ? standings(idx, p => plays.includes(p), { fair: true }) : []), [idx, live, plays])
 
   if (done) {
     const top = done.table.find(r => r.plays > 0)
@@ -33,7 +33,7 @@ export default function Live() {
             {top ? <>
               <Character player={top.player} pose="jump" size={120} />
               <small>نجم الليلة</small><strong>{top.player.name}</strong>
-              <p>{top.wins} فوز من {top.plays} · مستواه الليلة {top.points}%</p>
+              <p>{top.wins} فوز من {top.plays} · إيلو الليلة {top.points}</p>
             </> : <p>ما انسجل أي قيم في هالجلسة.</p>}
             <div className="row3 live-nums"><div><b>{done.plays.length}</b><span>قيم</span></div><div><b>{done.players.length}</b><span>حاضر</span></div><div><b>{dur(done.end - new Date(done.start))}</b><span>مدة</span></div></div>
           </div>

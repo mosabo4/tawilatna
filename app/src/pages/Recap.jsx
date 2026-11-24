@@ -73,7 +73,7 @@ export default function Recap({ month }) {
             <div key={k} className={`rc-pod p${k + 1}`}>
               <Avatar player={top3[k].player} size={k === 0 ? 84 : 64} />
               <b>{top3[k].player.name}</b>
-              <span>{top3[k].points}%</span>
+              <span>{top3[k].points}</span>
               <div className="rc-step">{k + 1}</div>
             </div>
           ))}
@@ -92,7 +92,7 @@ export default function Recap({ month }) {
               <tr key={t.player.id}>
                 <td>{t.rank}</td>
                 <td><span className="rc-p"><Avatar player={t.player} size={26} />{t.player.name}</span></td>
-                <td><b>{t.points}%</b></td>
+                <td><b>{t.points}</b></td>
                 <td>{Number.isInteger(t.beat) ? t.beat : t.beat.toFixed(1)}/{t.faced}</td>
                 <td>{t.wins}/{t.plays}</td>
                 <td>{r.hasPrev ? <Move r={t} /> : ''}</td>
